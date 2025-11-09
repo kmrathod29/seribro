@@ -1,4 +1,3 @@
-// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -8,103 +7,97 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary colors based on your logo
         primary: {
-          DEFAULT: '#0066FF',      // Main brand blue
-          dark: '#0052CC',         // Darker blue for hover states
-          light: '#3385FF',        // Lighter blue for accents
+          DEFAULT: '#10b981',  // emerald-500
+          light: '#34d399',    // emerald-400
+          dark: '#059669',     // emerald-600
         },
-        // Navy colors from your logo background
         navy: {
-          DEFAULT: '#1a2d5e',      // Main navy from logo
-          light: '#2d3748',        // Lighter navy for secondary text
-          dark: '#0f1729',         // Darker navy
+          DEFAULT: '#1a1f36',
+          light: '#252b42',
+          dark: '#0f1419',
         },
-        // Lavender from your logo text
-        lavender: {
-          DEFAULT: '#b8b3ff',      // Main lavender accent
-          light: '#d4d0ff',        // Lighter lavender
-          dark: '#9c96e6',         // Darker lavender
+        gold: {
+          DEFAULT: '#f59e0b',  // amber-500
+          light: '#fbbf24',    // amber-400
+          dark: '#d97706',     // amber-600
         },
       },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
-      backgroundSize: {
-        'size-200': '200% 200%',
-      },
-      backgroundPosition: {
-        'pos-0': '0% 0%',
-        'pos-100': '100% 100%',
-      },
+      backgroundColor: theme => ({
+        ...theme('colors'),
+      }),
+      textColor: theme => ({
+        ...theme('colors'),
+      }),
+      gradientColorStops: theme => ({
+        ...theme('colors'),
+      }),
       animation: {
-        'fade-in-up': 'fadeInUp 0.6s ease-out',
-        'fade-in-down': 'fadeInDown 0.6s ease-out',
         'blob': 'blob 7s infinite',
-        'scroll': 'scroll 1.5s ease-in-out infinite',
-        'gradient': 'gradient 8s ease infinite',
+        'scroll': 'scroll 2s ease-in-out infinite',
+        'fade-in-down': 'fade-in-down 0.6s ease-out',
+        'fade-in-up': 'fade-in-up 0.6s ease-out',
+        'gradient': 'gradient 3s ease infinite',
+        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
-        fadeInUp: {
-          '0%': {
-            opacity: '0',
-            transform: 'translateY(30px)',
-          },
-          '100%': {
-            opacity: '1',
-            transform: 'translateY(0)',
-          },
-        },
-        fadeInDown: {
-          '0%': {
-            opacity: '0',
-            transform: 'translateY(-30px)',
-          },
-          '100%': {
-            opacity: '1',
-            transform: 'translateY(0)',
-          },
-        },
         blob: {
-          '0%': {
-            transform: 'translate(0px, 0px) scale(1)',
-          },
-          '33%': {
-            transform: 'translate(30px, -50px) scale(1.1)',
-          },
-          '66%': {
-            transform: 'translate(-20px, 20px) scale(0.9)',
-          },
-          '100%': {
-            transform: 'translate(0px, 0px) scale(1)',
-          },
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '25%': { transform: 'translate(20px, -50px) scale(1.1)' },
+          '50%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+          '75%': { transform: 'translate(50px, 50px) scale(1.05)' }
         },
         scroll: {
-          '0%': {
-            transform: 'translateY(0)',
-            opacity: '0',
-          },
-          '40%': {
-            opacity: '1',
-          },
-          '80%': {
-            transform: 'translateY(12px)',
-            opacity: '0',
-          },
-          '100%': {
-            opacity: '0',
-          },
+          '0%': { opacity: '0', transform: 'translateY(0)' },
+          '40%': { opacity: '1' },
+          '100%': { opacity: '0', transform: 'translateY(16px)' }
+        },
+        'fade-in-down': {
+          'from': { opacity: '0', transform: 'translateY(-20px)' },
+          'to': { opacity: '1', transform: 'translateY(0)' }
+        },
+        'fade-in-up': {
+          'from': { opacity: '0', transform: 'translateY(20px)' },
+          'to': { opacity: '1', transform: 'translateY(0)' }
         },
         gradient: {
-          '0%, 100%': {
-            backgroundPosition: '0% 50%',
-          },
-          '50%': {
-            backgroundPosition: '100% 50%',
-          },
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' }
         },
+        pulse: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '.5' }
+        }
       },
-    },
+      backgroundSize: {
+        'auto': 'auto',
+        'cover': 'cover',
+        'contain': 'contain',
+        '200%': '200% auto',
+      },
+      animationDelay: {
+        '200': '0.2s',
+        '400': '0.4s',
+        '600': '0.6s',
+        '2000': '2s',
+        '4000': '4s',
+      },
+      animationFillMode: {
+        'both': 'both'
+      }
+    }
   },
-  plugins: [],
+  plugins: [
+    function({ addUtilities, theme }) {
+      const animationDelays = theme('animationDelay', {});
+      const utilities = Object.entries(animationDelays).reduce((acc, [key, value]) => {
+        acc[`.animation-delay-${key}`] = {
+          'animation-delay': value,
+          'animation-fill-mode': 'both'
+        };
+        return acc;
+      }, {});
+      addUtilities(utilities);
+    }
+  ]
 }
