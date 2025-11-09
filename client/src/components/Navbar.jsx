@@ -25,8 +25,10 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-20">
           {/* Logo with Glow Effect */}
           <a href="/" className="flex items-center space-x-3 group">
-           <img src="/seribro_nobg_only_logo.png" alt="Seribro Icon" className="h-13 w-12" />
-            <img src="/seribro_nobg__only_name_logo.png" alt="Seribro Brand" className="h-12" />
+           <img src="/seribro_new_logo.png" alt="Seribro Icon" className="h-13 w-12" />
+            <img src="/seribro_new_logo_name.png" alt="Seribro Brand" className="h-11" />
+           {/* <img src="/seribro_nobg_only_logo.png" alt="Seribro Icon" className="h-13 w-12" />
+            <img src="/seribro_nobg__only_name_logo.png" alt="Seribro Brand" className="h-12" /> */}
           </a>
           {/* <a href="/" className="flex items-center space-x-3 group">
             <div className="relative">

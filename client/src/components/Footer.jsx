@@ -42,11 +42,12 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center space-x-3 text-gray-300 hover:text-lavender transition-colors duration-300 cursor-pointer">
                 <Mail size={18} />
-                <span className="text-sm">hello@seribro.com</span>
+                <span className="text-sm">info.seribro@gmail.com
+</span>
               </div>
               <div className="flex items-center space-x-3 text-gray-300 hover:text-lavender transition-colors duration-300 cursor-pointer">
                 <Phone size={18} />
-                <span className="text-sm">+91 98765 43210</span>
+                <span className="text-sm">+91 90549 24231</span>
               </div>
               <div className="flex items-center space-x-3 text-gray-300 hover:text-lavender transition-colors duration-300 cursor-pointer">
                 <MapPin size={18} />
@@ -139,7 +140,7 @@ const Footer = () => {
         {/* Bottom Footer */}
         <div className="border-t border-gray-700/50 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <p className="text-gray-400 text-sm">
-            © 2025 Seribro. All rights reserved. Made with ❤️ in Bhavnagar
+           © 2025 Midnight Sphere | SeriBro. Made with ❤️ in Bhavnagar.
           </p>
           
           <div className="flex items-center space-x-6">
