@@ -39,6 +39,7 @@ const Signup = () => {
         }
     };
 
+
     const handleSubmit = () => {
         console.log('Signup:', userType, userType === 'student' ? studentData : companyData);
     };
@@ -67,11 +68,10 @@ const Signup = () => {
                 <div className="text-center mb-8 animate-fade-in-down">
                     <div className="flex items-center justify-center space-x-3 mb-4">
                         <div className="relative">
-                            {/* <div className="absolute -inset-1 bg-gradient-to-r from-primary to-gold rounded-xl blur opacity-30"></div>
-              <div className="relative w-12 h-12 bg-gradient-to-br from-navy to-navy-light rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-primary font-bold text-2xl">S</span>
-              </div> */}
-                            <img src="/seribro_new_logo.png" alt="Seribro" className="w-12 h-12 object-contain" />
+                            <div className="absolute -inset-1 bg-gradient-to-r from-primary to-gold rounded-xl blur opacity-30"></div>
+                            <div className="relative w-12 h-12 bg-gradient-to-br from-navy to-navy-light rounded-xl flex items-center justify-center shadow-lg">
+                                <span className="text-primary font-bold text-2xl">S</span>
+                            </div>
                         </div>
                         <h1 className="text-3xl font-black text-navy">Seribro</h1>
                     </div>
@@ -84,8 +84,8 @@ const Signup = () => {
                     <button
                         onClick={() => setUserType('student')}
                         className={`flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center justify-center space-x-2 ${userType === 'student'
-                            ? 'bg-white text-navy shadow-md'
-                            : 'text-gray-600 hover:text-navy'
+                                ? 'bg-white text-navy shadow-md'
+                                : 'text-gray-600 hover:text-navy'
                             }`}
                     >
                         <GraduationCap size={18} />
@@ -94,12 +94,12 @@ const Signup = () => {
                     <button
                         onClick={() => setUserType('company')}
                         className={`flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center justify-center space-x-2 ${userType === 'company'
-                            ? 'bg-white text-navy shadow-md'
-                            : 'text-gray-600 hover:text-navy'
+                                ? 'bg-white text-navy shadow-md'
+                                : 'text-gray-600 hover:text-navy'
                             }`}
                     >
                         <Briefcase size={18} />
-                        <span>Company</span>
+                        <span>Company / Business</span>
                     </button>
                 </div>
 
