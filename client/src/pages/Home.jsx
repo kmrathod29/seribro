@@ -79,7 +79,7 @@ const Home = () => {
             - Shift horizontally with left- utilities or arbitrary values: left-1/2, left-[48%], left-[55%]
             - Keep `transform -translate-x-1/2` when using left-1/2 to center; when using left-[48%] it will offset slightly left
         */}
-        <div className="absolute bottom-1 left-[5%] md:left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="absolute bottom-1 left-[45%] md:left-1/2 transform -translate-x-1/2 animate-bounce">
           <div className="w-6 h-10 rounded-full border-2 border-white/40 flex justify-center items-start pt-2">
             <div className="w-1.5 h-3 bg-gold rounded-full animate-scroll shadow-lg shadow-gold/50"></div>
           </div>
