@@ -40,10 +40,10 @@ const Footer = () => {
               </div>
 
               <span className="text-2xl font-bold text-white">
-                Seribro
+                SeriBro
               </span>
             </div>
-            <p className="text-gray-300 text-base leading-relaxed mb-5">
+            <p className="text-gray-300 text-base leading-relaxed mb-5 text-justify">
               Connecting local talent with opportunities. Empowering students and companies to build the future together.
             </p>
 

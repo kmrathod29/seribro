@@ -1,10 +1,16 @@
+// src/pages/Auth/Signup.jsx
 import React, { useState } from 'react';
 import { User, Mail, Building, Lock, Eye, EyeOff, Upload, ArrowRight, Chrome, Github, Linkedin, GraduationCap, Briefcase, Home } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { saveUserToCookie } from '../../utils/authUtils';
 
 const Signup = () => {
     const [userType, setUserType] = useState('student');
     const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
+    
     const [studentData, setStudentData] = useState({
         fullName: '',
         email: '',
@@ -13,6 +19,7 @@ const Signup = () => {
         password: '',
         collegeId: null
     });
+    
     const [companyData, setCompanyData] = useState({
         contactPerson: '',
         companyName: '',
@@ -23,15 +30,16 @@ const Signup = () => {
 
     const handleStudentChange = (e) => {
         setStudentData({ ...studentData, [e.target.name]: e.target.value });
+        setError('');
     };
 
     const handleCompanyChange = (e) => {
         setCompanyData({ ...companyData, [e.target.name]: e.target.value });
+        setError('');
     };
 
     const handleFileUpload = (e, uploadType) => {
         const file = e.target.files[0];
-        // prefer explicit uploadType if provided, otherwise fall back to current userType
         const target = uploadType || userType;
         if (target === 'student') {
             setStudentData({ ...studentData, collegeId: file });
@@ -40,9 +48,119 @@ const Signup = () => {
         }
     };
 
+    const validateStudentForm = () => {
+        if (!studentData.fullName || !studentData.email || !studentData.college || !studentData.skills || !studentData.password) {
+            setError('Please fill in all required fields');
+            return false;
+        }
+        if (studentData.password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return false;
+        }
+        if (!studentData.collegeId) {
+            setError('Please upload your college ID');
+            return false;
+        }
+        return true;
+    };
 
-    const handleSubmit = () => {
-        console.log('Signup:', userType, userType === 'student' ? studentData : companyData);
+    const validateCompanyForm = () => {
+        if (!companyData.contactPerson || !companyData.companyName || !companyData.email || !companyData.password) {
+            setError('Please fill in all required fields');
+            return false;
+        }
+        if (companyData.password.length < 6) {
+            setError('Password must be at least 6 characters');
+            return false;
+        }
+        if (!companyData.verificationDoc) {
+            setError('Please upload verification document');
+            return false;
+        }
+        return true;
+    };
+
+    const handleSubmit = async () => {
+        setIsLoading(true);
+        setError('');
+
+        try {
+            // Validate form
+            if (userType === 'student' && !validateStudentForm()) {
+                setIsLoading(false);
+                return;
+            }
+            if (userType === 'company' && !validateCompanyForm()) {
+                setIsLoading(false);
+                return;
+            }
+
+            // TODO: Replace with actual backend API call
+            // const formData = new FormData();
+            // if (userType === 'student') {
+            //   formData.append('fullName', studentData.fullName);
+            //   formData.append('email', studentData.email);
+            //   formData.append('college', studentData.college);
+            //   formData.append('skills', studentData.skills);
+            //   formData.append('password', studentData.password);
+            //   formData.append('collegeId', studentData.collegeId);
+            // } else {
+            //   formData.append('contactPerson', companyData.contactPerson);
+            //   formData.append('companyName', companyData.companyName);
+            //   formData.append('email', companyData.email);
+            //   formData.append('password', companyData.password);
+            //   formData.append('verificationDoc', companyData.verificationDoc);
+            // }
+            
+            // const response = await fetch('/api/auth/signup', {
+            //   method: 'POST',
+            //   body: formData
+            // });
+
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Create user object based on type
+            let userData;
+            if (userType === 'student') {
+                userData = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    firstName: studentData.fullName.split(' ')[0],
+                    lastName: studentData.fullName.split(' ').slice(1).join(' ') || 'Student',
+                    email: studentData.email,
+                    userType: 'student',
+                    college: studentData.college,
+                    skills: studentData.skills,
+                    signupTime: new Date().toISOString()
+                };
+            } else {
+                userData = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    firstName: companyData.contactPerson.split(' ')[0],
+                    lastName: companyData.contactPerson.split(' ').slice(1).join(' ') || 'Company',
+                    email: companyData.email,
+                    userType: 'company',
+                    companyName: companyData.companyName,
+                    signupTime: new Date().toISOString()
+                };
+            }
+
+            // Save to cookie
+            const saved = saveUserToCookie(userData);
+
+            if (saved) {
+                // Navigate to dashboard
+                const dashboard = userType === 'student' ? '/student-dashboard' : '/company-dashboard';
+                navigate(dashboard);
+            } else {
+                setError('Failed to save account information');
+            }
+        } catch (err) {
+            setError(err.message || 'Signup failed. Please try again.');
+            console.error('Signup error:', err);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -50,7 +168,7 @@ const Signup = () => {
             {/* Animated Background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-blob"></div>
-                <div className="absolute top-40 right-20 w-72 h-72 bg-gold/10 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+                <div className="absolute top-40 right-20 w-72 h-72 bg-navy/10 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
                 <div className="absolute -bottom-8 left-40 w-72 h-72 bg-navy/5 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
             </div>
 
@@ -69,10 +187,6 @@ const Signup = () => {
                 <div className="text-center mb-8 animate-fade-in-down">
                     <div className="flex items-center justify-center space-x-3 mb-4">
                         <div className="relative">
-                            {/* <div className="absolute -inset-1 bg-gradient-to-r from-primary to-gold rounded-xl blur opacity-30"></div>
-              <div className="relative w-12 h-12 bg-gradient-to-br from-navy to-navy-light rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-primary font-bold text-2xl">S</span>
-              </div> */}
                             <img src="/seribro_new_logo.png" alt="Seribro" className="w-12 h-12 object-contain" />
                         </div>
                         <h1 className="text-3xl font-black text-navy">Seribro</h1>
@@ -119,6 +233,13 @@ const Signup = () => {
                         </p>
                     </div>
 
+                    {/* Error Message */}
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-red-700 text-sm font-medium">{error}</p>
+                        </div>
+                    )}
+
                     {/* Student Form */}
                     {userType === 'student' && (
                         <div className="space-y-5">
@@ -134,7 +255,8 @@ const Signup = () => {
                                         value={studentData.fullName}
                                         onChange={handleStudentChange}
                                         placeholder="John Doe"
-                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm"
+                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
+                                        disabled={isLoading}
                                     />
                                 </div>
                             </div>
@@ -151,7 +273,8 @@ const Signup = () => {
                                         value={studentData.email}
                                         onChange={handleStudentChange}
                                         placeholder="student@college.edu"
-                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm"
+                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
+                                        disabled={isLoading}
                                     />
                                 </div>
                             </div>
@@ -168,7 +291,8 @@ const Signup = () => {
                                         value={studentData.college}
                                         onChange={handleStudentChange}
                                         placeholder="ABC University"
-                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm"
+                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
+                                        disabled={isLoading}
                                     />
                                 </div>
                             </div>
@@ -183,7 +307,8 @@ const Signup = () => {
                                     value={studentData.skills}
                                     onChange={handleStudentChange}
                                     placeholder="Web Design, React, Python"
-                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm"
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
+                                    disabled={isLoading}
                                 />
                             </div>
 
@@ -199,11 +324,14 @@ const Signup = () => {
                                         value={studentData.password}
                                         onChange={handleStudentChange}
                                         placeholder="Create a strong password"
-                                        className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm"
+                                        className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
+                                        disabled={isLoading}
                                     />
                                     <button
+                                        type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-navy transition-colors"
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-navy transition-colors disabled:opacity-50"
+                                        disabled={isLoading}
                                     >
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
@@ -220,8 +348,9 @@ const Signup = () => {
                                         onChange={(e) => handleFileUpload(e, 'student')}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         accept="image/*,.pdf"
+                                        disabled={isLoading}
                                     />
-                                    <div className="text-center">
+                                    <div className="text-center pointer-events-none">
                                         <Upload className="mx-auto text-gray-400 group-hover:text-primary transition-colors mb-2" size={32} />
                                         <p className="text-sm text-gray-600 mb-1">
                                             {studentData.collegeId ? studentData.collegeId.name : 'Click to upload College ID'}
@@ -248,7 +377,8 @@ const Signup = () => {
                                         value={companyData.contactPerson}
                                         onChange={handleCompanyChange}
                                         placeholder="Jane Smith"
-                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm"
+                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
+                                        disabled={isLoading}
                                     />
                                 </div>
                             </div>
@@ -265,7 +395,8 @@ const Signup = () => {
                                         value={companyData.companyName}
                                         onChange={handleCompanyChange}
                                         placeholder="Tech Corp"
-                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm"
+                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
+                                        disabled={isLoading}
                                     />
                                 </div>
                             </div>
@@ -282,7 +413,8 @@ const Signup = () => {
                                         value={companyData.email}
                                         onChange={handleCompanyChange}
                                         placeholder="hr@company.com"
-                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm"
+                                        className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
+                                        disabled={isLoading}
                                     />
                                 </div>
                             </div>
@@ -299,11 +431,14 @@ const Signup = () => {
                                         value={companyData.password}
                                         onChange={handleCompanyChange}
                                         placeholder="Create a strong password"
-                                        className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm"
+                                        className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
+                                        disabled={isLoading}
                                     />
                                     <button
+                                        type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-navy transition-colors"
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-navy transition-colors disabled:opacity-50"
+                                        disabled={isLoading}
                                     >
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                     </button>
@@ -320,8 +455,9 @@ const Signup = () => {
                                         onChange={(e) => handleFileUpload(e, 'company')}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         accept="image/*,.pdf"
+                                        disabled={isLoading}
                                     />
-                                    <div className="text-center">
+                                    <div className="text-center pointer-events-none">
                                         <Upload className="mx-auto text-gray-400 group-hover:text-primary transition-colors mb-2" size={32} />
                                         <p className="text-sm text-gray-600 mb-1">
                                             {companyData.verificationDoc ? companyData.verificationDoc.name : 'Click to upload Company Registration'}
@@ -336,13 +472,14 @@ const Signup = () => {
                     {/* Create Account Button */}
                     <button
                         onClick={handleSubmit}
-                        className="group w-full relative py-3.5 rounded-xl font-bold text-base text-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] mt-6"
+                        disabled={isLoading}
+                        className="group w-full relative py-3.5 rounded-xl font-bold text-base text-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] mt-6 disabled:opacity-75 disabled:cursor-not-allowed"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-primary to-navy"></div>
-                        <div className="absolute inset-0 bg-gradient-to-r from-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500 disabled:opacity-0"></div>
                         <span className="relative z-10 flex items-center justify-center space-x-2">
-                            <span>Create Account</span>
-                            <ArrowRight className="transform group-hover:translate-x-1 transition-transform duration-300" size={18} />
+                            <span>{isLoading ? 'Creating Account...' : 'Create Account'}</span>
+                            {!isLoading && <ArrowRight className="transform group-hover:translate-x-1 transition-transform duration-300" size={18} />}
                         </span>
                     </button>
 
@@ -358,13 +495,13 @@ const Signup = () => {
 
                     {/* Social Signup Buttons */}
                     <div className="grid grid-cols-3 gap-3">
-                        <button className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-primary hover:bg-primary/5 transition-all duration-300 transform hover:scale-105">
+                        <button type="button" className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-primary hover:bg-primary/5 transition-all duration-300 transform hover:scale-105 disabled:opacity-50" disabled={isLoading}>
                             <Chrome className="text-gray-600 group-hover:text-primary transition-colors" size={20} />
                         </button>
-                        <button className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-navy hover:bg-navy/5 transition-all duration-300 transform hover:scale-105">
+                        <button type="button" className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-navy hover:bg-navy/5 transition-all duration-300 transform hover:scale-105 disabled:opacity-50" disabled={isLoading}>
                             <Github className="text-gray-600 group-hover:text-navy transition-colors" size={20} />
                         </button>
-                        <button className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 transform hover:scale-105">
+                        <button type="button" className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50" disabled={isLoading}>
                             <Linkedin className="text-gray-600 group-hover:text-blue-500 transition-colors" size={20} />
                         </button>
                     </div>

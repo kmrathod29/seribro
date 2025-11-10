@@ -26,6 +26,10 @@ export default {
       backgroundColor: theme => ({
         ...theme('colors'),
       }),
+      fontFamily: {
+        // make Poppins available as the primary sans font
+        sans: ["Poppins", "Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", "sans-serif"],
+      },
       textColor: theme => ({
         ...theme('colors'),
       }),
