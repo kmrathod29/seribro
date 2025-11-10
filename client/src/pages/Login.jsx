@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Chrome, Github, Linkedin, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Login = () => {
   const [userType, setUserType] = useState('student');
@@ -31,13 +32,13 @@ const Login = () => {
       {/* Main Content */}
       <div className="relative max-w-md w-full">
         {/* Back to Home Button */}
-        <a 
-          href="/"
+        <Link
+          to="/"
           className="inline-flex items-center space-x-2 text-navy hover:text-primary transition-colors duration-300 mb-4 group animate-fade-in-down"
         >
           <Home size={18} className="transform group-hover:-translate-x-1 transition-transform duration-300" />
           <span className="font-semibold text-sm">Back to Home</span>
-        </a>
+        </Link>
 
         {/* Logo & Header */}
         <div className="text-center mb-8 animate-fade-in-down">
@@ -149,9 +150,9 @@ const Login = () => {
 
             {/* Forgot Password */}
             <div className="flex items-center justify-end">
-              <a href="/forgot-password" className="text-sm font-semibold text-primary hover:text-primary-dark transition-colors">
+              <Link to="/forgot-password" className="text-sm font-semibold text-primary hover:text-primary-dark transition-colors">
                 Forgot Password?
-              </a>
+              </Link>
             </div>
 
             {/* Login Button */}
@@ -195,9 +196,9 @@ const Login = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <a href="/signup" className="font-bold text-primary hover:text-primary-dark transition-colors">
+              <Link to="/signup" className="font-bold text-primary hover:text-primary-dark transition-colors">
                 Sign up
-              </a>
+              </Link>
             </p>
           </div>
         </div>

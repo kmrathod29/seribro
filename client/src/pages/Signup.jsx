@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Building, Lock, Eye, EyeOff, Upload, ArrowRight, Chrome, Github, Linkedin, GraduationCap, Briefcase, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Signup = () => {
     const [userType, setUserType] = useState('student');
@@ -56,13 +57,13 @@ const Signup = () => {
             {/* Main Content */}
             <div className="relative max-w-2xl mx-auto">
                 {/* Back to Home Button */}
-                <a
-                    href="/"
+                <Link
+                    to="/"
                     className="inline-flex items-center space-x-2 text-navy hover:text-primary transition-colors duration-300 mb-4 group animate-fade-in-down"
                 >
                     <Home size={18} className="transform group-hover:-translate-x-1 transition-transform duration-300" />
                     <span className="font-semibold text-sm">Back to Home</span>
-                </a>
+                </Link>
 
                 {/* Logo & Header */}
                 <div className="text-center mb-8 animate-fade-in-down">
@@ -371,9 +372,9 @@ const Signup = () => {
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-600">
                             Already have an account?{' '}
-                            <a href="/login" className="font-bold text-primary hover:text-primary-dark transition-colors">
+                            <Link to="/login" className="font-bold text-primary hover:text-primary-dark transition-colors">
                                 Login
-                            </a>
+                            </Link>
                         </p>
                     </div>
                 </div>
@@ -381,9 +382,9 @@ const Signup = () => {
                 {/* Footer Text */}
                 <p className="mt-6 text-center text-xs text-gray-500">
                     By creating an account, you agree to our{' '}
-                    <a href="/terms" className="text-primary hover:underline">Terms of Service</a>
+                    <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
                     {' '}and{' '}
-                    <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>
+                    <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
                 </p>
             </div>
         </div>
