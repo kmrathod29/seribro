@@ -151,7 +151,7 @@ const Footer = () => {
         {/* Bottom Footer */}
         <div className="border-t border-gray-700/50 pt-6 flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0">
           <p className="text-gray-400 text-sm">
-            © 2025 Midnight Sphere | Seribro.Made with <span className="text-gold">❤️</span> in Bhavnagar
+            © 2025 Midnight Sphere | Seribro. Made with <span className="text-gold">❤️</span> in Bhavnagar
           </p>
 
           <div className="flex items-center space-x-5">

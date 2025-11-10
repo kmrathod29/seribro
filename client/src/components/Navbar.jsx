@@ -1,6 +1,7 @@
 // src/components/Navbar.jsx
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom'; // Import Link
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -23,20 +24,12 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <a href="/" className="flex items-center space-x-2.5 group">
-            {/* <div className="relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-gold to-navy rounded-lg blur opacity-20 group-hover:opacity-60 transition duration-300"></div>
-              <div className="relative w-10 h-10 bg-gradient-to-br from-navy to-navy-light rounded-lg flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300 shadow-md">
-                <img src="/logo.png" alt="Seribro" className="w-8 h-8 object-contain" />
-                {/* Fallback */}
-                {/* <span className="text-primary font-bold text-xl">S</span> */}
-              {/* </div> */}
-            {/* </div> */} 
+          <Link to="/" className="flex items-center space-x-2.5 group">
             <img src="/seribro_new_logo.png" alt="Seribro" className="w-12 h-12 object-contain" />
             <span className="text-2xl font-bold text-navy">
               Seribro
             </span>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-1">
@@ -54,29 +47,32 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* UPDATED Auth Buttons - NEW GRADIENT */}
+          {/* Auth Buttons with Navigation */}
           <div className="hidden md:flex items-center space-x-3">
-            {/* LOGIN BUTTON - Enhanced with border gradient effect */}
-            <button className="group relative px-6 py-2 font-semibold text-sm overflow-hidden rounded-lg transition-all duration-300 transform hover:scale-105">
-              {/* Animated gradient border */}
-              <div className="absolute inset-0 bg-gradient-to-r from-primary via-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
-              <div className="absolute inset-0.5 bg-white rounded-lg"></div>
-              <span className="relative z-10 bg-gradient-to-r from-navy to-primary bg-clip-text text-transparent group-hover:from-primary group-hover:to-navy transition-all duration-300">
-                Login
-              </span>
-            </button>
+            {/* LOGIN BUTTON */}
+            <Link to="/login">
+              <button className="group relative px-6 py-2 font-semibold text-sm overflow-hidden rounded-lg transition-all duration-300 transform hover:scale-105">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary via-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                <div className="absolute inset-0.5 bg-white rounded-lg"></div>
+                <span className="relative z-10 bg-gradient-to-r from-navy to-primary bg-clip-text text-transparent group-hover:from-primary group-hover:to-navy transition-all duration-300">
+                  Login
+                </span>
+              </button>
+            </Link>
             
-            {/* SIGN UP BUTTON - NEW: Primary to Navy gradient */}
-            <button className="relative px-6 py-2 font-semibold text-sm text-white rounded-lg overflow-hidden group shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary to-navy"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <span className="relative z-10 flex items-center space-x-1.5">
-                <span>Sign Up</span>
-                <svg className="w-3.5 h-3.5 transform group-hover:translate-x-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </span>
-            </button>
+            {/* SIGN UP BUTTON */}
+            <Link to="/signup">
+              <button className="relative px-6 py-2 font-semibold text-sm text-white rounded-lg overflow-hidden group shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary to-navy"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <span className="relative z-10 flex items-center space-x-1.5">
+                  <span>Sign Up</span>
+                  <svg className="w-3.5 h-3.5 transform group-hover:translate-x-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </span>
+              </button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -113,15 +109,19 @@ const Navbar = () => {
               ))}
               <div className="pt-3 space-y-2 border-t border-gray-200">
                 {/* Mobile Login Button */}
-                <button className="w-full px-3 py-2.5 font-semibold text-sm border-2 border-gray-300 rounded-lg hover:border-primary transition-all duration-300 relative overflow-hidden group">
-                  <span className="relative z-10 bg-gradient-to-r from-navy to-primary bg-clip-text text-transparent">
-                    Login
-                  </span>
-                </button>
-                {/* Mobile Sign Up Button - UPDATED GRADIENT */}
-                <button className="w-full px-3 py-2.5 font-semibold text-sm text-white rounded-lg bg-gradient-to-r from-primary to-navy hover:from-navy hover:to-primary hover:shadow-md transform hover:scale-105 transition-all duration-300">
-                  Sign Up
-                </button>
+                <Link to="/login">
+                  <button className="w-full px-3 py-2.5 font-semibold text-sm border-2 border-gray-300 rounded-lg hover:border-primary transition-all duration-300 relative overflow-hidden group">
+                    <span className="relative z-10 bg-gradient-to-r from-navy to-primary bg-clip-text text-transparent">
+                      Login
+                    </span>
+                  </button>
+                </Link>
+                {/* Mobile Sign Up Button */}
+                <Link to="/signup">
+                  <button className="w-full px-3 py-2.5 font-semibold text-sm text-white rounded-lg bg-gradient-to-r from-primary to-navy hover:from-navy hover:to-primary hover:shadow-md transform hover:scale-105 transition-all duration-300">
+                    Sign Up
+                  </button>
+                </Link>
               </div>
             </div>
           </div>
