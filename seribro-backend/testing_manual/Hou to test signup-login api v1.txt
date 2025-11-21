@@ -1,0 +1,327 @@
+# 🧪 Seribro API Testing Guide - Postman
+
+## 📋 Prerequisites
+- Backend server running on `http://localhost:7000`
+- Postman installed
+- MongoDB running
+
+---
+
+## 1️⃣ **Student Registration** 
+### POST `/api/auth/student/register`
+
+**URL:** `http://localhost:7000/api/auth/student/register`
+
+**Method:** `POST`
+
+**Body Type:** `form-data`
+
+**Fields:**
+| Key | Type | Value (Example) |
+|-----|------|-----------------|
+| fullName | Text | `Arman Mahetar` |
+| email | Text | `arman@college.edu` |
+| college | Text | `Bhavnagar University` |
+| skills | Text | `React, Node.js, MongoDB` |
+| password | Text | `password123` |
+| collegeId | File | [Upload any image/PDF] |
+
+**Expected Response (201):**
+```json
+{
+  "message": "Registration successful. OTP sent to your email for verification",
+  "userId": "676abc123def456789",
+  "email": "arman@college.edu"
+}
+```
+
+**Common Errors:**
+- `400`: Missing fields or file
+- `409`: User already exists
+
+---
+
+## 2️⃣ **Company Registration**
+### POST `/api/auth/company/register`
+
+**URL:** `http://localhost:7000/api/auth/company/register`
+
+**Method:** `POST`
+
+**Body Type:** `form-data`
+
+**Fields:**
+| Key | Type | Value (Example) |
+|-----|------|-----------------|
+| contactPerson | Text | `Rahul Shah` |
+| companyName | Text | `Tech Solutions Pvt Ltd` |
+| email | Text | `hr@techsolutions.com` |
+| password | Text | `company@123` |
+| verificationDoc | File | [Upload GST/Registration doc] |
+
+**Expected Response (201):**
+```json
+{
+  "message": "Registration successful. OTP sent to your email for verification",
+  "userId": "676abc987fed654321",
+  "email": "hr@techsolutions.com"
+}
+```
+
+---
+
+## 3️⃣ **Send OTP** (If needed again)
+### POST `/api/auth/send-otp`
+
+**URL:** `http://localhost:7000/api/auth/send-otp`
+
+**Method:** `POST`
+
+**Body Type:** `raw (JSON)`
+
+```json
+{
+  "email": "arman@college.edu"
+}
+```
+
+**Expected Response (200):**
+```json
+{
+  "message": "New OTP sent to your email"
+}
+```
+
+**Common Errors:**
+- `404`: User not found
+- `400`: Email already verified
+
+---
+
+## 4️⃣ **Verify OTP**
+### POST `/api/auth/verify-otp`
+
+**URL:** `http://localhost:7000/api/auth/verify-otp`
+
+**Method:** `POST`
+
+**Body Type:** `raw (JSON)`
+
+```json
+{
+  "email": "arman@college.edu",
+  "otp": "123456"
+}
+```
+
+**Expected Response (200):**
+```json
+{
+  "message": "Email verified successfully"
+}
+```
+
+**Common Errors:**
+- `400`: Invalid or expired OTP
+- `404`: User not found
+
+---
+
+## 5️⃣ **Login**
+### POST `/api/auth/login`
+
+**URL:** `http://localhost:7000/api/auth/login`
+
+**Method:** `POST`
+
+**Body Type:** `raw (JSON)`
+
+```json
+{
+  "email": "arman@college.edu",
+  "password": "password123"
+}
+```
+
+**Expected Response (200):**
+```json
+{
+  "_id": "676abc123def456789",
+  "email": "arman@college.edu",
+  "role": "student",
+  "emailVerified": true,
+  "profileCompleted": false,
+  "message": "Login successful"
+}
+```
+
+**Important:** 
+- JWT token is set in **HTTP-only cookie** named `jwt`
+- Check **Cookies** tab in Postman after login
+- Cookie will be automatically sent in subsequent requests
+
+**Common Errors:**
+- `401`: Invalid email/password
+- `401`: Email not verified
+
+---
+
+## 6️⃣ **Logout**
+### POST `/api/auth/logout`
+
+**URL:** `http://localhost:7000/api/auth/logout`
+
+**Method:** `POST`
+
+**Body:** None needed
+
+**Expected Response (200):**
+```json
+{
+  "message": "User logged out"
+}
+```
+
+---
+
+## 🔐 **Testing Protected Routes (Future)**
+
+When you create protected routes, you need to:
+
+1. **Login first** to get JWT cookie
+2. **Enable cookie storage** in Postman:
+   - Go to Settings → General
+   - Turn ON "Automatically follow redirects"
+   - Turn ON "Send cookies"
+
+3. **Or manually set cookie:**
+   - Go to **Cookies** under request URL
+   - Add domain: `localhost`
+   - Add cookie: `jwt=<your_token_value>`
+
+---
+
+## 📊 **Postman Collection Structure**
+
+Create folders like this:
+```
+Seribro API
+├── 1. Authentication
+│   ├── Student Registration
+│   ├── Company Registration
+│   ├── Send OTP
+│   ├── Verify OTP
+│   ├── Login
+│   └── Logout
+├── 2. Student Profile (Future)
+├── 3. Company Profile (Future)
+├── 4. Projects (Future)
+└── 5. Payments (Future)
+```
+
+---
+
+## 🐛 **Common Testing Issues & Solutions**
+
+### Issue 1: File upload not working
+**Solution:** Make sure you select "File" type in form-data, not "Text"
+
+### Issue 2: "User already exists"
+**Solution:** 
+- Use different email OR
+- Delete user from MongoDB:
+```javascript
+// In MongoDB Compass or Shell
+db.users.deleteOne({ email: "test@example.com" })
+```
+
+### Issue 3: OTP not received
+**Solution:** 
+- Check backend console for OTP (if email not configured)
+- Check your email service configuration (Nodemailer)
+- For testing, print OTP in console:
+```javascript
+console.log('Generated OTP:', otpCode);
+```
+
+### Issue 4: JWT cookie not set
+**Solution:**
+- Check `withCredentials: true` in frontend axios
+- Check CORS settings in backend
+- Verify `res.cookie()` is called in `generateToken()`
+
+---
+
+## ✅ **Quick Testing Checklist**
+
+### Student Flow:
+- [ ] Register student with all fields + file
+- [ ] Check MongoDB for User and Student documents
+- [ ] Check OTP in email/console
+- [ ] Verify OTP
+- [ ] Login with credentials
+- [ ] Check JWT cookie is set
+- [ ] Logout
+
+### Company Flow:
+- [ ] Register company with all fields + file
+- [ ] Check MongoDB for User and Company documents
+- [ ] Verify OTP
+- [ ] Login
+- [ ] Check JWT cookie
+- [ ] Logout
+
+---
+
+## 🎯 **Expected Database Structure After Registration**
+
+### Users Collection:
+```json
+{
+  "_id": "...",
+  "email": "arman@college.edu",
+  "password": "$2a$12$hashed_password...",
+  "role": "student",
+  "emailVerified": false,  // true after OTP verification
+  "profileCompleted": false,
+  "createdAt": "2025-01-15T10:30:00.000Z"
+}
+```
+
+### Students Collection:
+```json
+{
+  "_id": "...",
+  "user": "user_id_reference",
+  "fullName": "Arman Mahetar",
+  "college": "Bhavnagar University",
+  "skills": ["React", "Node.js", "MongoDB"],
+  "collegeId": "uploads/collegeIds/filename.jpg",
+  "createdAt": "2025-01-15T10:30:00.000Z"
+}
+```
+
+### OTPs Collection (temporary):
+```json
+{
+  "_id": "...",
+  "email": "arman@college.edu",
+  "otp": "123456",
+  "createdAt": "2025-01-15T10:30:00.000Z"
+  // Auto-expires after 10 minutes
+}
+```
+
+---
+
+## 🔄 **Testing Workflow Order**
+
+```
+1. Student Registration → Check email/console for OTP
+2. Verify OTP → Email becomes verified
+3. Login → Get JWT cookie
+4. Test protected routes (when created)
+5. Logout → Cookie cleared
+
+Then repeat for Company...
+```
