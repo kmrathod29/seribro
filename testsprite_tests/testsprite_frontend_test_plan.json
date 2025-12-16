@@ -1,0 +1,723 @@
+[
+  {
+    "id": "TC001",
+    "title": "Student Registration Success with Valid Data",
+    "description": "Verify that a student can successfully register with valid email, password, fullName, phone, and college ID file upload, and that an OTP is sent to the email.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to student registration endpoint"
+      },
+      {
+        "type": "action",
+        "description": "Submit form with valid email, strong password, fullName, phone, and valid college ID file"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 200 and contains success message with userId and email"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that OTP is sent to the provided email"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Student Registration Failure for Duplicate Email",
+    "description": "Verify that registration fails if an email already exists in the system for a student or company.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt student registration with an email already registered in the system"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status indicates failure and proper error message about duplicate email"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Company Registration Success with Valid Data",
+    "description": "Verify that a company can register successfully with valid email, password, companyName, phone, verification document upload, and OTP is sent.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to company registration endpoint"
+      },
+      {
+        "type": "action",
+        "description": "Submit form with valid email, strong password, companyName, phone, and valid verification document"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 200 and contains success message confirming OTP sent"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify OTP is sent to the provided email"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Send OTP Resend Limitation and Success",
+    "description": "Verify OTP send mechanism including successful sending, limitation on resend frequency, and correct response messages.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Request OTP sending for a valid registered email"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify success response and that OTP is sent"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to resend OTP immediately again"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error response indicating resend too soon or limit reached"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Verify OTP with Valid and Invalid OTP Codes",
+    "description": "Verify the OTP verification succeeds with valid, unexpired OTP and fails with invalid or expired OTP codes.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Submit valid email and correct OTP code"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify success response confirming email verification"
+      },
+      {
+        "type": "action",
+        "description": "Submit valid email and incorrect OTP code"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify failure response indicating invalid OTP"
+      },
+      {
+        "type": "action",
+        "description": "Submit expired OTP for valid email"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify failure response indicating OTP expired"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Login Success and Failure for Different Roles",
+    "description": "Verify users (student, company, admin) can login with correct credentials and appropriate role, and fail login with incorrect password or mismatched role.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login with valid email, correct password, and correct role"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify success response with token and user info"
+      },
+      {
+        "type": "action",
+        "description": "Login with valid email, incorrect password"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify failure response for invalid credentials"
+      },
+      {
+        "type": "action",
+        "description": "Login with valid email, correct password, incorrect role"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login failure due to role mismatch"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Logout Clears JWT Authentication",
+    "description": "Verify that logging out invalidates the JWT session cookie and returns successful logout confirmation.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login successfully and obtain JWT cookie"
+      },
+      {
+        "type": "action",
+        "description": "Call logout endpoint with JWT cookie"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response confirms successful logout"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access an authenticated endpoint with the old JWT cookie"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied indicating logout success"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Student Profile Completion Percentage Calculation",
+    "description": "Verify the system correctly calculates the student profile completion percentage based on filled sections and uploaded documents.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Retrieve student profile with partial data filled"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profileCompletion field reflects correct percentage"
+      },
+      {
+        "type": "action",
+        "description": "Complete missing sections and upload required documents"
+      },
+      {
+        "type": "action",
+        "description": "Retrieve student profile again"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profileCompletion is 100%"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Student Profile Update and Document Upload",
+    "description": "Verify that students can update profile sections (basic info, skills, tech stack, portfolio) and upload documents (resume, college ID, certificates).",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Update student profile basic info with valid data"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify update success response"
+      },
+      {
+        "type": "action",
+        "description": "Upload valid document files for resume and certificates"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify document upload success responses"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Student Submit Profile for Verification Only When Complete and Email Verified",
+    "description": "Verify students can only submit profile for admin verification if profile completion is 100% and email is verified.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to submit profile for verification with incomplete profile or unverified email"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify submission is rejected with appropriate message"
+      },
+      {
+        "type": "action",
+        "description": "Complete profile fully and verify email"
+      },
+      {
+        "type": "action",
+        "description": "Submit profile for verification"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify submission success response"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Company Profile Management including Get, Update, Submit for Verification",
+    "description": "Verify company can retrieve profile data, update their profile sections, upload logo and documents, and submit for admin verification.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Retrieve company profile"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response contains expected company data and verificationStatus"
+      },
+      {
+        "type": "action",
+        "description": "Update company profile fields with valid data"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify successful update message"
+      },
+      {
+        "type": "action",
+        "description": "Upload company logo and verification documents"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify successful file upload responses"
+      },
+      {
+        "type": "action",
+        "description": "Submit company profile for verification"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify submission success message"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Admin Dashboard Shows Pending Verifications",
+    "description": "Verify admin dashboard correctly shows counts of pending student and company profile verifications for approval.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as admin"
+      },
+      {
+        "type": "action",
+        "description": "Fetch admin verification dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response includes current counts of pending students and companies"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Admin Approve and Reject Student and Company Profiles",
+    "description": "Verify admin can approve or reject student and company profiles and that profile statuses update accordingly with notifications sent.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Admin approves a pending student profile by ID"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify success response and profile status updated to approved"
+      },
+      {
+        "type": "action",
+        "description": "Admin approves a pending company profile by ID"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify success response and profile status updated to approved"
+      },
+      {
+        "type": "action",
+        "description": "Admin rejects a pending student profile with reason"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile status updated to rejected and notification sent"
+      },
+      {
+        "type": "action",
+        "description": "Admin rejects a pending company profile with reason"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile status updated to rejected and notification sent"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Company Project Creation with Duplicate Title Prevention",
+    "description": "Verify company can create a new project with 100% profile completion, but cannot create a duplicate active project with the same title.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to create project with incomplete company profile"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify creation is rejected due to incomplete profile"
+      },
+      {
+        "type": "action",
+        "description": "Create project with valid title, description, requirements, budget, deadline, skills, and techStack"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify project is created successfully with status 'open' and zero applications"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to create another active project with the same title"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify project creation fails due to duplicate active title"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Company Retrieve Projects with Pagination and Filtering",
+    "description": "Verify company can retrieve projects they created with support for pagination, filtering by status, and correct response structure.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Request company projects with page=1, limit=10, and status filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response includes array of projects and pagination metadata"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Students Browse Open Projects with Various Filters",
+    "description": "Verify students can browse all open projects without profile verification, filter projects by skills, budgetMin, and budgetMax, and receive paginated results.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Retrieve open projects with different filter combinations"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify filtered results match filter criteria and pagination data is returned"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Student View Project Details and Profile Verification Dependency",
+    "description": "Verify that students with 100% profile completion and verified email can retrieve detailed project info, while others get denied access.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to get project details as a student with incomplete or unverified profile"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied with appropriate error message"
+      },
+      {
+        "type": "action",
+        "description": "Get project details as a fully verified student"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify detailed project information is returned successfully"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Student Apply to Project with Proper Profile and Proposal",
+    "description": "Verify students with fully completed and verified profiles can apply to projects with proposal text, price, and estimated time; application status defaults to 'pending'.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to apply as student with incomplete or unverified profile"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify application is rejected due to profile state"
+      },
+      {
+        "type": "action",
+        "description": "Apply to a valid project with proposal text, proposed price, and estimated time as eligible student"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify application response shows application ID and status 'pending'"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Student Manage Applications Including View and Withdraw",
+    "description": "Verify students can view all their applications, filter by status, and withdraw pending applications successfully.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Retrieve student applications with status filter and pagination"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response contains list of applications and pagination info"
+      },
+      {
+        "type": "action",
+        "description": "Withdraw a pending application"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify application status updates and success message"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to withdraw an application with non-pending status"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify withdrawal is rejected"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Company Application Management: Retrieve, Shortlist, Accept, Reject",
+    "description": "Verify companies can view all applications for their projects with filtering, shortlist applications, accept one application (which auto-rejects others), and reject applications with reasons.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Retrieve all applications for a company with filters, pagination"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify applications and pagination data returned correctly"
+      },
+      {
+        "type": "action",
+        "description": "Retrieve applications for a specific project"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify list of applications returned"
+      },
+      {
+        "type": "action",
+        "description": "Shortlist a pending application"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify application status changes to 'shortlisted'"
+      },
+      {
+        "type": "action",
+        "description": "Accept one application for a project"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify accepted application status is 'accepted', project status updates to 'assigned', assignedStudent is set, and all other applications for that project are rejected"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify notifications sent to affected applicants"
+      },
+      {
+        "type": "action",
+        "description": "Reject an application with a rejection reason"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify application status updates to rejected and success message returned"
+      }
+    ]
+  },
+  {
+    "id": "TC021",
+    "title": "Notification System: Retrieve, Count Sync, and Bulk Actions",
+    "description": "Verify users can retrieve notifications with pagination, see real-time notification counts accurately synced with backend, and perform bulk mark-as-read or delete actions.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Fetch notifications for a user with pagination"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify notifications data and counts are accurate and consistent"
+      },
+      {
+        "type": "action",
+        "description": "Perform bulk mark-as-read on notifications"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify notifications are marked read and counts update accordingly"
+      },
+      {
+        "type": "action",
+        "description": "Perform bulk delete on notifications"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify notifications are removed and counts update"
+      }
+    ]
+  },
+  {
+    "id": "TC022",
+    "title": "Automated Cron Job: Auto-Close Projects and Handle Applications on Deadline Expiry",
+    "description": "Verify scheduled cron jobs automatically close projects past deadline, update project and application statuses, reject pending applications, and send all related notifications without fail.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate project deadline passing with open/unassigned projects"
+      },
+      {
+        "type": "action",
+        "description": "Trigger or wait for cron job to execute"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify projects are marked closed and statuses updated"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all pending applications for closed projects are automatically rejected"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify notifications are sent to companies and all affected students"
+      }
+    ]
+  },
+  {
+    "id": "TC023",
+    "title": "Security: Ensure Unauthorized Access to Admin and Company Dashboards is Blocked",
+    "description": "Verify that users without admin or company roles cannot access admin and company dashboard endpoints respectively, including verification and project management APIs.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to access admin dashboard and admin approval endpoints as non-admin user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied with 403 or 401 status"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access company project creation or applications management endpoints as non-company user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied"
+      }
+    ]
+  },
+  {
+    "id": "TC024",
+    "title": "Error Handling: File Upload Validation for Documents and Images",
+    "description": "Verify that invalid file types, oversized files, or missing files are correctly rejected with proper error responses when uploading documents or profile images.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to upload non-supported file types (e.g. .exe) for college ID or company verification document"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify upload is rejected with descriptive error message"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to upload file larger than maximum allowed size"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify upload is rejected with appropriate error"
+      },
+      {
+        "type": "action",
+        "description": "Submit upload request without a file"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error response indicating missing file"
+      }
+    ]
+  },
+  {
+    "id": "TC025",
+    "title": "Edge Case: Applying Multiple Times to Same Project",
+    "description": "Verify system prevents students from applying multiple times to the same project and returns appropriate error message.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Apply to a project as a student with valid profile"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify application accepted"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to apply again to the same project"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify application rejected with message indicating duplicate application not allowed"
+      }
+    ]
+  }
+]

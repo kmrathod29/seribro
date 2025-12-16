@@ -1,0 +1,19 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:7000",
+  "backendAuthType": "basic token",
+  "backendUsername": "afmahetar2006@gmail.com",
+  "backendPassword": "Arman2006@#",
+  "executionArgs": {
+    "projectName": "phase2.1",
+    "projectPath": "D:\\seribro\\phase4.5\\phase4.5\\phase2.1",
+    "testIds": [],
+    "additionalInstruction": "Based on MASTERREADME.md and phase implementation documents, test all 5 phases comprehensively:\n\nPHASE 1 - Authentication & Registration:\n- Test student registration with college ID upload\n- Test company registration with verification document\n- Test OTP verification (use second OTP: 654321)\n- Test login for all roles (student, company, admin)\n- Test logout and JWT cookie clearing\n\nPHASE 2 - Profile Setup & Verification:\n- Test student profile completion (basic info, skills, tech stack, projects, documents)\n- Test profile completion percentage calculation (should reach 100%)\n- Test student submit for verification\n- Test company profile completion and submission\n- Test admin approve/reject student and company\n\nPHASE 3 - Project & Application Management (CRITICAL):\n- Test company creates project (verify status='open', applicationCount=0)\n- Test student applies to project (verify status='pending', applicationCount increments)\n- Test company shortlists application (verify status='shortlisted')\n- **CRITICAL Test Case 3.4**: Company accepts application - VERIFY:\n  * application.status = 'accepted' (NOT 'approved' - this was the bug fix)\n  * project.status = 'assigned'\n  * project.assignedStudent = studentId\n  * ALL other applications status = 'rejected'\n  * notification created for all stakeholders\n- **CRITICAL Test Case 3.5**: Prevent double assignment - try accepting another application, should FAIL with proper error\n- Test student withdraws application (verify status='withdrawn')\n- Test application list filtering after status changes\n\nPHASE 4 - Admin Monitoring:\n- Test admin projects monitoring with filters\n- Test admin applications monitoring\n- Test auto-close expired projects (cron job)\n\nPHASE 5 - Notifications:\n- Test notification creation for all events\n- Test notification bell functionality\n- Test mark as read functionality\n\nAlso test:\n- Modal responsiveness on mobile devices\n- Application list filtering after status changes\n- Document preview functionality (resume, college ID, certificates)\n- Privacy: Email/phone should NOT be visible to companies in application lists",
+    "envs": {
+      "API_KEY": "sk-user-NiOe1ffjiJzZz0hDRcZT64t7cShRvHATcBA9QzyqSni6AgZ89Kuy7w2HGjr-Q78568UUdA8NW_WLgTN7jA_PffDLRMn_XZU1k2g4hhcpTDgmCwp0TQdcVOomqUG8Y_iHB4c"
+    }
+  },
+  "proxy": "http://af932d36-d549-4144-bb6c-19032945e66f:66qBIuRTPd6i0JqTgDod0Niyn62EIllw@tun.testsprite.com:8080"
+}

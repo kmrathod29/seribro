@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "student registration with valid data and college id upload",
+    "description": "Test the student registration API with valid email, password, full name, phone, and college ID file upload. Verify that the response confirms successful registration and OTP is sent to the email."
+  },
+  {
+    "id": "TC002",
+    "title": "company registration with valid data and verification document upload",
+    "description": "Test the company registration API with valid email, password, company name, phone, and verification document upload. Verify that the response confirms successful registration and OTP is sent to the email."
+  },
+  {
+    "id": "TC003",
+    "title": "send otp to valid email",
+    "description": "Test the send OTP API by providing a valid email address. Verify that the OTP is sent successfully and the response confirms the action."
+  },
+  {
+    "id": "TC004",
+    "title": "verify otp with correct email and otp",
+    "description": "Test the verify OTP API with a valid email and correct OTP code. Verify that the email is marked as verified and the response confirms successful verification."
+  },
+  {
+    "id": "TC005",
+    "title": "login with valid credentials and role",
+    "description": "Test the login API with valid email, password, and role (student, company, or admin). Verify that the user is authenticated, a JWT token is returned, and user details are correct."
+  },
+  {
+    "id": "TC006",
+    "title": "logout and clear jwt cookie",
+    "description": "Test the logout API to ensure the user session is terminated and the JWT cookie is cleared. Verify the response confirms successful logout."
+  },
+  {
+    "id": "TC007",
+    "title": "get student profile with valid token",
+    "description": "Test the get student profile API with a valid authorization token. Verify that the response returns the complete student profile data including basic info, skills, tech stack, projects, documents, and profile completion percentage."
+  },
+  {
+    "id": "TC008",
+    "title": "create new project with complete company profile",
+    "description": "Test the company create project API with a fully completed company profile. Provide valid project details including title, description, requirements, budget, deadline, skills, and tech stack. Verify that the project is created successfully with status 'open' and application count zero."
+  },
+  {
+    "id": "TC009",
+    "title": "apply to project with complete student profile and valid proposal",
+    "description": "Test the student apply to project API with a verified and 100% completed student profile. Submit a valid proposal, proposed price, and estimated time. Verify that the application is created with status 'pending' and response confirms success."
+  },
+  {
+    "id": "TC010",
+    "title": "accept student application and update project status",
+    "description": "Test the company accept application API by approving a student application. Verify that the application status is set to 'accepted', the project status is updated to 'assigned', other applications are rejected automatically, and notifications are created for involved users."
+  }
+]
