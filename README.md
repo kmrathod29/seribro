@@ -19,12 +19,16 @@ Copy code
 ## ⚙️ Backend Setup (seribro-backend)
 
 ### Step 1: Navigate to backend folder
+
 ```bash
 cd phase2.1/seribro-backend
 Step 2: Install dependencies
+
 bash
 Copy code
 npm install
+
+
 Step 3: Environment Variables
 Create a .env file in the seribro-backend folder using .env.example.
 
@@ -42,15 +46,20 @@ Backend will run on:
 arduino
 Copy code
 http://localhost:7000
+
+
 🎨 Frontend Setup (seribro-frontend)
 Step 1: Navigate to frontend folder
+
 bash
 Copy code
 cd phase2.1/seribro-frontend/client
+
 Step 2: Install dependencies
 bash
 Copy code
 npm install
+
 Step 3: Start frontend development server
 bash
 Copy code
