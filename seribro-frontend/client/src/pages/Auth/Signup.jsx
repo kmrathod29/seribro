@@ -30,7 +30,6 @@ const Signup = () => {
     fullName: "",
     email: "",
     college: "",
-    skills: "",
     password: "",
     collegeId: null,
   });
@@ -69,7 +68,6 @@ const Signup = () => {
       !studentData.fullName ||
       !studentData.email ||
       !studentData.college ||
-      !studentData.skills ||
       !studentData.password
     ) {
       setError("Please fill in all required fields");
@@ -130,7 +128,6 @@ const Signup = () => {
         formData.append("fullName", studentData.fullName);
         formData.append("email", studentData.email);
         formData.append("college", studentData.college);
-        formData.append("skills", studentData.skills);
         formData.append("password", studentData.password);
         formData.append("collegeId", studentData.collegeId);
       } else {
@@ -292,22 +289,6 @@ const Signup = () => {
                     disabled={isLoading}
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-navy mb-2">
-                  Skills <span className="text-gray-400 text-xs">(comma separated)</span>
-                  <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="skills"
-                  value={studentData.skills}
-                  onChange={handleStudentChange}
-                  placeholder="Web Design, React, Python"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
-                  disabled={isLoading}
-                />
               </div>
 
               <div>
