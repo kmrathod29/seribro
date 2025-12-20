@@ -1,23 +1,23 @@
 // controllers/authController.js (Hinglish: Authentication ke saare main logic yahan hain)
 
-const asyncHandler = require('express-async-handler');
-const mongoose = require('mongoose');
-const User = require('../models/User');
-const Student = require('../models/Student');
-const Company = require('../models/Company');
-const OTP = require('../models/OTP');
-const generateToken = require('../utils/generateToken');
-const generateResetToken = require('../utils/generateResetToken');
-const generateOTP = require('../utils/generateOTP');
-const sendEmail = require('../utils/sendEmail');
-const path = require('path');
-const fs = require('fs');
+const asyncHandler = require("express-async-handler");
+const mongoose = require("mongoose");
+const User = require("../models/User");
+const Student = require("../models/Student");
+const Company = require("../models/Company");
+const OTP = require("../models/OTP");
+const generateToken = require("../utils/generateToken");
+const generateResetToken = require("../utils/generateResetToken");
+const generateOTP = require("../utils/generateOTP");
+const sendEmail = require("../utils/sendEmail");
+const path = require("path");
+const fs = require("fs");
 
 // Hinglish: Error handling ke liye ek utility function
 const removeFileAndThrowError = (filePath, message, res, status = 400) => {
   if (filePath) {
     fs.unlink(filePath, (err) => {
-      if (err) console.error('File deletion error:', err);
+      if (err) console.error("File deletion error:", err);
     });
   }
   res.status(status);
@@ -29,49 +29,88 @@ const removeFileAndThrowError = (filePath, message, res, status = 400) => {
 // @access  Public
 const registerStudent = asyncHandler(async (req, res) => {
   const { fullName, email, password } = req.body;
-  console.log('Received student registration data:', req.body);
+  console.log("Received student registration data:", req.body);
 
   // college is no longer required at signup
   if (!fullName || !email || !password) {
-    return removeFileAndThrowError(null, 'Please fill all required fields', res);
+    return removeFileAndThrowError(
+      null,
+      "Please fill all required fields",
+      res
+    );
   }
 
   const userExists = await User.findOne({ email });
   if (userExists) {
-    return removeFileAndThrowError(null, 'User already exists', res, 409);
+    return removeFileAndThrowError(null, "User already exists", res, 409);
   }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const user = await User.create([{
-      email,
-      password,
-      role: 'student',
-      emailVerified: false,
-    }], { session });
+    const user = await User.create(
+      [
+        {
+          email,
+          password,
+          role: "student",
+          emailVerified: false,
+        },
+      ],
+      { session }
+    );
 
-    const student = await Student.create([{
-      user: user[0]._id,
-      fullName,
-      // college can be provided later from profile
-    }], { session });
+    const student = await Student.create(
+      [
+        {
+          user: user[0]._id,
+          fullName,
+          // college can be provided later from profile
+        },
+      ],
+      { session }
+    );
 
     const otpCode = generateOTP();
     await OTP.findOneAndDelete({ email }, { session });
     await OTP.create([{ email, otp: otpCode }], { session });
 
     const emailMessage = `
-      <p>Namaste ${fullName},</p>
-      <p>Seribro mein register karne ke liye shukriya. Aapka One-Time Password (OTP) yeh hai:</p>
-      <h2 style="color: #1e3a8a; font-size: 24px; font-weight: bold;">${otpCode}</h2>
-      <p>Yeh OTP 10 minutes ke liye valid hai. Agar aapne yeh request nahi ki hai, toh is email ko ignore karein.</p>
-      <p>Dhanyawad,<br>Team Seribro</p>
-    `;
+     
+    
+
+<p>Namaste ${fullName},</p>
+
+<p>
+Thank you for registering with <strong>Seribro</strong>.
+To verify your email address, please use the One-Time Password (OTP) below:
+</p>
+
+<p style="margin: 20px 0;">
+  <span style="display: inline-block; padding: 12px 24px; font-size: 22px; font-weight: 600; letter-spacing: 2px; color: #1e3a8a; border: 1px solid #e5e7eb; border-radius: 6px;">
+    ${otpCode}
+  </span>
+</p>
+
+<p>
+This OTP is valid for <strong>10 minutes</strong>.  
+For security reasons, please do not share this code with anyone.
+</p>
+
+<p>
+If you did not initiate this request, you can safely ignore this email.
+</p>
+
+<p>
+Regards,<br />
+<strong>Team Seribro</strong>
+</p>
+
+`;
     await sendEmail({
       email,
-      subject: 'Seribro: Email Verification OTP',
+      subject: "Seribro: Email Verification OTP",
       message: emailMessage,
     });
 
@@ -79,16 +118,21 @@ const registerStudent = asyncHandler(async (req, res) => {
     session.endSession();
 
     res.status(201).json({
-      message: 'Registration successful. OTP sent to your email for verification',
+      message:
+        "Registration successful. OTP sent to your email for verification",
       userId: user[0]._id,
       email: user[0].email,
     });
-
-    } catch (error) {
+  } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    console.error('Student registration error:', error);
-    removeFileAndThrowError(null, error.message || 'Student registration failed', res, 500);
+    console.error("Student registration error:", error);
+    removeFileAndThrowError(
+      null,
+      error.message || "Student registration failed",
+      res,
+      500
+    );
   }
 });
 
@@ -100,37 +144,53 @@ const createStudentAccount = asyncHandler(async (req, res) => {
 
   if (!fullName || !email || !password) {
     res.status(400);
-    throw new Error('Please fill all required fields');
+    throw new Error("Please fill all required fields");
   }
 
   const existing = await User.findOne({ email });
   if (existing) {
     res.status(409);
-    throw new Error('User already exists');
+    throw new Error("User already exists");
   }
 
   // Check OTP doc was verified for signup
-  const otpDoc = await OTP.findOne({ email, purpose: 'signup', verified: true });
+  const otpDoc = await OTP.findOne({
+    email,
+    purpose: "signup",
+    verified: true,
+  });
   if (!otpDoc) {
     res.status(400);
-    throw new Error('OTP not verified for this email. Please verify OTP before creating account.');
+    throw new Error(
+      "OTP not verified for this email. Please verify OTP before creating account."
+    );
   }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const user = await User.create([{
-      email,
-      password,
-      role: 'student',
-      emailVerified: true,
-    }], { session });
+    const user = await User.create(
+      [
+        {
+          email,
+          password,
+          role: "student",
+          emailVerified: true,
+        },
+      ],
+      { session }
+    );
 
-    const student = await Student.create([{
-      user: user[0]._id,
-      fullName,
-    }], { session });
+    const student = await Student.create(
+      [
+        {
+          user: user[0]._id,
+          fullName,
+        },
+      ],
+      { session }
+    );
 
     // Clean up OTP
     await OTP.deleteOne({ email }, { session });
@@ -142,7 +202,7 @@ const createStudentAccount = asyncHandler(async (req, res) => {
     generateToken(res, user[0]._id, user[0].role);
 
     res.status(201).json({
-      message: 'Account created and logged in',
+      message: "Account created and logged in",
       _id: user[0]._id,
       email: user[0].email,
       role: user[0].role,
@@ -151,9 +211,9 @@ const createStudentAccount = asyncHandler(async (req, res) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    console.error('createStudentAccount error:', error);
+    console.error("createStudentAccount error:", error);
     res.status(500);
-    throw new Error('Account creation failed');
+    throw new Error("Account creation failed");
   }
 });
 
@@ -162,36 +222,51 @@ const createStudentAccount = asyncHandler(async (req, res) => {
 // @access  Public
 const registerCompany = asyncHandler(async (req, res) => {
   const { contactPerson, companyName, email, password } = req.body;
-  console.log('Received company registration data:', req.body);
+  console.log("Received company registration data:", req.body);
   const verificationDocumentPath = req.file ? req.file.path : null; // optional at signup
 
   // companyName and verification document are optional at signup; collect contactPerson, email, password
   if (!contactPerson || !email || !password) {
-    return removeFileAndThrowError(verificationDocumentPath, 'Please fill all required fields', res);
+    return removeFileAndThrowError(
+      verificationDocumentPath,
+      "Please fill all required fields",
+      res
+    );
   }
 
   const userExists = await User.findOne({ email });
   if (userExists) {
-    return removeFileAndThrowError(verificationDocumentPath, 'User already exists', res, 409);
+    return removeFileAndThrowError(
+      verificationDocumentPath,
+      "User already exists",
+      res,
+      409
+    );
   }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const user = await User.create([{
-      email,
-      password,
-      role: 'company',
-      emailVerified: false,
-    }], { session });
+    const user = await User.create(
+      [
+        {
+          email,
+          password,
+          role: "company",
+          emailVerified: false,
+        },
+      ],
+      { session }
+    );
 
     const companyPayload = {
       user: user[0]._id,
       contactPersonName: contactPerson,
     };
     if (companyName) companyPayload.companyName = companyName;
-    if (verificationDocumentPath) companyPayload.verificationDocument = verificationDocumentPath;
+    if (verificationDocumentPath)
+      companyPayload.verificationDocument = verificationDocumentPath;
 
     const company = await Company.create([companyPayload], { session });
 
@@ -208,7 +283,7 @@ const registerCompany = asyncHandler(async (req, res) => {
     `;
     await sendEmail({
       email,
-      subject: 'Seribro: Email Verification OTP',
+      subject: "Seribro: Email Verification OTP",
       message: emailMessage,
     });
 
@@ -216,16 +291,21 @@ const registerCompany = asyncHandler(async (req, res) => {
     session.endSession();
 
     res.status(201).json({
-      message: 'Registration successful. OTP sent to your email for verification',
+      message:
+        "Registration successful. OTP sent to your email for verification",
       userId: user[0]._id,
       email: user[0].email,
     });
-
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    console.error('Company registration error:', error);
-    removeFileAndThrowError(verificationDocumentPath, error.message || 'Company registration failed', res, 500);
+    console.error("Company registration error:", error);
+    removeFileAndThrowError(
+      verificationDocumentPath,
+      error.message || "Company registration failed",
+      res,
+      500
+    );
   }
 });
 
@@ -237,32 +317,43 @@ const createCompanyAccount = asyncHandler(async (req, res) => {
 
   if (!contactPerson || !email || !password) {
     res.status(400);
-    throw new Error('Please fill all required fields');
+    throw new Error("Please fill all required fields");
   }
 
   const existing = await User.findOne({ email });
   if (existing) {
     res.status(409);
-    throw new Error('User already exists');
+    throw new Error("User already exists");
   }
 
   // Check OTP doc was verified for signup
-  const otpDoc = await OTP.findOne({ email, purpose: 'signup', verified: true });
+  const otpDoc = await OTP.findOne({
+    email,
+    purpose: "signup",
+    verified: true,
+  });
   if (!otpDoc) {
     res.status(400);
-    throw new Error('OTP not verified for this email. Please verify OTP before creating account.');
+    throw new Error(
+      "OTP not verified for this email. Please verify OTP before creating account."
+    );
   }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const user = await User.create([{
-      email,
-      password,
-      role: 'company',
-      emailVerified: true,
-    }], { session });
+    const user = await User.create(
+      [
+        {
+          email,
+          password,
+          role: "company",
+          emailVerified: true,
+        },
+      ],
+      { session }
+    );
 
     const companyPayload = {
       user: user[0]._id,
@@ -282,7 +373,7 @@ const createCompanyAccount = asyncHandler(async (req, res) => {
     generateToken(res, user[0]._id, user[0].role);
 
     res.status(201).json({
-      message: 'Account created and logged in',
+      message: "Account created and logged in",
       _id: user[0]._id,
       email: user[0].email,
       role: user[0].role,
@@ -291,9 +382,9 @@ const createCompanyAccount = asyncHandler(async (req, res) => {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    console.error('createCompanyAccount error:', error);
+    console.error("createCompanyAccount error:", error);
     res.status(500);
-    throw new Error('Account creation failed');
+    throw new Error("Account creation failed");
   }
 });
 
@@ -305,54 +396,77 @@ const sendOtp = asyncHandler(async (req, res) => {
 
   if (!email) {
     res.status(400);
-    throw new Error('Please provide an email');
+    throw new Error("Please provide an email");
   }
 
   // purpose: 'signup' or 'verify' (login). Default to 'verify'.
-  const purpose = req.body.purpose === 'signup' ? 'signup' : 'verify';
+  const purpose = req.body.purpose === "signup" ? "signup" : "verify";
   const user = await User.findOne({ email });
 
   // If this is a login/verify OTP request, the user must exist and be unverified
-  if (purpose === 'verify') {
+  if (purpose === "verify") {
     if (!user) {
       res.status(404);
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
     if (user.emailVerified) {
       res.status(400);
-      throw new Error('Email is already verified');
+      throw new Error("Email is already verified");
     }
   }
 
   // If this is a signup OTP request, user must NOT already exist
-  if (purpose === 'signup') {
+  if (purpose === "signup") {
     if (user) {
       res.status(409);
-      throw new Error('User already exists');
+      throw new Error("User already exists");
     }
   }
 
   const otpCode = generateOTP();
   // For signup, frontend will indicate purpose='signup' when requesting OTP
-  
+
   await OTP.findOneAndDelete({ email });
   await OTP.create({ email, otp: otpCode, purpose });
   // const purpose = req.body.purpose === 'signup' ? 'signup' : 'verify';
+    // <p>Namaste ${fullName},</p>
 
   const emailMessage = `
-    <p>Namaste,</p>
-    <p>Aapka One-Time Password (OTP) yeh hai:</p>
-    <h2 style="color: #1e3a8a; font-size: 24px; font-weight: bold;">${otpCode}</h2>
-    <p>Yeh OTP 10 minutes ke liye valid hai.</p>
-    <p>Dhanyawad,<br>Team Seribro</p>
+   <p>Namaste,</p>
+
+<p>
+Thank you for registering with <strong>Seribro</strong>.
+To verify your email address, please use the One-Time Password (OTP) below:
+</p>
+
+<p style="margin: 20px 0;">
+  <span style="display: inline-block; padding: 12px 24px; font-size: 22px; font-weight: 600; letter-spacing: 2px; color: #1e3a8a; border: 1px solid #e5e7eb; border-radius: 6px;">
+    ${otpCode}
+  </span>
+</p>
+
+<p>
+This OTP is valid for <strong>10 minutes</strong>.  
+For security reasons, please do not share this code with anyone.
+</p>
+
+<p>
+If you did not initiate this request, you can safely ignore this email.
+</p>
+
+<p>
+Regards,<br />
+<strong>Team Seribro</strong>
+</p>
+
   `;
   await sendEmail({
     email,
-    subject: 'Seribro: Email Verification OTP',
+    subject: "Seribro: Email Verification OTP",
     message: emailMessage,
   });
 
-  res.json({ message: 'New OTP sent to your email' });
+  res.json({ message: "New OTP sent to your email" });
 });
 
 // @desc    Verify OTP
@@ -367,30 +481,32 @@ const verifyOtp = asyncHandler(async (req, res) => {
 
   if (!email || !otp) {
     res.status(400);
-    throw new Error('Please provide email and OTP');
+    throw new Error("Please provide email and OTP");
   }
 
   const otpDoc = await OTP.findOne({ email, otp });
   if (!otpDoc) {
     res.status(400);
-    throw new Error('Invalid or expired OTP');
+    throw new Error("Invalid or expired OTP");
   }
 
   // If this is a signup OTP verification, mark OTP doc as verified but DO NOT create user yet.
-  if (otpDoc.purpose === 'signup' || purpose === 'signup') {
+  if (otpDoc.purpose === "signup" || purpose === "signup") {
     otpDoc.verified = true;
     await otpDoc.save();
-    return res.status(200).json({ message: 'OTP verified for signup', email, purpose: 'signup' });
+    return res
+      .status(200)
+      .json({ message: "OTP verified for signup", email, purpose: "signup" });
   }
 
   // Default: login/verification flow where user exists. Proceed to mark user's email as verified and login.
   const user = await User.findOne({ email });
   if (!user) {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 
-  console.log('� OTP verified for:', email);
+  console.log("� OTP verified for:", email);
 
   const updatedUser = await User.findByIdAndUpdate(
     user._id,
@@ -404,7 +520,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
   generateToken(res, updatedUser._id, updatedUser.role);
 
   res.status(200).json({
-    message: 'Email verified and logged in successfully',
+    message: "Email verified and logged in successfully",
     emailVerified: true,
     _id: updatedUser._id,
     email: updatedUser.email,
@@ -419,16 +535,16 @@ const verifyOtp = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ email }).select("+password");
 
   if (user && (await user.matchPassword(password))) {
     if (!user.emailVerified || user.emailVerified !== true) {
-      console.log('🔐 Login attempt with unverified email:', {
+      console.log("🔐 Login attempt with unverified email:", {
         email,
         emailVerified: user.emailVerified,
         type: typeof user.emailVerified,
       });
-      
+
       const otpCode = generateOTP();
       await OTP.findOneAndDelete({ email });
       await OTP.create({ email, otp: otpCode });
@@ -442,25 +558,26 @@ const loginUser = asyncHandler(async (req, res) => {
       `;
       await sendEmail({
         email,
-        subject: 'Seribro: Email Verification OTP',
+        subject: "Seribro: Email Verification OTP",
         message: emailMessage,
       });
 
       res.status(202).json({
-        message: 'Email not verified. A new OTP has been sent to your email for verification.',
+        message:
+          "Email not verified. A new OTP has been sent to your email for verification.",
         email: user.email,
         otpSent: true,
       });
       return;
     }
 
-    console.log('✅ Login successful for verified email:', {
+    console.log("✅ Login successful for verified email:", {
       email,
       emailVerified: user.emailVerified,
     });
 
-    const userAgent = req.headers['user-agent'] || 'Unknown';
-    const ip = req.ip || 'Unknown';
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const ip = req.ip || "Unknown";
 
     user.devices.push({
       userAgent,
@@ -482,11 +599,11 @@ const loginUser = asyncHandler(async (req, res) => {
       role: user.role,
       emailVerified: user.emailVerified,
       profileCompleted: user.profileCompleted,
-      message: 'Login successful',
+      message: "Login successful",
     });
   } else {
     res.status(401);
-    throw new Error('Invalid email or password');
+    throw new Error("Invalid email or password");
   }
 });
 
@@ -494,12 +611,12 @@ const loginUser = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Private
 const logoutUser = asyncHandler(async (req, res) => {
-  res.cookie('jwt', '', {
+  res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0),
   });
 
-  res.status(200).json({ message: 'User logged out' });
+  res.status(200).json({ message: "User logged out" });
 });
 
 // @desc    Forgot Password - Send reset link
@@ -510,25 +627,32 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   if (!email) {
     res.status(400);
-    throw new Error('Please provide an email');
+    throw new Error("Please provide an email");
   }
 
-  console.log('🔔 Forgot password requested for:', email);
+  console.log("🔔 Forgot password requested for:", email);
 
   const user = await User.findOne({ email });
 
-  if (user) console.log('🔎 User found for forgot-password:', { email: user.email, _id: user._id });
+  if (user)
+    console.log("🔎 User found for forgot-password:", {
+      email: user.email,
+      _id: user._id,
+    });
 
   if (!user) {
     return res.status(200).json({
-      message: 'Password reset link sent to your email (if user exists)',
+      message: "Password reset link sent to your email (if user exists)",
     });
   }
 
   const resetToken = generateResetToken();
 
   // log masked token for debugging (do not expose full token in production logs)
-  console.log('🔐 Generated reset token (masked):', `${String(resetToken).slice(0,6)}...`);
+  console.log(
+    "🔐 Generated reset token (masked):",
+    `${String(resetToken).slice(0, 6)}...`
+  );
 
   user.resetPasswordToken = resetToken;
   user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
@@ -536,8 +660,14 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   // Use FRONTEND_URL env var so the reset link points to the correct frontend app.
   // Fallback to Vite default dev server port where the frontend likely runs.
-  const frontendBase = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
-  const resetURL = `${frontendBase.replace(/\/$/, '')}/reset-password?token=${resetToken}`;
+  const frontendBase =
+    process.env.FRONTEND_URL ||
+    process.env.CLIENT_URL ||
+    "http://localhost:5173";
+  const resetURL = `${frontendBase.replace(
+    /\/$/,
+    ""
+  )}/reset-password?token=${resetToken}`;
 
   // Email message includes both a clickable button and the raw link so users can copy-paste if needed.
   const emailMessage = `
@@ -555,25 +685,25 @@ const forgotPassword = asyncHandler(async (req, res) => {
   `;
 
   try {
-    console.log('✉️ Sending password reset email to:', user.email);
+    console.log("✉️ Sending password reset email to:", user.email);
     await sendEmail({
       email: user.email,
-      subject: 'Seribro: Password Reset Request',
+      subject: "Seribro: Password Reset Request",
       message: emailMessage,
     });
 
-    console.log('✅ sendEmail resolved for forgot-password for:', user.email);
+    console.log("✅ sendEmail resolved for forgot-password for:", user.email);
     res.status(200).json({
-      message: 'Password reset link sent to your email',
+      message: "Password reset link sent to your email",
     });
   } catch (error) {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
 
-    console.error('Forgot Password Email Error:', error);
+    console.error("Forgot Password Email Error:", error);
     res.status(500);
-    throw new Error('Email could not be sent. Please try again later.');
+    throw new Error("Email could not be sent. Please try again later.");
   }
 });
 
@@ -585,17 +715,17 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   if (!token || !password) {
     res.status(400);
-    throw new Error('Please provide token and new password');
+    throw new Error("Please provide token and new password");
   }
 
   const user = await User.findOne({
     resetPasswordToken: token,
     resetPasswordExpire: { $gt: Date.now() },
-  }).select('+password');
+  }).select("+password");
 
   if (!user) {
     res.status(400);
-    throw new Error('Invalid or expired token');
+    throw new Error("Invalid or expired token");
   }
 
   user.password = password;
@@ -605,7 +735,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   await user.save();
 
   res.status(200).json({
-    message: 'Password reset successful, please log in again',
+    message: "Password reset successful, please log in again",
   });
 });
 
