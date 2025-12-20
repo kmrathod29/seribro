@@ -12,6 +12,17 @@ const OTPSchema = new mongoose.Schema({
     required: true,
     // Hinglish: 6-digit OTP code
   },
+  // Purpose indicates where OTP is used: 'signup' for account creation, 'verify' for login/verification
+  purpose: {
+    type: String,
+    enum: ['signup', 'verify'],
+    default: 'verify',
+  },
+  // When an OTP for signup has been validated, we mark verified=true so account creation can proceed
+  verified: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

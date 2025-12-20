@@ -5,6 +5,8 @@ const router = express.Router();
 const {
   registerStudent,
   registerCompany,
+  createStudentAccount,
+  createCompanyAccount,
   sendOtp,
   verifyOtp,
   loginUser,
@@ -17,9 +19,13 @@ const { protect } = require('../middleware/authMiddleware');
 
 // Hinglish: Student registration route (accepts multipart for flexibility)
 router.post('/student/register', upload.single('collegeId'), registerStudent);
+// New: finalize student account creation after OTP signup verification
+router.post('/student/create-account', createStudentAccount);
 
 // Hinglish: Company registration route (file upload ke saath)
 router.post('/company/register', upload.single('verificationDocument'), registerCompany);
+// New: finalize company account creation after OTP signup verification
+router.post('/company/create-account', createCompanyAccount);
 
 // Hinglish: OTP se related routes
 router.post('/send-otp', sendOtp);

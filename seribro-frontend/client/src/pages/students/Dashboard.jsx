@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, AlertCircle, Clock, ArrowRight, Edit2, FileText, Award, RefreshCw } from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock, Edit2, RefreshCw, TrendingUp } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import ProfileCompletionBar from '../../components/studentComponent/ProfileCompletionBar';
+import DocumentUpload from '../../components/studentComponent/DocumentUpload';
+// ProfileCompletionBar not used in redesigned layout
 import { fetchDashboardData, formatApiError } from '../../apis/studentProfileApi';
 
 const Dashboard = () => {
@@ -22,6 +23,9 @@ const Dashboard = () => {
             setError(null);
             const data = await fetchDashboardData();
             setDashboardData(data);
+            // Debug: log returned dashboard data (helps verify collegeId url/path)
+            // Remove or guard this in production if noisy.
+            console.log('DEBUG: dashboardData', data);
         } catch (err) {
             const apiError = formatApiError(err);
             setError(apiError.message);
@@ -75,27 +79,11 @@ const Dashboard = () => {
         basicInfo = {}
     } = dashboardData || {};
 
-    const getStatusIcon = (status) => {
-        switch(status) {
-            case 'verified':
-                return <CheckCircle className="text-green-400" size={20} />;
-            case 'pending':
-                return <Clock className="text-yellow-400" size={20} />;
-            default:
-                return <AlertCircle className="text-red-400" size={20} />;
-        }
-    };
+    // Prefer the uploaded College ID image. Backend sometimes provides `documents.collegeId.url` or `documents.collegeId.path`.
+    // Fall back to any legacy/profile photo fields if present.
+    const collegeIdUrl = dashboardData?.documents?.collegeId?.url || dashboardData?.documents?.collegeId?.path || basicInfo?.collegeIdUrl || basicInfo?.profilePhotoUrl || null;
 
-    const getStatusColor = (status) => {
-        switch(status) {
-            case 'verified':
-                return 'bg-green-500/20 border-green-500 text-green-400';
-            case 'pending':
-                return 'bg-yellow-500/20 border-yellow-500 text-yellow-400';
-            default:
-                return 'bg-red-500/20 border-red-500 text-red-400';
-        }
-    };
+    // status helpers removed (not used in this redesigned layout)
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-navy via-navy-light to-navy-dark">
@@ -103,95 +91,195 @@ const Dashboard = () => {
 
             {/* Main Content */}
             <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-7">
-                {/* Welcome Section */}
-                <div className="mb-8 animate-fade-in flex items-center justify-between">
+                {/* Welcome & Hero Cards */}
+                <div className="mb-8 flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-                            Welcome back, <span className="text-gold">{basicInfo?.fullName || 'Student'}!</span>
+                            Welcome back, <span className="text-[#fb923c]">{basicInfo?.fullName || 'Student'}</span>
                         </h1>
-                        <p className="text-gray-300">Complete your profile to start getting projects</p>
+                        <p className="text-[#94a3b8]">Complete your profile to start getting projects</p>
                     </div>
                     <button
                         onClick={loadDashboard}
                         disabled={loading}
-                        className="p-3 rounded-lg bg-gold/20 hover:bg-gold/40 text-gold transition-colors duration-300 disabled:opacity-50"
+                        className="p-3 rounded-lg bg-[#f59e0b]/20 hover:bg-[#f59e0b]/40 text-[#f59e0b] transition-colors duration-300 disabled:opacity-50"
                         title="Refresh dashboard"
                     >
                         <RefreshCw size={24} className={loading ? 'animate-spin' : ''} />
                     </button>
                 </div>
 
-                {/* Profile Completion Card */}
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 mb-8 hover:bg-white/20 transition-all duration-300">
-                    <div className="flex items-start justify-between mb-6">
-                        <div>
-                            <h2 className="text-2xl font-bold text-white mb-2">Profile Completion</h2>
-                            <p className="text-gray-300">Complete your profile to unlock all features</p>
-                        </div>
-                        <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${getStatusColor(verificationStatus)}`}>
-                            {getStatusIcon(verificationStatus)}
-                            <span className="font-semibold capitalize">{verificationStatus}</span>
-                        </div>
-                    </div>
-
-                    <ProfileCompletionBar 
-                        percentage={profileCompletion} 
-                        status={verificationStatus}
-                    />
-
-                    <div className="mt-6 flex flex-col sm:flex-row gap-4">
-                        <button
-                            onClick={() => navigate('/student/profile')}
-                            className="flex-1 bg-gradient-to-r from-primary to-gold hover:shadow-lg hover:shadow-gold/50 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group"
-                        >
-                            <Edit2 size={18} />
-                            Complete Profile
-                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                        </button>
-                        
-                        {profileCompletion === 100 && verificationStatus === 'incomplete' && (
-                            <button
-                                onClick={() => navigate('/student/profile?tab=verification')}
-                                className="flex-1 bg-gold/20 hover:bg-gold/30 border-2 border-gold text-gold font-semibold py-3 px-6 rounded-xl transition-all duration-300"
-                            >
-                                Submit for Verification
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Stats Grid */}
+                {/* Three hero cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    {/* Completion Stat */}
-                    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 hover:bg-white/20 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-gray-300 font-semibold">Completion</h3>
-                            <FileText className="text-primary" size={24} />
+                    {/* Profile Completion */}
+                    <div className="p-6 rounded-2xl" style={{ background: '#0f172a' }}>
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <h3 className="text-white text-lg font-medium">Profile Completion</h3>
+                                <div className="flex items-center gap-4 mt-4">
+                                    <div className="w-16 h-16 rounded-full bg-[#334155] flex items-center justify-center">
+                                        <TrendingUp className="w-6 h-6 text-[#fb923c]" />
+                                    </div>
+                                    <div>
+                                        <div className="text-3xl font-bold text-white">{profileCompletion}%</div>
+                                        <p className="text-sm text-[#94a3b8]">{profileCompletion === 100 ? 'Profile Complete' : 'Incomplete'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="w-1/3 flex items-center">
+                                <div className="w-full bg-[#334155] rounded-full h-4 overflow-hidden">
+                                    <div className="h-4 rounded-full" style={{ width: `${profileCompletion}%`, background: 'linear-gradient(90deg, #fb923c, #f97316)' }} />
+                                </div>
+                            </div>
                         </div>
-                        <p className="text-4xl font-bold text-white">{profileCompletion}%</p>
-                        <p className="text-gray-400 text-sm mt-2">Profile completion rate</p>
                     </div>
 
-                    {/* Projects Stat */}
-                    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 hover:bg-white/20 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-gray-300 font-semibold">Projects</h3>
-                            <Award className="text-gold" size={24} />
+                    {/* Verification */}
+                    <div className="p-6 rounded-2xl" style={{ background: '#0f172a' }}>
+                        <h3 className="text-white text-lg font-medium">Verification Status</h3>
+                        <div className="flex items-center gap-4 mt-4">
+                            <div className="w-16 h-16 rounded-full bg-[#334155] flex items-center justify-center">
+                                {verificationStatus === 'verified' ? <CheckCircle className="w-6 h-6 text-[#10b981]" /> : verificationStatus === 'pending' ? <Clock className="w-6 h-6 text-[#fbbf24]" /> : <AlertCircle className="w-6 h-6 text-[#ef4444]" />}
+                            </div>
+                            <div>
+                                <div className="text-2xl font-bold text-white capitalize">{verificationStatus}</div>
+                                <p className="text-sm text-[#94a3b8] mt-1">{Array.isArray(alerts) && alerts.length > 0 ? alerts[0] : 'Verification details'}</p>
+                            </div>
                         </div>
-                        <p className="text-4xl font-bold text-white">{totalProjects}</p>
-                        <p className="text-gray-400 text-sm mt-2">Min 3 required for verification</p>
                     </div>
 
-                    {/* Status Stat */}
-                    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 hover:bg-white/20 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-gray-300 font-semibold">Status</h3>
-                            {getStatusIcon(verificationStatus)}
+                    {/* Action Card */}
+                    <div className="p-6 rounded-2xl flex items-center justify-between" style={{ background: '#0f172a' }}>
+                        <div>
+                            <h3 className="text-white text-lg font-medium">Profile Actions</h3>
+                            <p className="text-sm text-[#94a3b8] mt-2">Edit or complete your profile</p>
                         </div>
-                        <p className="text-2xl font-bold text-white capitalize">{verificationStatus}</p>
-                        <p className="text-gray-400 text-sm mt-2">Verification status</p>
+                        <div>
+                            <button onClick={() => navigate('/student/profile')} className="inline-flex items-center gap-3 px-4 py-3 rounded-lg font-semibold" style={{ background: '#f59e0b', color: '#0f172a' }}>
+                                <Edit2 size={18} />
+                                Edit Profile
+                            </button>
+                        </div>
                     </div>
                 </div>
+
+                {/* Two-column info & photo */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="p-6 rounded-xl" style={{ background: '#334155' }}>
+                        <h3 className="text-white text-lg font-semibold mb-4">Student Information</h3>
+                        <div className="grid grid-cols-1 gap-4 text-[#94a3b8]">
+                            <div>
+                                <p className="text-sm">Full Name</p>
+                                <p className="text-white font-medium">{basicInfo?.fullName || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm">Email</p>
+                                <p className="text-white font-medium">{basicInfo?.email || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm">Mobile</p>
+                                <p className="text-white font-medium">{basicInfo?.phone || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm">City</p>
+                                <p className="text-white font-medium">{basicInfo?.city || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm">College</p>
+                                <p className="text-white font-medium">{basicInfo?.collegeName || 'Not provided'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm">Degree</p>
+                                <p className="text-white font-medium">{basicInfo?.degree || 'Not provided'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-6 rounded-xl flex items-center justify-center" style={{ background: '#475569' }}>
+                        <div className="text-center">
+                                {/* <p className="text-sm text-[#94a3b8] mb-3">Your Profile Photo</p> */}
+                                {collegeIdUrl ? (
+                                    <img src={collegeIdUrl} alt="College ID" className="w-40 h-40 object-cover rounded-lg mx-auto border-2 border-[#0f172a]" />
+                                ) : (
+                                    <div className="w-40 h-40 rounded-lg mx-auto bg-[#0f172a] flex items-center justify-center">
+                                        <span className="text-3xl font-bold text-white">{(basicInfo?.fullName || 'S').split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase()}</span>
+                                    </div>
+                                )}
+                                <p className="text-sm text-[#94a3b8] mt-3">Your College ID</p>
+                                {/* Debug helpers to inspect Cloudinary URL */}
+                                {collegeIdUrl ? (
+                                    <div className="mt-2 text-sm">
+                                        <a href={collegeIdUrl} target="_blank" rel="noopener noreferrer" className="text-gold underline">Open College ID (opens in new tab)</a>
+                                        <div className="text-xs text-gray-400 mt-1 break-words">{collegeIdUrl}</div>
+                                    </div>
+                                ) : (
+                                    <div className="mt-2 text-xs text-red-400">No College ID URL available from server</div>
+                                )}
+
+                                {/* Upload widget: allow student to upload/change college ID directly from dashboard */}
+                                <div className="mt-4 w-full">
+                                    <DocumentUpload
+                                        type="collegeId"
+                                        currentDocument={{ path: dashboardData?.documents?.collegeId?.url || dashboardData?.documents?.collegeId?.path || null, filename: 'College ID' }}
+                                        onRefresh={loadDashboard}
+                                    />
+                                </div>
+                            </div>
+                    </div>
+                </div>
+
+                {/* Action Items or Stats */}
+                {profileCompletion < 100 ? (
+                    <div className="bg-white/5 rounded-2xl p-6 mb-8" style={{ background: '#334155' }}>
+                        <h3 className="text-white text-lg font-semibold mb-4">Action Items</h3>
+                        <div className="space-y-3 text-[#94a3b8]">
+                            {(() => {
+                                const missing = [];
+                                if (!basicInfo?.fullName) missing.push('Add full name');
+                                if (!basicInfo?.phone) missing.push('Add mobile number');
+                                if ((totalProjects || 0) < 3) missing.push('Upload at least 3 projects');
+                                if (!basicInfo?.resumeUploaded) missing.push('Upload resume (PDF)');
+                                if (!basicInfo?.collegeIdUploaded) missing.push('Upload college ID for verification');
+                                if (missing.length === 0) return <p className="text-[#94a3b8]">Complete remaining items to reach 100%.</p>;
+                                return (
+                                    <ul className="space-y-2">
+                                        {missing.map((it, idx) => (
+                                            <li key={idx} className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <AlertCircle className="w-5 h-5 text-[#f59e0b]" />
+                                                    <span className="text-white">{it}</span>
+                                                </div>
+                                                <button onClick={() => navigate('/student/profile')} className="text-sm font-semibold px-3 py-1 rounded bg-[#f59e0b] text-[#0f172a]">Go to Profile</button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="p-6 rounded-xl" style={{ background: '#334155' }}>
+                            <h4 className="text-white font-semibold">Applied Projects</h4>
+                            <div className="text-3xl font-bold text-white mt-4">{dashboardData?.appliedProjects || 0}</div>
+                        </div>
+                        <div className="p-6 rounded-xl" style={{ background: '#334155' }}>
+                            <h4 className="text-white font-semibold">Active Projects</h4>
+                            <div className="text-3xl font-bold text-white mt-4">{dashboardData?.activeProjects || 0}</div>
+                        </div>
+                        <div className="p-6 rounded-xl flex items-center justify-between" style={{ background: '#334155' }}>
+                            <div>
+                                <h4 className="text-white font-semibold">Verification</h4>
+                                <p className="text-[#94a3b8] mt-2">{verificationStatus}</p>
+                            </div>
+                            {verificationStatus !== 'verified' && (
+                                <button onClick={() => navigate('/student/profile?tab=verification')} className="px-4 py-2 rounded-lg font-semibold" style={{ background: '#f59e0b', color: '#0f172a' }}>
+                                    Submit for Verification
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Alerts Section */}
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8">
@@ -215,7 +303,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Quick Info */}
-                <div className="mt-8 bg-white/5 border border-white/10 rounded-lg p-6">
+                {/* <div className="mt-8 bg-white/5 border border-white/10 rounded-lg p-6">
                     <h3 className="text-lg font-semibold text-white mb-4">Profile Information</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
@@ -235,7 +323,7 @@ const Dashboard = () => {
                             <p className="text-white font-semibold">{basicInfo?.degree || 'N/A'}</p>
                         </div>
                     </div>
-                </div>
+                </div> */}
             </main>
 
             <Footer />

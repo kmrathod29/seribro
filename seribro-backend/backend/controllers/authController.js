@@ -28,16 +28,17 @@ const removeFileAndThrowError = (filePath, message, res, status = 400) => {
 // @route   POST /api/auth/student/register
 // @access  Public
 const registerStudent = asyncHandler(async (req, res) => {
-  const { fullName, email, college, password } = req.body;
+  const { fullName, email, password } = req.body;
   console.log('Received student registration data:', req.body);
 
-  if (!fullName || !email || !college || !password) {
-    return removeFileAndThrowError(null, 'Please fill all fields', res);
+  // college is no longer required at signup
+  if (!fullName || !email || !password) {
+    return removeFileAndThrowError(null, 'Please fill all required fields', res);
   }
 
   const userExists = await User.findOne({ email });
   if (userExists) {
-    return removeFileAndThrowError(collegeIdPath, 'User already exists', res, 409);
+    return removeFileAndThrowError(null, 'User already exists', res, 409);
   }
 
   const session = await mongoose.startSession();
@@ -54,7 +55,7 @@ const registerStudent = asyncHandler(async (req, res) => {
     const student = await Student.create([{
       user: user[0]._id,
       fullName,
-      college,
+      // college can be provided later from profile
     }], { session });
 
     const otpCode = generateOTP();
@@ -83,11 +84,76 @@ const registerStudent = asyncHandler(async (req, res) => {
       email: user[0].email,
     });
 
-  } catch (error) {
+    } catch (error) {
     await session.abortTransaction();
     session.endSession();
     console.error('Student registration error:', error);
-    removeFileAndThrowError(collegeIdPath, error.message || 'Student registration failed', res, 500);
+    removeFileAndThrowError(null, error.message || 'Student registration failed', res, 500);
+  }
+});
+
+// @desc    Finalize student account creation after OTP signup verification
+// @route   POST /api/auth/student/create-account
+// @access  Public (but requires prior OTP verification)
+const createStudentAccount = asyncHandler(async (req, res) => {
+  const { fullName, email, password } = req.body;
+
+  if (!fullName || !email || !password) {
+    res.status(400);
+    throw new Error('Please fill all required fields');
+  }
+
+  const existing = await User.findOne({ email });
+  if (existing) {
+    res.status(409);
+    throw new Error('User already exists');
+  }
+
+  // Check OTP doc was verified for signup
+  const otpDoc = await OTP.findOne({ email, purpose: 'signup', verified: true });
+  if (!otpDoc) {
+    res.status(400);
+    throw new Error('OTP not verified for this email. Please verify OTP before creating account.');
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const user = await User.create([{
+      email,
+      password,
+      role: 'student',
+      emailVerified: true,
+    }], { session });
+
+    const student = await Student.create([{
+      user: user[0]._id,
+      fullName,
+    }], { session });
+
+    // Clean up OTP
+    await OTP.deleteOne({ email }, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    // Issue JWT and return user info
+    generateToken(res, user[0]._id, user[0].role);
+
+    res.status(201).json({
+      message: 'Account created and logged in',
+      _id: user[0]._id,
+      email: user[0].email,
+      role: user[0].role,
+      profileCompleted: false,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('createStudentAccount error:', error);
+    res.status(500);
+    throw new Error('Account creation failed');
   }
 });
 
@@ -97,10 +163,11 @@ const registerStudent = asyncHandler(async (req, res) => {
 const registerCompany = asyncHandler(async (req, res) => {
   const { contactPerson, companyName, email, password } = req.body;
   console.log('Received company registration data:', req.body);
-  const verificationDocumentPath = req.file ? req.file.path : null;
+  const verificationDocumentPath = req.file ? req.file.path : null; // optional at signup
 
-  if (!contactPerson || !companyName || !email || !password || !verificationDocumentPath) {
-    return removeFileAndThrowError(verificationDocumentPath, 'Please fill all fields and upload Verification Document', res);
+  // companyName and verification document are optional at signup; collect contactPerson, email, password
+  if (!contactPerson || !email || !password) {
+    return removeFileAndThrowError(verificationDocumentPath, 'Please fill all required fields', res);
   }
 
   const userExists = await User.findOne({ email });
@@ -119,12 +186,14 @@ const registerCompany = asyncHandler(async (req, res) => {
       emailVerified: false,
     }], { session });
 
-    const company = await Company.create([{
+    const companyPayload = {
       user: user[0]._id,
       contactPersonName: contactPerson,
-      companyName,
-      verificationDocument: verificationDocumentPath,
-    }], { session });
+    };
+    if (companyName) companyPayload.companyName = companyName;
+    if (verificationDocumentPath) companyPayload.verificationDocument = verificationDocumentPath;
+
+    const company = await Company.create([companyPayload], { session });
 
     const otpCode = generateOTP();
     await OTP.findOneAndDelete({ email }, { session });
@@ -160,6 +229,74 @@ const registerCompany = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Finalize company account creation after OTP signup verification
+// @route   POST /api/auth/company/create-account
+// @access  Public (but requires prior OTP verification)
+const createCompanyAccount = asyncHandler(async (req, res) => {
+  const { contactPerson, companyName, email, password } = req.body;
+
+  if (!contactPerson || !email || !password) {
+    res.status(400);
+    throw new Error('Please fill all required fields');
+  }
+
+  const existing = await User.findOne({ email });
+  if (existing) {
+    res.status(409);
+    throw new Error('User already exists');
+  }
+
+  // Check OTP doc was verified for signup
+  const otpDoc = await OTP.findOne({ email, purpose: 'signup', verified: true });
+  if (!otpDoc) {
+    res.status(400);
+    throw new Error('OTP not verified for this email. Please verify OTP before creating account.');
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const user = await User.create([{
+      email,
+      password,
+      role: 'company',
+      emailVerified: true,
+    }], { session });
+
+    const companyPayload = {
+      user: user[0]._id,
+      contactPersonName: contactPerson,
+    };
+    if (companyName) companyPayload.companyName = companyName;
+
+    const company = await Company.create([companyPayload], { session });
+
+    // Clean up OTP
+    await OTP.deleteOne({ email }, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    // Issue JWT and return user info
+    generateToken(res, user[0]._id, user[0].role);
+
+    res.status(201).json({
+      message: 'Account created and logged in',
+      _id: user[0]._id,
+      email: user[0].email,
+      role: user[0].role,
+      profileCompleted: false,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('createCompanyAccount error:', error);
+    res.status(500);
+    throw new Error('Account creation failed');
+  }
+});
+
 // @desc    Send OTP to email
 // @route   POST /api/auth/send-otp
 // @access  Public
@@ -171,20 +308,36 @@ const sendOtp = asyncHandler(async (req, res) => {
     throw new Error('Please provide an email');
   }
 
+  // purpose: 'signup' or 'verify' (login). Default to 'verify'.
+  const purpose = req.body.purpose === 'signup' ? 'signup' : 'verify';
   const user = await User.findOne({ email });
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
+
+  // If this is a login/verify OTP request, the user must exist and be unverified
+  if (purpose === 'verify') {
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+    if (user.emailVerified) {
+      res.status(400);
+      throw new Error('Email is already verified');
+    }
   }
 
-  if (user.emailVerified) {
-    res.status(400);
-    throw new Error('Email is already verified');
+  // If this is a signup OTP request, user must NOT already exist
+  if (purpose === 'signup') {
+    if (user) {
+      res.status(409);
+      throw new Error('User already exists');
+    }
   }
 
   const otpCode = generateOTP();
+  // For signup, frontend will indicate purpose='signup' when requesting OTP
+  
   await OTP.findOneAndDelete({ email });
-  await OTP.create({ email, otp: otpCode });
+  await OTP.create({ email, otp: otpCode, purpose });
+  // const purpose = req.body.purpose === 'signup' ? 'signup' : 'verify';
 
   const emailMessage = `
     <p>Namaste,</p>
@@ -205,44 +358,58 @@ const sendOtp = asyncHandler(async (req, res) => {
 // @desc    Verify OTP
 // @route   POST /api/auth/verify-otp
 // @access  Public
+// Verify OTP: supports both 'verify' (login flow) and 'signup' (pre-account creation) purposes.
+// For purpose='verify' (default) it behaves as before: marks user emailVerified and issues token.
+// For purpose='signup' it only marks the OTP document as verified={true} so frontend can proceed
+// to final account creation (which will actually create the User and Student/Company records).
 const verifyOtp = asyncHandler(async (req, res) => {
-  const { email, otp } = req.body;
+  const { email, otp, purpose } = req.body;
 
   if (!email || !otp) {
     res.status(400);
     throw new Error('Please provide email and OTP');
   }
 
-  const user = await User.findOne({ email });
   const otpDoc = await OTP.findOne({ email, otp });
-
-  if (!user) {
-    res.status(404);
-    throw new Error('User not found');
-  }
-
   if (!otpDoc) {
     res.status(400);
     throw new Error('Invalid or expired OTP');
   }
 
-  console.log('🔐 OTP verified for:', email);
-  console.log('📝 Before update - emailVerified:', user.emailVerified);
-  
+  // If this is a signup OTP verification, mark OTP doc as verified but DO NOT create user yet.
+  if (otpDoc.purpose === 'signup' || purpose === 'signup') {
+    otpDoc.verified = true;
+    await otpDoc.save();
+    return res.status(200).json({ message: 'OTP verified for signup', email, purpose: 'signup' });
+  }
+
+  // Default: login/verification flow where user exists. Proceed to mark user's email as verified and login.
+  const user = await User.findOne({ email });
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  console.log('� OTP verified for:', email);
+
   const updatedUser = await User.findByIdAndUpdate(
-    user._id, 
-    { emailVerified: true }, 
+    user._id,
+    { emailVerified: true },
     { new: true }
   );
 
-  console.log('📝 After update - emailVerified:', updatedUser.emailVerified);
-
   await OTP.deleteOne({ email });
 
-  res.status(200).json({ 
-    message: 'Email verified successfully', 
+  // Issue auth token (same behavior as login)
+  generateToken(res, updatedUser._id, updatedUser.role);
+
+  res.status(200).json({
+    message: 'Email verified and logged in successfully',
     emailVerified: true,
+    _id: updatedUser._id,
     email: updatedUser.email,
+    role: updatedUser.role,
+    profileCompleted: updatedUser.profileCompleted || false,
   });
 });
 
@@ -448,6 +615,8 @@ module.exports = {
   registerCompany,
   sendOtp,
   verifyOtp,
+  createStudentAccount,
+  createCompanyAccount,
   loginUser,
   logoutUser,
   forgotPassword,

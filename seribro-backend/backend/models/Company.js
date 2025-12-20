@@ -18,13 +18,15 @@ const CompanySchema = new mongoose.Schema({
   },
   companyName: {
     type: String,
-    required: [true, 'Company Name is required'], // Hinglish: Company ka naam zaroori hai
-    unique: true,
+    // Company name is optional at signup; may be added/updated later in profile
+    required: false,
+    unique: false,
     trim: true,
   },
   verificationDocument: {
     type: String, // Hinglish: File path store hoga
-    required: [true, 'Verification Document is required'], // Hinglish: Verification document zaroori hai
+    // Verification document is optional at signup; can be uploaded later
+    required: false,
   },
   // Hinglish: Baaki fields Phase-2 mein aayenge
 }, {

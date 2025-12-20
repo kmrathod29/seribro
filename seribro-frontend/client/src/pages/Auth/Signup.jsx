@@ -2,15 +2,11 @@ import React, { useState } from "react";
 import {
   User,
   Mail,
-  Building,
   Lock,
   Eye,
   EyeOff,
-  Upload,
   ArrowRight,
   Chrome,
-  Github,
-  Linkedin,
   GraduationCap,
   Briefcase,
   Home,
@@ -18,6 +14,8 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 // import { saveUserToCookie } from "../../utils/authUtils.js";
 import API from "../../apis/api.js";
+// saveUserToCookie imported in case we need to persist user after final account creation
+import { saveUserToCookie } from "../../utils/authUtils.js";
 
 const Signup = () => {
   const [userType, setUserType] = useState("student");
@@ -26,19 +24,25 @@ const Signup = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  const [otpData, setOtpData] = useState({
+    otp: '',
+    showOtpField: false,
+    otpSent: false,
+  });
+
+  const [otpVerified, setOtpVerified] = useState(false);
+
   const [studentData, setStudentData] = useState({
     fullName: "",
     email: "",
-    college: "",
     password: "",
   });
 
   const [companyData, setCompanyData] = useState({
     contactPerson: "",
-    companyName: "",
     email: "",
     password: "",
-    verificationDoc: null,
+    // verificationDoc removed from signup - optional later in profile
   });
 
   // -------------------- Handlers --------------------
@@ -52,19 +56,13 @@ const Signup = () => {
     setError("");
   };
 
-  const handleFileUpload = (e, uploadType) => {
-    const file = e.target.files[0];
-    const target = uploadType || userType;
-    if (target === "company") {
-      setCompanyData({ ...companyData, verificationDoc: file });
-    }
-  };
+  // File uploads are not required during signup anymore. Companies can upload verification
+  // documents later from their profile. Removed handler to keep signup flow simple.
 
   const validateStudentForm = () => {
     if (
       !studentData.fullName ||
       !studentData.email ||
-      !studentData.college ||
       !studentData.password
     ) {
       setError("Please fill in all required fields");
@@ -80,7 +78,6 @@ const Signup = () => {
   const validateCompanyForm = () => {
     if (
       !companyData.contactPerson ||
-      !companyData.companyName ||
       !companyData.email ||
       !companyData.password
     ) {
@@ -89,10 +86,6 @@ const Signup = () => {
     }
     if (companyData.password.length < 6) {
       setError("Password must be at least 6 characters");
-      return false;
-    }
-    if (!companyData.verificationDoc) {
-      setError("Please upload verification document");
       return false;
     }
     return true;
@@ -120,28 +113,25 @@ const Signup = () => {
         // ✅ FIXED: Send 'fullName' instead of 'name'
         formData.append("fullName", studentData.fullName);
         formData.append("email", studentData.email);
-        formData.append("college", studentData.college);
         formData.append("password", studentData.password);
       } else {
         // ✅ FIXED: Field names now match backend
         formData.append("contactPerson", companyData.contactPerson);
-        formData.append("companyName", companyData.companyName);
         formData.append("email", companyData.email);
         formData.append("password", companyData.password);
-        formData.append("verificationDocument", companyData.verificationDoc);
       }
 
-      // ---- API Call ----
-      const endpoint =
-        userType === "student" ? "/student/register" : "/company/register";
+      // ---- PHASE 1: SEND OTP (do NOT create user) ----
+      // We will call the /send-otp endpoint with purpose='signup'. This sends the OTP email
+      // but does NOT create a User. Account creation is a separate step after OTP verification.
+      await API.post('/send-otp', { email: userType === 'student' ? studentData.email : companyData.email, purpose: 'signup' });
 
-      const response = await API.post(endpoint, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      // Success - Show alert and redirect to login
-      alert(response.data.message + ". Please check your email for OTP.");
-      navigate("/login");
+      // Show OTP UI so user can verify
+      setOtpData({ ...otpData, showOtpField: true, otpSent: true });
+      setIsLoading(false);
+      setError('');
+      alert('OTP sent to your email. Enter it below to verify, then click Create Account.');
+      return; // stop here — wait for OTP verification step
 
     } catch (err) {
       console.error("Signup error:", err);
@@ -149,6 +139,79 @@ const Signup = () => {
       setError(
         err.response?.data?.message || "Signup failed. Please try again."
       );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Send or resend OTP for the given email (registration already sends on server, but allow resend)
+  const handleSendOtp = async () => {
+    const email = userType === 'student' ? studentData.email : companyData.email;
+    if (!email) {
+      setError('Please enter your email to send OTP');
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+    try {
+      await API.post('/send-otp', { email });
+      setOtpData(prev => ({ ...prev, otpSent: true, showOtpField: true }));
+      alert('OTP sent to ' + email);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const email = userType === 'student' ? studentData.email : companyData.email;
+    if (!email || !otpData.otp) {
+      setError('Please provide email and OTP');
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+    try {
+      // verify-otp now issues JWT (cookie) and returns user info
+  await API.post('/verify-otp', { email, otp: otpData.otp, purpose: 'signup' });
+      // Save minimal user info to cookie so client-side UI knows user is logged in
+      // (backend issues httpOnly JWT cookie via generateToken)
+      // For signup-purpose verification we only get back a confirmation. Mark local flag so
+      // Create Account button becomes enabled.
+      setOtpVerified(true);
+      alert('OTP verified. Now click Create Account to finish sign up.');
+      // On success, redirect user to their dashboard (auto-logged in)
+      // Do not auto-login here for signup OTP. Final account creation will perform creation
+      // and login (generate JWT) when user clicks Create Account.
+    } catch (err) {
+      setError(err.response?.data?.message || 'OTP verification failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // -------------------- Create Account (PHASE 3) --------------------
+  // Requires that an OTP for purpose='signup' was verified (server-side flag).
+  // This call will create the User + Student/Company records, set emailVerified=true,
+  // issue the JWT (httpOnly cookie) and return the user info.
+  const handleCreateAccount = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const payload = userType === 'student'
+        ? { fullName: studentData.fullName, email: studentData.email, password: studentData.password }
+        : { contactPerson: companyData.contactPerson, companyName: companyData.companyName, email: companyData.email, password: companyData.password };
+
+      const endpoint = userType === 'student' ? '/student/create-account' : '/company/create-account';
+      const res = await API.post(endpoint, payload);
+
+      // Save minimal user info (frontend visible) and navigate to dashboard
+      saveUserToCookie({ _id: res.data._id, email: res.data.email, role: res.data.role });
+      const dashboard = res.data.role === 'student' ? '/student/dashboard' : res.data.role === 'company' ? '/company/dashboard' : '/';
+      navigate(dashboard);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Account creation failed');
     } finally {
       setIsLoading(false);
     }
@@ -265,23 +328,7 @@ const Signup = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-navy mb-2">
-                  College <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="text"
-                    name="college"
-                    value={studentData.college}
-                    onChange={handleStudentChange}
-                    placeholder="ABC University"
-                    className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
+              {/* College/university field removed from signup — students can update later in profile */}
 
               <div>
                 <label className="block text-sm font-semibold text-navy mb-2">
@@ -333,23 +380,7 @@ const Signup = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-navy mb-2">
-                  Company Name <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="text"
-                    name="companyName"
-                    value={companyData.companyName}
-                    onChange={handleCompanyChange}
-                    placeholder="Tech Corp"
-                    className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
+              {/* Company Name removed from signup flow - companies may add this later in their profile */}
 
               <div>
                 <label className="block text-sm font-semibold text-navy mb-2">
@@ -395,40 +426,64 @@ const Signup = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-navy mb-2">
-                  Upload Verification Document <span className="text-red-500">*</span>
-                </label>
-                <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-primary transition-all duration-300 cursor-pointer group">
+              {/* Verification document removed from signup UI - companies can add this later in their profile */}
+            </div>
+          )}
+
+          {/* OTP Section (shown after registration) */}
+          {otpData.showOtpField && (
+            <div className="space-y-3 border-t pt-4 border-gray-100">
+              <p className="text-sm text-gray-600 font-medium">
+                We've sent an OTP to your email. Enter it below to verify and continue.
+              </p>
+              <div className="flex space-x-3">
+                <div className="relative flex-grow">
                   <input
-                    type="file"
-                    onChange={(e) => handleFileUpload(e, 'company')}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    accept="image/*,.pdf"
+                    type="text"
+                    name="otp"
+                    value={otpData.otp}
+                    onChange={(e) => setOtpData({ ...otpData, otp: e.target.value })}
+                    placeholder="Enter 6-digit OTP"
+                    maxLength={6}
+                    className="w-full pl-4 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
                     disabled={isLoading}
                   />
-                  <div className="text-center pointer-events-none">
-                    <Upload className="mx-auto text-gray-400 group-hover:text-primary transition-colors mb-2" size={32} />
-                    <p className="text-sm text-gray-600 mb-1">
-                      {companyData.verificationDoc ? companyData.verificationDoc.name : 'Click to upload Company Registration'}
-                    </p>
-                    <p className="text-xs text-gray-400">GST, Registration Certificate (Max 5MB)</p>
-                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={otpData.otpSent ? handleVerifyOtp : handleSendOtp}
+                  disabled={isLoading || !(userType === 'student' ? studentData.email : companyData.email)}
+                  className={`py-3 px-4 rounded-xl font-bold text-sm text-white transition-all duration-300 disabled:opacity-50 ${
+                    otpData.otpSent ? 'bg-green-500 hover:bg-green-600' : 'bg-primary hover:bg-navy'
+                  }`}
+                >
+                  <span className="flex items-center space-x-1">
+                    {otpData.otpSent ? 'Verify' : 'Send OTP'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={isLoading}
+                  className="py-3 px-3 rounded-xl font-medium text-sm text-gray-700 border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Resend
+                </button>
               </div>
             </div>
           )}
 
-          {/* Submit Button */}
+          {/* Send OTP Button (PHASE 1) */}
           <button
+            type="button"
             onClick={handleSubmit}
-            disabled={isLoading}
+            disabled={isLoading || !(userType === 'student' ? (studentData.fullName && studentData.email && studentData.password.length >= 6) : (companyData.contactPerson && companyData.email && companyData.password.length >= 6))}
             className="group w-full relative py-3.5 rounded-xl font-bold text-base text-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] mt-6 disabled:opacity-75 disabled:cursor-not-allowed"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-primary to-navy"></div>
             <div className="absolute inset-0 bg-gradient-to-r from-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500 disabled:opacity-0"></div>
             <span className="relative z-10 flex items-center justify-center space-x-2">
-              <span>{isLoading ? "Creating Account..." : "Create Account"}</span>
+              <span>{isLoading ? "Sending OTP..." : "Send OTP"}</span>
               {!isLoading && (
                 <ArrowRight
                   className="transform group-hover:translate-x-1 transition-transform duration-300"
@@ -436,6 +491,17 @@ const Signup = () => {
                 />
               )}
             </span>
+          </button>
+
+          {/* Create Account Button (PHASE 3) - enabled only after OTP is verified */}
+          <button
+            type="button"
+            onClick={handleCreateAccount}
+            disabled={!otpVerified || isLoading}
+            className="group w-full relative py-3.5 rounded-xl font-bold text-base text-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="absolute inset-0 bg-green-600"></div>
+            <span className="relative z-10">{isLoading ? 'Processing...' : 'Create Account'}</span>
           </button>
 
           {/* Login Link */}

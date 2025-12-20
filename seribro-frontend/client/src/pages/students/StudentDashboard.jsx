@@ -13,6 +13,9 @@ import {
   Award,
   Download,
   RefreshCw,
+  TrendingUp,
+  Pencil,
+  XCircle,
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
@@ -98,14 +101,17 @@ const StudentDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col" style={{ background: '#0f172a' }}>
       <Navbar />
 
       <main className="flex-grow container mx-auto px-4 py-8">
-        {/* Hinglish: Header section */}
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome back! Manage your profile and track verification status</p>
+          <h1 className="text-3xl font-extrabold text-white">
+            Welcome back,
+            <span className="text-[#fb923c] ml-2">{dashboard?.basicInfo?.fullName || dashboard?.student?.email || 'Student'}</span>
+          </h1>
+          <p className="text-[#94a3b8] mt-2">Manage your profile and track verification status</p>
         </div>
 
         {/* Hinglish: Error message */}
@@ -153,291 +159,225 @@ const StudentDashboard = () => {
 
         {dashboard && (
           <>
-            {/* Hinglish: Verification Alert Banner */}
-            <div className="mb-6">
-              <div
-                className={`p-4 rounded-lg border-l-4 ${
-                  dashboard.verification.status === 'approved'
-                    ? 'bg-green-50 border-l-green-600'
-                    : dashboard.verification.status === 'rejected'
-                    ? 'bg-red-50 border-l-red-600'
-                    : 'bg-yellow-50 border-l-yellow-600'
-                }`}
-              >
-                <div className="flex items-start">
-                  {dashboard.verification.status === 'approved' ? (
-                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 mr-3" />
-                  ) : dashboard.verification.status === 'rejected' ? (
-                    <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 mr-3" />
-                  ) : (
-                    <Clock className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
-                  )}
-                  <div>
-                    <h3
-                      className={`font-semibold ${
-                        dashboard.verification.status === 'approved'
-                          ? 'text-green-800'
-                          : dashboard.verification.status === 'rejected'
-                          ? 'text-red-800'
-                          : 'text-yellow-800'
-                      }`}
-                    >
-                      {dashboard.verification.statusMessage}
-                    </h3>
-                    {dashboard.verification.rejectionReason && (
-                      <p className="text-sm text-red-700 mt-1">
-                        Reason: {dashboard.verification.rejectionReason}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Hinglish: Profile Completion Section */}
+            {/* Top Hero Cards (Profile Completion, Verification, Action) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {/* Hinglish: Profile Completion Card */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Completion</h3>
-                <div className="relative w-24 h-24 mx-auto mb-4">
-                  <svg className="w-24 h-24 transform -rotate-90">
-                    <circle
-                      cx="48"
-                      cy="48"
-                      r="40"
-                      fill="none"
-                      stroke="#e5e7eb"
-                      strokeWidth="4"
-                    />
-                    <circle
-                      cx="48"
-                      cy="48"
-                      r="40"
-                      fill="none"
-                      stroke="#3b82f6"
-                      strokeWidth="4"
-                      strokeDasharray={`${(dashboard.profileCompletion.percentage / 100) * 251.2} 251.2`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-blue-600">
-                      {dashboard.profileCompletion.percentage}%
-                    </span>
-                  </div>
-                </div>
-                <p className="text-center text-gray-600">
-                  {dashboard.profileCompletion.percentage === 100
-                    ? 'Profile Complete'
-                    : `${100 - dashboard.profileCompletion.percentage}% remaining`}
-                </p>
-              </div>
-
-              {/* Hinglish: Account Overview Card */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Overview</h3>
-                <div className="space-y-3">
+              {/* Profile Completion Card */}
+              <div className="p-6 rounded-xl" style={{ background: '#0f172a' }}>
+                <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Email</p>
-                    <p className="font-medium text-gray-900 truncate">
-                      {dashboard.student.email}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Role</p>
-                    <p className="font-medium text-gray-900 capitalize">
-                      {dashboard.student.role}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Verification Status</p>
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                        dashboard.verification.status === 'approved'
-                          ? 'bg-green-100 text-green-800'
-                          : dashboard.verification.status === 'rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      {dashboard.verification.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Hinglish: Documents Card */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Resume</span>
-                    {dashboard.documents.resume.uploaded ? (
-                      <span className="flex items-center text-green-600">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Uploaded
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">Pending</span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">College ID</span>
-                    {dashboard.documents.collegeId.uploaded ? (
-                      <span className="flex items-center text-green-600">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Uploaded
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">Pending</span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Certificates</span>
-                    <span className="text-gray-900 font-medium">
-                      {dashboard.documents.certificates.length}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Hinglish: Basic Info Section */}
-            <div className="bg-white rounded-lg shadow p-6 mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-gray-600">Full Name</p>
-                  <p className="font-medium text-gray-900">
-                    {dashboard.basicInfo.fullName || 'Not provided'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Phone</p>
-                  <p className="font-medium text-gray-900">
-                    {dashboard.basicInfo.phone || 'Not provided'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">College Name</p>
-                  <p className="font-medium text-gray-900">
-                    {dashboard.basicInfo.collegeName || 'Not provided'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Degree</p>
-                  <p className="font-medium text-gray-900">
-                    {dashboard.basicInfo.degree || 'Not provided'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Branch</p>
-                  <p className="font-medium text-gray-900">
-                    {dashboard.basicInfo.branch || 'Not provided'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Graduation Year</p>
-                  <p className="font-medium text-gray-900">
-                    {dashboard.basicInfo.graduationYear || 'Not provided'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Hinglish: Profile Analytics Section */}
-            <div className="bg-white rounded-lg shadow p-6 mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Analytics</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div>
-                  <p className="text-sm text-gray-600">Technical Skills</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {dashboard.analytics.skillsCount.technical}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Soft Skills</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {dashboard.analytics.skillsCount.soft}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Languages</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {dashboard.analytics.skillsCount.languages}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Projects</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {dashboard.projectsCount}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Hinglish: Action Buttons */}
-            <div className="flex gap-4 mb-8">
-              <button
-                onClick={() => navigate('/student/profile')}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-              >
-                <FileText className="w-4 h-4" />
-                Edit Profile
-              </button>
-
-              {dashboard.verification.status === 'rejected' ? (
-                <button
-                  onClick={handleSubmitVerification}
-                  disabled={submitLoading}
-                  className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition disabled:opacity-50"
-                >
-                  {submitLoading ? (
-                    <Loader className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                  Re-Submit for Verification
-                </button>
-              ) : dashboard.verification.status !== 'approved' && dashboard.profileCompletion.percentage >= 50 ? (
-                <button
-                  onClick={handleSubmitVerification}
-                  disabled={submitLoading}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
-                >
-                  {submitLoading ? (
-                    <Loader className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <CheckCircle className="w-4 h-4" />
-                  )}
-                  Submit for Verification
-                </button>
-              ) : null}
-            </div>
-
-            {/* Hinglish: Notifications Section */}
-            {dashboard.notifications && dashboard.notifications.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Notifications</h3>
-                <div className="space-y-3">
-                  {dashboard.notifications.slice(0, 5).map((notif) => (
-                    <div key={notif.id} className="flex items-start p-3 bg-gray-50 rounded-lg">
-                      <div className="flex-grow">
-                        <p className="text-sm font-medium text-gray-900">
-                          {notif.message}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(notif.createdAt).toLocaleDateString()}
-                        </p>
+                    <h3 className="text-white font-medium">Profile Completion</h3>
+                    <div className="flex items-center space-x-4 mt-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-16 h-16 rounded-full bg-[#334155] flex items-center justify-center">
+                          <TrendingUp className="w-6 h-6 text-[#fb923c]" />
+                        </div>
                       </div>
-                      <span className="text-xs font-semibold capitalize bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        {notif.type}
+                      <div>
+                        <div className="text-3xl font-bold text-white">{dashboard.profileCompletion.percentage}%</div>
+                        <p className="text-sm text-[#94a3b8]">{dashboard.profileCompletion.percentage === 100 ? 'Profile Complete' : 'Incomplete'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-1/3 flex items-center">
+                    <div className="w-full bg-[#334155] rounded-full h-4 overflow-hidden">
+                      <div
+                        className="h-4 rounded-full"
+                        style={{
+                          width: `${dashboard.profileCompletion.percentage}%`,
+                          background: 'linear-gradient(90deg, #fb923c, #f97316)'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Verification Status Card */}
+              <div className="p-6 rounded-xl" style={{ background: '#0f172a' }}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-white font-medium">Verification Status</h3>
+                    <div className="flex items-center space-x-4 mt-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-16 h-16 rounded-full bg-[#334155] flex items-center justify-center">
+                          {dashboard.verification.status === 'approved' ? (
+                            <CheckCircle className="w-6 h-6 text-[#10b981]" />
+                          ) : dashboard.verification.status === 'rejected' ? (
+                            <XCircle className="w-6 h-6 text-[#ef4444]" />
+                          ) : (
+                            <Clock className="w-6 h-6 text-[#fbbf24]" />
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-white capitalize">{dashboard.verification.status}</div>
+                        <p className="text-sm text-[#94a3b8] mt-1">{dashboard.verification.statusMessage}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Edit / Action Card */}
+              <div className="p-6 rounded-xl flex items-center justify-between" style={{ background: '#0f172a' }}>
+                <div>
+                  <h3 className="text-white font-medium">Profile Actions</h3>
+                  <p className="text-sm text-[#94a3b8] mt-2">Complete or edit your profile to improve placement chances</p>
+                </div>
+                <div>
+                  <button
+                    onClick={() => navigate('/student/profile')}
+                    className="inline-flex items-center gap-3 px-4 py-3 rounded-lg font-semibold"
+                    style={{ background: '#f59e0b', color: '#0f172a' }}
+                  >
+                    <Pencil className="w-5 h-5" />
+                    <span>Edit Profile</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Redesigned: Information / Photo and Action Items */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* Student Information Card */}
+              <div className="p-6 rounded-xl" style={{ background: '#334155' }}>
+                <h3 className="text-white text-lg font-semibold mb-4">Student Information</h3>
+                <div className="grid grid-cols-1 gap-4 text-[#94a3b8]">
+                  <div>
+                    <p className="text-sm">Full Name</p>
+                    <p className="text-white font-medium">{dashboard.basicInfo.fullName || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm">Email</p>
+                    <p className="text-white font-medium">{dashboard.student.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm">Mobile</p>
+                    <p className="text-white font-medium">{dashboard.basicInfo.phone || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm">City</p>
+                    <p className="text-white font-medium">{dashboard.basicInfo.city || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm">College</p>
+                    <p className="text-white font-medium">{dashboard.basicInfo.collegeName || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm">Degree</p>
+                    <p className="text-white font-medium">{dashboard.basicInfo.degree || 'Not provided'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Photo / College ID */}
+              <div className="p-6 rounded-xl flex items-center justify-center" style={{ background: '#475569' }}>
+                <div className="text-center">
+                  <p className="text-sm text-[#94a3b8] mb-3">Your Profile Photo</p>
+                  {(
+                    dashboard.student.profilePhotoUrl || dashboard.documents.collegeId?.url
+                  ) ? (
+                    <img
+                      src={dashboard.student.profilePhotoUrl || dashboard.documents.collegeId?.url}
+                      alt="profile"
+                      className="w-40 h-40 object-cover rounded-lg mx-auto border-2 border-[#0f172a]"
+                    />
+                  ) : (
+                    <div className="w-40 h-40 rounded-lg mx-auto bg-[#0f172a] flex items-center justify-center">
+                      <span className="text-3xl font-bold text-white">
+                        {((dashboard.basicInfo.fullName || dashboard.student.email) || 'S')
+                          .split(' ')
+                          .map(n => n[0])
+                          .slice(0,2)
+                          .join('')
+                          .toUpperCase()}
                       </span>
                     </div>
-                  ))}
+                  )}
+                  <p className="text-sm text-[#94a3b8] mt-3">Your College ID</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Items or Application Stats */}
+            {dashboard.profileCompletion.percentage < 100 ? (
+              <div className="p-6 rounded-xl mb-8" style={{ background: '#334155' }}>
+                <h3 className="text-white text-lg font-semibold mb-4">Action Items</h3>
+                <div className="space-y-3 text-[#94a3b8]">
+                  {/* derive missing items */}
+                  {(() => {
+                    const items = [];
+                    try {
+                      if ((dashboard.analytics?.skillsCount?.technical || 0) < 1) items.push('Add technical skills');
+                      if ((dashboard.projectsCount || 0) < 3) items.push('Upload at least 3 projects');
+                      if (!dashboard.documents?.resume?.uploaded) items.push('Upload resume (PDF)');
+                      if (!dashboard.documents?.collegeId?.uploaded) items.push('Upload college ID for verification');
+                    } catch {
+                      // ignore
+                    }
+                    if (items.length === 0) return <p className="text-[#94a3b8]">Complete the remaining items to reach 100%.</p>;
+                    return (
+                      <ul className="space-y-2">
+                        {items.map((it, idx) => (
+                          <li key={idx} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <AlertCircle className="w-5 h-5 text-[#f59e0b]" />
+                              <span className="text-white">{it}</span>
+                            </div>
+                            <button onClick={() => navigate('/student/profile')} className="text-sm font-semibold px-3 py-1 rounded bg-[#f59e0b] text-[#0f172a]">Go to Profile</button>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="p-6 rounded-xl" style={{ background: '#334155' }}>
+                  <h4 className="text-white font-semibold">Applied Projects</h4>
+                  <div className="text-3xl font-bold text-white mt-4">{dashboard.applicationStats?.applied || dashboard.appliedCount || 0}</div>
+                </div>
+                <div className="p-6 rounded-xl" style={{ background: '#334155' }}>
+                  <h4 className="text-white font-semibold">Active Projects</h4>
+                  <div className="text-3xl font-bold text-white mt-4">{dashboard.applicationStats?.active || 0}</div>
+                </div>
+                <div className="p-6 rounded-xl flex items-center justify-between" style={{ background: '#334155' }}>
+                  <div>
+                    <h4 className="text-white font-semibold">Verification</h4>
+                    <p className="text-[#94a3b8] mt-2">{dashboard.verification.status}</p>
+                  </div>
+                  {dashboard.verification.status !== 'approved' && dashboard.verification.status !== 'pending' && (
+                    <button onClick={handleSubmitVerification} disabled={submitLoading} className="px-4 py-2 rounded-lg font-semibold" style={{ background: '#f59e0b', color: '#0f172a' }}>
+                      {submitLoading ? <Loader className="w-4 h-4 animate-spin" /> : 'Submit for Verification'}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
+
+            {/* Profile Analytics Section (kept for quick stats) */}
+            <div className="p-6 rounded-xl mb-8" style={{ background: '#334155' }}>
+              <h3 className="text-white text-lg font-semibold mb-4">Profile Analytics</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-[#94a3b8]">
+                <div>
+                  <p className="text-sm">Technical Skills</p>
+                  <p className="text-2xl font-bold text-white">{dashboard.analytics.skillsCount.technical}</p>
+                </div>
+                <div>
+                  <p className="text-sm">Soft Skills</p>
+                  <p className="text-2xl font-bold text-white">{dashboard.analytics.skillsCount.soft}</p>
+                </div>
+                <div>
+                  <p className="text-sm">Languages</p>
+                  <p className="text-2xl font-bold text-white">{dashboard.analytics.skillsCount.languages}</p>
+                </div>
+                <div>
+                  <p className="text-sm">Projects</p>
+                  <p className="text-2xl font-bold text-white">{dashboard.projectsCount}</p>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </main>

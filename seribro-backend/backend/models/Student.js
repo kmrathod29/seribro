@@ -18,7 +18,8 @@ const StudentSchema = new mongoose.Schema({
   },
   college: {
     type: String,
-    required: [true, 'College name is required'], // Hinglish: College ka naam zaroori hai
+    // College name is optional at signup; students can update profile later
+    required: false,
     trim: true,
   },
   // Hinglish: Baaki fields Phase-2 mein aayenge

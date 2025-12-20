@@ -1,6 +1,6 @@
 // src/pages/Auth/Login.jsx - DEBUG VERSION
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Chrome, Github, Linkedin, Home, Send } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Chrome, Home, Send } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import API from '../../apis/api.js';
 import { saveUserToCookie } from '../../utils/authUtils';
@@ -372,16 +372,10 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Social Login Buttons */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Social Login Buttons (only Chrome/Browser sign-in remains) */}
+          <div className="grid grid-cols-1 gap-3">
             <button type="button" className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-primary hover:bg-primary/5 transition-all duration-300 transform hover:scale-105 disabled:opacity-50" disabled={isLoading}>
               <Chrome className="text-gray-600 group-hover:text-primary transition-colors" size={20} />
-            </button>
-            <button type="button" className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-navy hover:bg-navy/5 transition-all duration-300 transform hover:scale-105 disabled:opacity-50" disabled={isLoading}>
-              <Github className="text-gray-600 group-hover:text-navy transition-colors" size={20} />
-            </button>
-            <button type="button" className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50" disabled={isLoading}>
-              <Linkedin className="text-gray-600 group-hover:text-blue-500 transition-colors" size={20} />
             </button>
           </div>
 
