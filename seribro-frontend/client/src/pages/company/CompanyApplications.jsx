@@ -8,6 +8,7 @@ import {
     shortlistApplication,
     approveStudentForProject, // Phase 4.5
     rejectApplication,
+    deleteApplication,
 } from '../../apis/companyApplicationApi';
 import { getMyProjects } from '../../apis/companyProjectApi';
 import Navbar from '../../components/Navbar';
@@ -184,6 +185,29 @@ const CompanyApplications = () => {
         }
     };
 
+    const handleDeleteApplication = async (applicationId) => {
+        if (!window.confirm('Are you sure you want to delete this application?')) return;
+        try {
+            setActionLoading(true);
+            const response = await deleteApplication(applicationId);
+            // Assuming response.success indicates deletion
+            if (response && response.success) {
+                // Remove from UI immediately
+                setApplications(prev => prev.filter(a => a._id !== applicationId));
+                // Refresh stats
+                await fetchStats();
+                setSuccess('Application removed successfully');
+                setTimeout(() => setSuccess(''), 3000);
+            } else {
+                setError(response.message || 'Failed to delete application');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || err.message || 'Failed to delete application');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const handleRejectClick = (applicationId) => {
         // Find the application object from the applications array
         const application = applications.find(app => app._id === applicationId);
@@ -347,6 +371,7 @@ const CompanyApplications = () => {
                                     onShortlist={handleShortlist}
                                     onAccept={handleAcceptClick}
                                     onReject={handleRejectClick}
+                                    onDelete={handleDeleteApplication}
                                     loading={actionLoading}
                                 />
                             ))}

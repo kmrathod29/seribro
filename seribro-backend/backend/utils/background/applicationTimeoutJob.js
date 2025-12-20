@@ -1,5 +1,12 @@
 // backend/utils/background/applicationTimeoutJob.js
+// ⚠️ PHASE 6 - DORMANT / FUTURE WORK ⚠️
 // Background job for auto-timeout - Phase 4.5+
+//
+// ARCHITECTURAL DECISION: This background job is currently NOT started in server.js.
+// The MVP uses the simpler approveStudentForProject flow which doesn't require timeouts.
+//
+// DO NOT START THIS JOB IN CURRENT MVP.
+// This is reserved for Phase 6 implementation when multi-stage selection is needed.
 
 const mongoose = require('mongoose');
 const Application = require('../../models/Application');

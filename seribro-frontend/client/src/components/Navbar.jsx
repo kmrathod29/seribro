@@ -139,7 +139,7 @@ const Navbar = ({ variant } = {}) => {
                     <button className="group relative px-6 py-2 font-semibold text-sm overflow-hidden rounded-lg transition-all duration-300 transform hover:scale-105">
                       <div className="absolute inset-0 bg-gradient-to-r from-primary via-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
                       <div className="absolute inset-0.5 bg-white rounded-lg"></div>
-                      <span className="relative z-10 bg-gradient-to-r from-navy to-primary bg-clip-text text-transparent group-hover:from-primary group-hover:to-navy transition-all duration-300">
+                      <span className="relative z-10 text-navy font-medium transition-colors duration-200">
                         Login
                       </span>
                     </button>
@@ -147,9 +147,11 @@ const Navbar = ({ variant } = {}) => {
 
                   {/* SIGN UP */}
                   <Link to="/signup">
-                    <button className="relative px-6 py-2 font-semibold text-sm text-white rounded-lg overflow-hidden group shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary to-navy"></div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <button className="relative z-50 px-6 py-2 font-semibold text-sm text-white rounded-lg overflow-hidden group shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                      {/* Base gradient */}
+                      <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary to-navy" />
+                      {/* Hover overlay to intensify on hover */}
+                      <div className="absolute inset-0 z-0 bg-gradient-to-r from-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <span className="relative z-10 flex items-center space-x-1.5">
                         <span>Sign Up</span>
                       </span>
@@ -341,16 +343,16 @@ const Navbar = ({ variant } = {}) => {
                     <>
                       {/* Mobile Login */}
                       <Link to="/login">
-                        <button className="w-full px-3 py-2.5 font-semibold text-sm border-2 border-gray-300 rounded-lg hover:border-primary transition-all duration-300 relative overflow-hidden group">
-                          <span className="relative z-10 bg-gradient-to-r from-navy to-primary bg-clip-text text-transparent">
-                            Login
-                          </span>
-                        </button>
+                      <button className="w-full px-3 py-2.5 font-semibold text-sm border-2 border-gray-300 rounded-lg hover:border-primary transition-all duration-300 relative overflow-hidden group">
+                        <span className="relative z-10 text-navy font-medium">Login</span>
+                      </button>
                       </Link>
                       {/* Mobile Signup */}
                       <Link to="/signup">
-                        <button className="w-full px-3 py-2.5 font-semibold text-sm text-white rounded-lg bg-gradient-to-r from-primary to-navy hover:from-navy hover:to-primary hover:shadow-md transform hover:scale-105 transition-all duration-300">
-                          Sign Up
+                        <button className="w-full px-3 py-2.5 font-semibold text-sm text-white rounded-lg relative overflow-hidden group bg-gradient-to-r from-primary to-navy hover:shadow-md transform hover:scale-105 transition-all duration-300">
+                          <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary to-navy" />
+                          <div className="absolute inset-0 z-0 bg-gradient-to-r from-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <span className="relative z-10">Sign Up</span>
                         </button>
                       </Link>
                     </>

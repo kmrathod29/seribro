@@ -2,6 +2,7 @@
 // Application Statistics Cards - Phase 4.3
 
 import React from 'react';
+import { Clipboard, Hourglass, Star, CheckCircle, XCircle, Sparkles } from 'lucide-react';
 
 const ApplicationStatsCards = ({ stats = {} }) => {
     // Default stats
@@ -22,7 +23,7 @@ const ApplicationStatsCards = ({ stats = {} }) => {
             bgColor: 'bg-blue-500/10',
             borderColor: 'border-blue-500',
             textColor: 'text-blue-300',
-            icon: '📋',
+            icon: Clipboard,
         },
         {
             label: 'Pending',
@@ -30,7 +31,7 @@ const ApplicationStatsCards = ({ stats = {} }) => {
             bgColor: 'bg-orange-500/10',
             borderColor: 'border-orange-500',
             textColor: 'text-orange-300',
-            icon: '⏳',
+            icon: Hourglass,
         },
         {
             label: 'Shortlisted',
@@ -38,7 +39,7 @@ const ApplicationStatsCards = ({ stats = {} }) => {
             bgColor: 'bg-blue-500/10',
             borderColor: 'border-blue-500',
             textColor: 'text-blue-300',
-            icon: '⭐',
+            icon: Star,
         },
         {
             label: 'Accepted',
@@ -46,7 +47,7 @@ const ApplicationStatsCards = ({ stats = {} }) => {
             bgColor: 'bg-green-500/10',
             borderColor: 'border-green-500',
             textColor: 'text-green-300',
-            icon: '✅',
+            icon: CheckCircle,
         },
         {
             label: 'Rejected',
@@ -54,7 +55,7 @@ const ApplicationStatsCards = ({ stats = {} }) => {
             bgColor: 'bg-red-500/10',
             borderColor: 'border-red-500',
             textColor: 'text-red-300',
-            icon: '❌',
+            icon: XCircle,
         },
         {
             label: 'New Today',
@@ -62,7 +63,7 @@ const ApplicationStatsCards = ({ stats = {} }) => {
             bgColor: 'bg-yellow-500/10',
             borderColor: 'border-yellow-500',
             textColor: 'text-yellow-300',
-            icon: '🆕',
+            icon: Sparkles,
         },
     ];
 
@@ -78,7 +79,12 @@ const ApplicationStatsCards = ({ stats = {} }) => {
                             <p className="text-sm text-gray-400 mb-2">{card.label}</p>
                             <p className={`text-3xl font-bold ${card.textColor}`}>{card.value}</p>
                         </div>
-                        <span className="text-2xl">{card.icon}</span>
+                        <span className="text-2xl">
+                            {(() => {
+                                const Icon = card.icon;
+                                return Icon ? <Icon size={28} className={`inline-block ${card.textColor}`} /> : null;
+                            })()}
+                        </span>
                     </div>
                 </div>
             ))}

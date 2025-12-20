@@ -28,20 +28,17 @@ const removeFileAndThrowError = (filePath, message, res, status = 400) => {
 // @route   POST /api/auth/student/register
 // @access  Public
 const registerStudent = asyncHandler(async (req, res) => {
-  const { fullName, email, college, skills, password } = req.body;
+  const { fullName, email, college, password } = req.body;
   console.log('Received student registration data:', req.body);
-  const collegeIdPath = req.file ? req.file.path : null;
 
-  if (!fullName || !email || !college || !skills || !password || !collegeIdPath) {
-    return removeFileAndThrowError(collegeIdPath, 'Please fill all fields and upload College ID', res);
+  if (!fullName || !email || !college || !password) {
+    return removeFileAndThrowError(null, 'Please fill all fields', res);
   }
 
   const userExists = await User.findOne({ email });
   if (userExists) {
     return removeFileAndThrowError(collegeIdPath, 'User already exists', res, 409);
   }
-
-  const skillsArray = skills.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0);
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -58,8 +55,6 @@ const registerStudent = asyncHandler(async (req, res) => {
       user: user[0]._id,
       fullName,
       college,
-      skills: skillsArray,
-      collegeId: collegeIdPath,
     }], { session });
 
     const otpCode = generateOTP();

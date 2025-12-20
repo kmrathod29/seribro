@@ -9,6 +9,7 @@ const ApplicationCard = ({
     onShortlist,
     onAccept,
     onReject,
+    onDelete,
     loading = false,
 }) => {
     const getStatusBadgeClass = (status) => {
@@ -23,9 +24,16 @@ const ApplicationCard = ({
 
     const getSkillMatchColor = (skillMatch) => {
         if (skillMatch >= 80) return 'text-green-400';
-        if (skillMatch >= 60) return 'text-yellow-400';
+        if (skillMatch >= 60) return 'text-blue-400';
         if (skillMatch >= 40) return 'text-orange-400';
         return 'text-red-400';
+    };
+
+    const getSkillMatchFill = (skillMatch) => {
+        if (skillMatch >= 80) return 'bg-green-500';
+        if (skillMatch >= 60) return 'bg-blue-500';
+        if (skillMatch >= 40) return 'bg-orange-500';
+        return 'bg-red-500';
     };
 
     return (
@@ -51,15 +59,15 @@ const ApplicationCard = ({
                 <div className="mb-2">
                     <p className="text-xs text-gray-500 mb-1">Skills Match</p>
                     <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-slate-700 rounded-full h-2">
-                            <div
-                                className="bg-gradient-to-r from-orange-500 to-green-500 h-2 rounded-full"
-                                style={{ width: `${application.skillMatch || 0}%` }}
-                            ></div>
-                        </div>
-                        <span className={`text-sm font-semibold ${getSkillMatchColor(application.skillMatch || 0)}`}>
-                            {application.skillMatch || 0}%
-                        </span>
+                            <div className="flex-1 bg-slate-700 rounded-full h-2">
+                                <div
+                                    className={`${getSkillMatchFill(application.skillMatch || 0)} h-2 rounded-full`}
+                                    style={{ width: `${application.skillMatch || 0}%` }}
+                                ></div>
+                            </div>
+                            <span className={`text-sm font-semibold ${getSkillMatchColor(application.skillMatch || 0)}`}>
+                                {application.skillMatch || 0}%
+                            </span>
                     </div>
                 </div>
 
@@ -120,6 +128,17 @@ const ApplicationCard = ({
                 >
                     View Details
                 </Link>
+
+                {(application.status === 'rejected' || application.status === 'withdrawn') && onDelete && (
+                    <button
+                        onClick={() => onDelete(application._id)}
+                        disabled={loading}
+                        className="bg-red-600 hover:bg-red-700 text-white text-sm py-2 px-3 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Delete"
+                    >
+                        Remove
+                    </button>
+                )}
 
                 {application.status === 'pending' && (
                     <>

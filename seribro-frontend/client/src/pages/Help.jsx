@@ -8,10 +8,11 @@ import { Search, ChevronDown, ChevronUp, HelpCircle, Users, Briefcase, Shield, C
 const Help = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [openFaq, setOpenFaq] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('all');
+  // Default to first real category (students) since "All Topics" button was removed
+  const [activeCategory, setActiveCategory] = useState('students');
 
   const categories = [
-    { id: 'all', name: 'All Topics', icon: BookOpen, color: 'blue' },
+    // { id: 'all', name: 'All Topics', icon: BookOpen, color: 'blue' },
     { id: 'students', name: 'For Students', icon: Users, color: 'green' },
     { id: 'companies', name: 'For Companies', icon: Briefcase, color: 'amber' },
     { id: 'payments', name: 'Payments', icon: CreditCard, color: 'purple' },
@@ -101,9 +102,10 @@ const Help = () => {
     }
   ];
 
+  // Only show FAQs that match the selected category (no special 'all' behavior)
   const filteredFaqs = faqs.filter(faq => {
-    const matchesCategory = activeCategory === 'all' || faq.category === activeCategory;
-    const matchesSearch = searchQuery === '' || 
+    const matchesCategory = faq.category === activeCategory;
+    const matchesSearch = searchQuery === '' ||
       faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
       faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;

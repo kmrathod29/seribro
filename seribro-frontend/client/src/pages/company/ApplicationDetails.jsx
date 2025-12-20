@@ -21,140 +21,390 @@ const ApplicationDetails = () => {
       .finally(() => setLoading(false));
   }, [applicationId]);
 
-  if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
-  if (error) return <div className="text-red-500 text-center py-8">{error}</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-slate-900">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+          <p className="text-slate-300 mt-4 text-lg">Loading application details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <div className="bg-red-500/10 border-2 border-red-500 rounded-xl p-8 max-w-md">
+          <div className="text-red-400 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-red-400 mb-2">Error</h2>
+          <p className="text-red-300">{error}</p>
+          <button 
+            onClick={() => navigate(-1)} 
+            className="mt-6 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!data) return null;
 
   const { student = {}, application = {}, project = {}, skillMatch = 0 } = data;
 
+  const getStatusStyles = (status) => {
+    const styles = {
+      pending: 'bg-orange-500/20 text-orange-400 border-orange-500',
+      shortlisted: 'bg-blue-500/20 text-blue-400 border-blue-500',
+      accepted: 'bg-green-500/20 text-green-400 border-green-500',
+      rejected: 'bg-red-500/20 text-red-400 border-red-500'
+    };
+    return styles[status] || styles.pending;
+  };
+
+  const getSkillMatchColor = (match) => {
+    if (match >= 80) return 'text-green-400';
+    if (match >= 60) return 'text-blue-400';
+    if (match >= 40) return 'text-orange-400';
+    return 'text-red-400';
+  };
+
   return (
-    <div className="max-w-2xl mx-auto p-4 md:p-8">
-      <button onClick={() => navigate(-1)} className="mb-4 text-blue-500 hover:underline">← Back to Applications</button>
-      <div className="bg-slate-800 rounded-lg shadow-lg p-4 md:p-8">
-        {/* Student Header */}
-        <div className="flex flex-col md:flex-row items-center gap-6 mb-6 pb-6 border-b border-slate-700">
-          {student.profilePicture && (
-            <img src={student.profilePicture} alt={student.name} className="w-24 h-24 rounded-lg object-cover border-2 border-blue-500" />
-          )}
-          <div className="flex-1 w-full">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-white">{student.name || 'Unknown Student'}</h2>
-              {student.verified && (
-                <span className="ml-2 px-2 py-1 bg-green-600 text-white text-xs rounded">Verified</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
+      <div className="max-w-5xl mx-auto">
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate(-1)} 
+          className="mb-6 flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors group"
+        >
+          <span className="text-xl group-hover:-translate-x-1 transition-transform">←</span>
+          <span className="font-medium">Back to Applications</span>
+        </button>
+
+        {/* Main Container */}
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+          
+          {/* Header Section with Student Info */}
+          <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 p-8 border-b border-slate-700/50">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              {/* Profile Picture */}
+              <div className="relative">
+                {student.profilePicture ? (
+                  <img 
+                    src={student.profilePicture} 
+                    alt={student.name} 
+                    className="w-28 h-28 rounded-2xl object-cover border-4 border-blue-500 shadow-lg shadow-blue-500/30" 
+                  />
+                ) : (
+                  <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-4xl font-bold text-white border-4 border-blue-500 shadow-lg shadow-blue-500/30">
+                    {student.name ? student.name.charAt(0).toUpperCase() : '?'}
+                  </div>
+                )}
+                {student.verified && (
+                  <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2 border-4 border-slate-800 shadow-lg">
+                    <span className="text-white text-lg">✓</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Student Info */}
+              <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <h1 className="text-3xl md:text-4xl font-bold text-white">
+                    {student.name || 'Unknown Student'}
+                  </h1>
+                  <span className={`px-4 py-1 rounded-full text-sm font-semibold border ${getStatusStyles(application.status)}`}>
+                    {application.status ? (application.status.charAt(0).toUpperCase() + application.status.slice(1)) : 'Pending'}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1 text-slate-300">
+                  {student.college && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🎓</span>
+                      <span className="text-lg">{student.college}</span>
+                    </div>
+                  )}
+                  {student.city && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">📍</span>
+                      <span>{student.city}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Skill Match Badge */}
+              <div className="text-center bg-slate-800/80 rounded-xl p-4 border border-slate-600 min-w-[120px]">
+                <div className={`text-3xl font-bold ${getSkillMatchColor(skillMatch)}`}>
+                  {skillMatch}%
+                </div>
+                <div className="text-slate-400 text-sm mt-1">Skill Match</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Content Grid */}
+          <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Left Column - Application Details */}
+            <div className="lg:col-span-2 space-y-6">
+              
+              {/* Application Stats */}
+              <div className="bg-slate-700/30 rounded-xl p-6 border border-slate-600/50">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-2xl">📋</span>
+                  Application Details
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-800/50 rounded-lg p-4">
+                    <div className="text-slate-400 text-sm mb-1">Applied Date</div>
+                    <div className="text-white font-semibold">
+                      {application.appliedAt ? new Date(application.appliedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                    </div>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-lg p-4">
+                    <div className="text-slate-400 text-sm mb-1">Proposed Price</div>
+                    <div className="text-green-400 font-bold text-lg">₹{application.proposedPrice?.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-lg p-4">
+                    <div className="text-slate-400 text-sm mb-1">Timeline</div>
+                    <div className="text-white font-semibold">{application.estimatedTime || 'Not specified'}</div>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-lg p-4">
+                    <div className="text-slate-400 text-sm mb-1">Status</div>
+                    <div className="text-white font-semibold capitalize">{application.status || 'Pending'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cover Letter */}
+              <div className="bg-slate-700/30 rounded-xl p-6 border border-slate-600/50">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-2xl">✉️</span>
+                  Cover Letter / Proposal
+                </h3>
+                <div className="bg-slate-800/50 rounded-lg p-4">
+                  <p className="text-slate-300 leading-relaxed whitespace-pre-line">
+                    {application.coverLetter || 'No proposal provided.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Past Projects */}
+              {student.projects && student.projects.length > 0 && (
+                <div className="bg-slate-700/30 rounded-xl p-6 border border-slate-600/50">
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <span className="text-2xl">💼</span>
+                    Past Projects ({student.projects.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {student.projects.map((proj, idx) => (
+                      <div key={idx} className="bg-slate-800/50 rounded-lg p-4 hover:bg-slate-800/70 transition-colors border border-slate-600/30">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-blue-500/20 rounded-lg p-2 mt-1">
+                            <span className="text-blue-400 text-xl">🚀</span>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-white font-semibold mb-1">{proj.title || 'Untitled Project'}</h4>
+                            {proj.description && (
+                              <p className="text-slate-400 text-sm line-clamp-2">{proj.description}</p>
+                            )}
+                            {proj.techStack && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {proj.techStack.map((tech, i) => (
+                                  <span key={i} className="bg-slate-700 text-slate-300 text-xs px-2 py-1 rounded">
+                                    {tech}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Project Info */}
+              <div className="bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-xl p-6 border border-blue-500/30">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-2xl">🎯</span>
+                  Project Information
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <span className="text-slate-400 min-w-[100px]">Title:</span>
+                    <span className="text-white font-semibold">{project.title || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-slate-400 min-w-[100px]">Category:</span>
+                    <span className="text-blue-400 font-medium">{project.category || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-slate-400 min-w-[100px]">Budget:</span>
+                    <span className="text-green-400 font-bold">₹{project.budgetMin?.toLocaleString()} - ₹{project.budgetMax?.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-slate-400 min-w-[100px]">Deadline:</span>
+                    <span className="text-white">{project.deadline ? new Date(project.deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-slate-400 min-w-[100px]">Required Skills:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {(project.requiredSkills || []).map((skill, idx) => (
+                        <span key={idx} className="bg-blue-500/20 border border-blue-500/50 text-blue-300 text-sm px-3 py-1 rounded-full">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Skills & Documents */}
+            <div className="space-y-6">
+              
+              {/* Skills */}
+              <div className="bg-slate-700/30 rounded-xl p-6 border border-slate-600/50">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-xl">⚡</span>
+                  Skills
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {student.skills && student.skills.length > 0 ? (
+                    student.skills.map((skill, idx) => (
+                      <span 
+                        key={idx} 
+                        className="bg-blue-500/20 border border-blue-500 text-blue-300 text-sm px-3 py-1.5 rounded-lg font-medium hover:bg-blue-500/30 transition-colors"
+                      >
+                        {skill}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-slate-400 text-sm italic">No skills specified</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Resume */}
+              {student.resume && (
+                <div className="bg-slate-700/30 rounded-xl p-6 border border-slate-600/50">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span className="text-xl">📄</span>
+                    Resume
+                  </h3>
+                  <a 
+                    href={student.resume} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-3 rounded-lg transition-all font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
+                  >
+                    <span className="text-xl">📥</span>
+                    Download Resume
+                  </a>
+                </div>
+              )}
+
+              {/* Certificates */}
+              {student.certificates && student.certificates.length > 0 && (
+                <div className="bg-slate-700/30 rounded-xl p-6 border border-slate-600/50">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span className="text-xl">🏆</span>
+                    Certificates ({student.certificates.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {student.certificates.map((cert, idx) => (
+                      <a 
+                        key={idx} 
+                        href={cert} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="flex items-center justify-between bg-slate-800/50 hover:bg-slate-800/70 border border-slate-600/50 px-4 py-3 rounded-lg transition-colors group"
+                      >
+                        <span className="text-green-400 font-medium">Certificate {idx + 1}</span>
+                        <span className="text-slate-400 group-hover:text-white transition-colors">→</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Ratings (if available) */}
+              {student.ratings && student.ratings.length > 0 && (
+                <div className="bg-slate-700/30 rounded-xl p-6 border border-slate-600/50">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span className="text-xl">⭐</span>
+                    Ratings & Reviews
+                  </h3>
+                  <div className="space-y-3">
+                    {student.ratings.map((review, idx) => (
+                      <div key={idx} className="bg-slate-800/50 rounded-lg p-3 border border-slate-600/30">
+                        <p className="text-slate-300 text-sm">{review}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Contact Info (if available) */}
+              {(student.email || student.phone) && (
+                <div className="bg-slate-700/30 rounded-xl p-6 border border-slate-600/50">
+                  <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span className="text-xl">📞</span>
+                    Contact
+                  </h3>
+                  <div className="space-y-2">
+                    {student.email && (
+                      <div className="flex items-center gap-2 text-slate-300">
+                        <span className="text-blue-400">✉️</span>
+                        <span className="text-sm break-all">{student.email}</span>
+                      </div>
+                    )}
+                    {student.phone && (
+                      <div className="flex items-center gap-2 text-slate-300">
+                        <span className="text-green-400">📱</span>
+                        <span className="text-sm">{student.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-            <div className="text-blue-400">{student.college || ''}</div>
-            <div className="text-gray-400 text-sm">{student.city || ''}</div>
           </div>
-        </div>
 
-        {/* Skills */}
-        <div className="mb-6">
-          <h4 className="text-lg font-semibold text-white mb-3">Skills</h4>
-          <div className="flex flex-wrap gap-2">
-            {student.skills && student.skills.length > 0 ? (
-              student.skills.map((skill, idx) => (
-                <span key={idx} className="bg-blue-500/20 border border-blue-500 text-blue-300 text-sm px-3 py-1 rounded">{skill}</span>
-              ))
-            ) : (
-              <span className="text-gray-400 text-sm">No skills specified</span>
-            )}
-          </div>
-        </div>
-
-        {/* Application Details */}
-        <div className="mb-6 pb-6 border-b border-slate-700">
-          <h4 className="text-lg font-semibold text-white mb-3">Application Details</h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Applied Date:</span>
-              <span className="text-white">{application.appliedAt ? new Date(application.appliedAt).toLocaleDateString() : ''}</span>
+          {/* Action Buttons Footer */}
+          <div className="bg-slate-800/50 border-t border-slate-700/50 p-6">
+            <div className="flex flex-wrap gap-3 justify-end">
+              <button 
+                onClick={() => navigate(-1)}
+                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition-colors"
+              >
+                Close
+              </button>
+              <button 
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-lg shadow-blue-500/30"
+              >
+                Send Message
+              </button>
+              {application.status === 'pending' && (
+                <>
+                  <button 
+                    className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Shortlist
+                  </button>
+                  <button 
+                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors shadow-lg shadow-green-500/30"
+                  >
+                    Accept Application
+                  </button>
+                </>
+              )}
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Proposed Price:</span>
-              <span className="text-white font-semibold">₹{application.proposedPrice}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Est. Timeline:</span>
-              <span className="text-white">{application.estimatedTime}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Skill Match:</span>
-              <span className="text-white font-semibold">{skillMatch || 0}%</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Status:</span>
-              <span className={`font-semibold px-2 py-1 rounded text-xs ${
-                application.status === 'pending' ? 'bg-orange-500/20 text-orange-300' :
-                application.status === 'shortlisted' ? 'bg-blue-500/20 text-blue-300' :
-                application.status === 'accepted' ? 'bg-green-500/20 text-green-300' :
-                'bg-red-500/20 text-red-300'
-              }`}>
-                {application.status ? (application.status.charAt(0).toUpperCase() + application.status.slice(1)) : 'Unknown'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Cover Letter / Proposal */}
-        <div className="mb-6 pb-6 border-b border-slate-700">
-          <h4 className="text-lg font-semibold text-white mb-3">Cover Letter / Proposal</h4>
-          <p className="text-gray-300 leading-relaxed">{application.coverLetter || 'No proposal provided.'}</p>
-        </div>
-
-        {/* Resume */}
-        {student.resume && (
-          <div className="mb-6">
-            <h4 className="text-lg font-semibold text-white mb-3">Resume</h4>
-            <a href={student.resume} target="_blank" rel="noopener noreferrer" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors">📄 Download Resume</a>
-          </div>
-        )}
-
-        {/* Certificates */}
-        {student.certificates && student.certificates.length > 0 && (
-          <div className="mb-6">
-            <h4 className="text-lg font-semibold text-white mb-3">Certificates</h4>
-            <div className="flex flex-wrap gap-2">
-              {student.certificates.map((cert, idx) => (
-                <a key={idx} href={cert} target="_blank" rel="noopener noreferrer" className="bg-green-500/20 border border-green-500 text-green-300 text-sm px-3 py-1 rounded">Certificate {idx + 1}</a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Past Projects */}
-        {student.projects && student.projects.length > 0 && (
-          <div className="mb-6">
-            <h4 className="text-lg font-semibold text-white mb-3">Past Projects</h4>
-            <ul className="list-disc pl-5 text-gray-300">
-              {student.projects.map((proj, idx) => (
-                <li key={idx}>{proj.title || 'Untitled Project'}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Ratings/Reviews (if available) */}
-        {student.ratings && student.ratings.length > 0 && (
-          <div className="mb-6">
-            <h4 className="text-lg font-semibold text-white mb-3">Ratings & Reviews</h4>
-            <ul className="list-disc pl-5 text-gray-300">
-              {student.ratings.map((review, idx) => (
-                <li key={idx}>{review}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Project Info */}
-        <div className="mb-6 pb-6 border-b border-slate-700">
-          <h4 className="text-lg font-semibold text-white mb-3">Project Info</h4>
-          <div className="space-y-2 text-sm">
-            <div><span className="text-gray-400">Title:</span> <span className="text-white">{project.title}</span></div>
-            <div><span className="text-gray-400">Category:</span> <span className="text-white">{project.category}</span></div>
-            <div><span className="text-gray-400">Required Skills:</span> <span className="text-white">{(project.requiredSkills || []).join(', ')}</span></div>
-            <div><span className="text-gray-400">Budget:</span> <span className="text-white">₹{project.budgetMin} - ₹{project.budgetMax}</span></div>
-            <div><span className="text-gray-400">Deadline:</span> <span className="text-white">{project.deadline ? new Date(project.deadline).toLocaleDateString() : ''}</span></div>
           </div>
         </div>
       </div>

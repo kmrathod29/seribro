@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { updateAuthorizedPerson } from '../../apis/companyProfileApi';
-import { validateAuthorizedPersonData } from '../../utils/company/validateCompanyData';
+// import { validateAuthorizedPersonData } from '../../utils/company/validateCompanyData';
 import { Users, Mail, Briefcase, Linkedin, AlertCircle, CheckCircle } from 'lucide-react';
 
 const AuthorizedPersonForm = ({ initialData, onUpdate }) => {
@@ -108,7 +108,7 @@ const AuthorizedPersonForm = ({ initialData, onUpdate }) => {
                     </label>
                     <div className="flex items-center gap-3">
                         <div className="bg-gold/20 p-3 rounded-lg">
-                            <User className="text-gold" size={20} />
+                            <Users className="text-gold" size={20} />
                         </div>
                         <input
                             type="text"

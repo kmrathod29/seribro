@@ -586,6 +586,14 @@ exports.approveStudentForProject = async (req, res) => {
         // PART 6: Step 3 - Update project document
         project.assignedStudent = application.studentId;
         project.status = 'assigned';
+        
+        // Defensive: Clear any advanced selection system fields (Phase 6 - dormant)
+        // This ensures the simple approveStudentForProject flow is isolated
+        project.studentUnderConsideration = null;
+        project.applicationUnderConsideration = null;
+        project.selectionDeadline = null;
+        project.currentSelectionRound = null;
+        
         await project.save({ session });
 
         // PART 6: Step 4 - Send notifications

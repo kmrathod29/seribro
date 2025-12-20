@@ -16,7 +16,7 @@ import {
   Home,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { saveUserToCookie } from "../../utils/authUtils.js";
+// import { saveUserToCookie } from "../../utils/authUtils.js";
 import API from "../../apis/api.js";
 
 const Signup = () => {
@@ -31,7 +31,6 @@ const Signup = () => {
     email: "",
     college: "",
     password: "",
-    collegeId: null,
   });
 
   const [companyData, setCompanyData] = useState({
@@ -56,9 +55,7 @@ const Signup = () => {
   const handleFileUpload = (e, uploadType) => {
     const file = e.target.files[0];
     const target = uploadType || userType;
-    if (target === "student") {
-      setStudentData({ ...studentData, collegeId: file });
-    } else {
+    if (target === "company") {
       setCompanyData({ ...companyData, verificationDoc: file });
     }
   };
@@ -75,10 +72,6 @@ const Signup = () => {
     }
     if (studentData.password.length < 6) {
       setError("Password must be at least 6 characters");
-      return false;
-    }
-    if (!studentData.collegeId) {
-      setError("Please upload your college ID");
       return false;
     }
     return true;
@@ -129,7 +122,6 @@ const Signup = () => {
         formData.append("email", studentData.email);
         formData.append("college", studentData.college);
         formData.append("password", studentData.password);
-        formData.append("collegeId", studentData.collegeId);
       } else {
         // ✅ FIXED: Field names now match backend
         formData.append("contactPerson", companyData.contactPerson);
@@ -317,27 +309,6 @@ const Signup = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-navy mb-2">
-                  Upload College ID <span className="text-red-500">*</span>
-                </label>
-                <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-primary transition-all duration-300 cursor-pointer group">
-                  <input
-                    type="file"
-                    onChange={(e) => handleFileUpload(e, 'student')}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    accept="image/*,.pdf"
-                    disabled={isLoading}
-                  />
-                  <div className="text-center pointer-events-none">
-                    <Upload className="mx-auto text-gray-400 group-hover:text-primary transition-colors mb-2" size={32} />
-                    <p className="text-sm text-gray-600 mb-1">
-                      {studentData.collegeId ? studentData.collegeId.name : 'Click to upload College ID'}
-                    </p>
-                    <p className="text-xs text-gray-400">PNG, JPG or PDF (Max 5MB)</p>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 

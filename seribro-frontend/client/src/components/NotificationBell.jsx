@@ -45,7 +45,14 @@ const NotificationBell = () => {
       }
     } catch (err) {
       console.error('Error fetching notifications:', err);
-      setError('Could not load notifications');
+      // Provide clearer error messages for common network/auth issues
+      if (err.code === 'ECONNABORTED') {
+        setError('Request timed out — server may be down or slow');
+      } else if (err.response?.status === 401) {
+        setError('Unauthorized — please login again');
+      } else {
+        setError('Could not load notifications');
+      }
     } finally {
       setLoading(false);
     }
@@ -62,6 +69,12 @@ const NotificationBell = () => {
       }
     } catch (err) {
       console.error('Error fetching unread count:', err);
+      if (err.code === 'ECONNABORTED') {
+        // Keep badge hidden if timed out, but log for debugging
+        setError('Notifications request timed out');
+      } else if (err.response?.status === 401) {
+        setError('Unauthorized — please login again');
+      }
     }
   };
 

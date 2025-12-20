@@ -1,5 +1,13 @@
 # Application Selection System - API Documentation
 
+⚠️ **PHASE 6 - DORMANT / FUTURE WORK** ⚠️
+
+**ARCHITECTURAL DECISION:** This documentation describes the advanced multi-stage selection system reserved for Phase 6. This system is currently **NOT active** in the MVP. The current MVP uses the simpler `approveStudentForProject` flow from `companyApplicationController.js`.
+
+**DO NOT USE THIS SYSTEM IN CURRENT MVP.**
+
+---
+
 ## Overview
 
 The Application Selection System implements a multi-stage project application workflow:

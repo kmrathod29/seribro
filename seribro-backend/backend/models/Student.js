@@ -21,15 +21,6 @@ const StudentSchema = new mongoose.Schema({
     required: [true, 'College name is required'], // Hinglish: College ka naam zaroori hai
     trim: true,
   },
-  skills: {
-    type: [String], // Hinglish: Skills ka array
-    default: [],
-    // Hinglish: Frontend se comma-separated string aayega, jise controller mein array mein convert karenge
-  },
-  collegeId: {
-    type: String, // Hinglish: File path store hoga
-    default: '', // Made optional - can be uploaded later in profile
-  },
   // Hinglish: Baaki fields Phase-2 mein aayenge
 }, {
   timestamps: true,

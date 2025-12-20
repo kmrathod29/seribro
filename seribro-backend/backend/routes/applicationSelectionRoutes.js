@@ -1,5 +1,12 @@
 // backend/routes/applicationSelectionRoutes.js
+// ⚠️ PHASE 6 - DORMANT / FUTURE WORK ⚠️
 // Routes for multi-stage application selection - Phase 4.5+
+//
+// ARCHITECTURAL DECISION: These routes are currently NOT mounted in server.js.
+// The MVP uses the simpler approveStudentForProject flow from companyApplicationRoutes.js.
+//
+// DO NOT MOUNT THESE ROUTES IN CURRENT MVP.
+// This is reserved for Phase 6 implementation when multi-stage selection is needed.
 
 const express = require('express');
 const router = express.Router();

@@ -22,9 +22,9 @@ const DocumentUpload = ({ type, currentDocument, onRefresh }) => {
         },
         collegeId: {
             title: 'Upload College ID',
-            description: 'Image or PDF, max 5MB',
+            description: ' Only Image, max 5MB',
             endpoint: uploadCollegeId,
-            accept: 'image/*,.pdf',
+            accept: 'image/*',
             icon: Image,
             color: 'green'
         },

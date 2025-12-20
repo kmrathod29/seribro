@@ -1,5 +1,13 @@
 // backend/controllers/applicationSelectionController.js
+// ⚠️ PHASE 6 - DORMANT / FUTURE WORK ⚠️
 // Multi-stage project application selection system - Phase 4.5+
+// 
+// ARCHITECTURAL DECISION: This advanced multi-stage selection system is currently
+// dormant and NOT active in production. The MVP uses the simpler approveStudentForProject
+// flow from companyApplicationController.js.
+//
+// DO NOT USE THIS CONTROLLER IN CURRENT MVP.
+// This is reserved for Phase 6 implementation when multi-stage selection is needed.
 
 const mongoose = require('mongoose');
 const Application = require('../models/Application');

@@ -22,20 +22,22 @@ const ProfileCompletionBar = ({ percentage, status }) => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 w-full max-w-md">
+        // Use wider max width so the inner card fills more of the available space on larger dashboards
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 w-full max-w-2xl">
             {/* Header Section */}
             <div className="flex justify-between items-end mb-2">
                 <div>
                     <h3 className="text-lg font-semibold text-gray-800">Profile Completion</h3>
                     <p className="text-sm text-gray-500">Complete your profile to get verified.</p>
                 </div>
-                <span className={`text-2xl font-bold ${isComplete ? 'text-emerald-600' : 'text-gray-700'}`}>
+                <span className={`text-3xl font-bold ${isComplete ? 'text-emerald-600' : 'text-gray-700'}`}>
                     {percentage}%
                 </span>
             </div>
 
             {/* Progress Bar Track */}
-            <div className="w-full bg-gray-100 rounded-full h-3 mb-6 overflow-hidden">
+            {/* Slightly taller progress bar for better visual weight on wider layouts */}
+            <div className="w-full bg-gray-100 rounded-full h-4 mb-6 overflow-hidden">
                 {/* Progress Bar Fill */}
                 <div 
                     className={`h-full rounded-full transition-all duration-1000 ease-out ${getColorClass()}`}

@@ -15,7 +15,7 @@ const {
 const upload = require('../middleware/uploadMiddleware');
 const { protect } = require('../middleware/authMiddleware');
 
-// Hinglish: Student registration route (file upload ke saath)
+// Hinglish: Student registration route (accepts multipart for flexibility)
 router.post('/student/register', upload.single('collegeId'), registerStudent);
 
 // Hinglish: Company registration route (file upload ke saath)

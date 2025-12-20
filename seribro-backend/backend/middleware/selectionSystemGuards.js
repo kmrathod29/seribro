@@ -1,5 +1,12 @@
 // backend/middleware/selectionSystemGuards.js
+// ⚠️ PHASE 6 - DORMANT / FUTURE WORK ⚠️
 // Prevent invalid state transitions in selection system
+//
+// ARCHITECTURAL DECISION: This middleware is currently NOT used in production.
+// The MVP uses the simpler approveStudentForProject flow.
+//
+// DO NOT USE THIS MIDDLEWARE IN CURRENT MVP.
+// This is reserved for Phase 6 implementation when multi-stage selection is needed.
 
 const Application = require('../models/Application');
 const Project = require('../models/Project');

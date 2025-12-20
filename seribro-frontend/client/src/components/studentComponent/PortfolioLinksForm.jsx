@@ -5,6 +5,51 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { updatePortfolioLinks } from '../../apis/studentProfileApi';
 import { Link, Github, Linkedin, Globe, AlertCircle, CheckCircle, Plus, X, ExternalLink } from 'lucide-react';
 
+// Stable, memoized LinkCard to avoid remounts which can cause inputs to lose focus
+const LinkCardInner = ({ icon, label, placeholder, value, name, error, hint, onChange }) => (
+    <div className="space-y-2">
+        <label htmlFor={name} className="flex items-center gap-2 text-white font-semibold">
+            {icon && React.createElement(icon, { size: 18 })}
+            {label}
+        </label>
+        <div className="relative">
+            <input
+                type="url"
+                id={name}
+                name={name}
+                value={value || ''}
+                onChange={onChange}
+                autoComplete="off"
+                className={`w-full px-4 py-3 bg-white/10 border ${
+                    error ? 'border-red-500' : 'border-white/20'
+                } rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent transition-all`}
+                placeholder={placeholder}
+            />
+            {value && (
+                <a
+                    href={value}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute right-3 top-3 text-gold hover:text-yellow-300 transition-colors"
+                    title="Open link"
+                >
+                    <ExternalLink size={18} />
+                </a>
+            )}
+        </div>
+        {error && (
+            <p className="text-red-400 text-sm flex items-center gap-1">
+                <AlertCircle size={14} /> {error}
+            </p>
+        )}
+        {hint && !error && (
+            <p className="text-gray-400 text-sm">{hint}</p>
+        )}
+    </div>
+);
+
+const LinkCard = React.memo(LinkCardInner);
+
 const PortfolioLinksForm = ({ initialData, onUpdate }) => {
     const [linksData, setLinksData] = useState(initialData || {});
     const [loading, setLoading] = useState(false);
@@ -48,10 +93,9 @@ const PortfolioLinksForm = ({ initialData, onUpdate }) => {
     const handleChange = useCallback((e) => {
         const { name, value } = e.target;
         setLinksData(prev => ({ ...prev, [name]: value }));
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
-        }
-    }, [errors]);
+        // clear error for this field if present using functional update
+        setErrors(prev => (prev && prev[name] ? { ...prev, [name]: '' } : prev));
+    }, []);
 
     const handleOtherLinkChange = useCallback((e) => {
         const { name, value } = e.target;
@@ -121,46 +165,7 @@ const PortfolioLinksForm = ({ initialData, onUpdate }) => {
     const messageType = message.split(':')[0];
     const messageText = message.split(':')[1] || message;
 
-    const LinkCard = ({ icon: Icon, label, placeholder, value, name, error, hint }) => (
-        <div className="space-y-2">
-            <label htmlFor={name} className="flex items-center gap-2 text-white font-semibold">
-                <Icon size={18} />
-                {label}
-            </label>
-            <div className="relative">
-                <input
-                    type="url"
-                    id={name}
-                    name={name}
-                    value={value || ''}
-                    onChange={handleChange}
-                    className={`w-full px-4 py-3 bg-white/10 border ${
-                        error ? 'border-red-500' : 'border-white/20'
-                    } rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent transition-all`}
-                    placeholder={placeholder}
-                />
-                {value && (
-                    <a
-                        href={value}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute right-3 top-3 text-gold hover:text-yellow-300 transition-colors"
-                        title="Open link"
-                    >
-                        <ExternalLink size={18} />
-                    </a>
-                )}
-            </div>
-            {error && (
-                <p className="text-red-400 text-sm flex items-center gap-1">
-                    <AlertCircle size={14} /> {error}
-                </p>
-            )}
-            {hint && !error && (
-                <p className="text-gray-400 text-sm">{hint}</p>
-            )}
-        </div>
-    );
+    
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -201,6 +206,7 @@ const PortfolioLinksForm = ({ initialData, onUpdate }) => {
                         value={linksData.github}
                         error={errors.github}
                         hint="Link to your GitHub repository or profile"
+                        onChange={handleChange}
                     />
 
                     {/* LinkedIn */}
@@ -212,6 +218,7 @@ const PortfolioLinksForm = ({ initialData, onUpdate }) => {
                         value={linksData.linkedin}
                         error={errors.linkedin}
                         hint="Your professional LinkedIn profile URL"
+                        onChange={handleChange}
                     />
 
                     {/* Portfolio Website */}
@@ -223,6 +230,7 @@ const PortfolioLinksForm = ({ initialData, onUpdate }) => {
                         value={linksData.portfolio}
                         error={errors.portfolio}
                         hint="Your personal portfolio or blog website"
+                        onChange={handleChange}
                     />
                 </div>
 

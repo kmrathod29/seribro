@@ -40,18 +40,7 @@ import AdminApplications from './pages/admin/AdminApplications';
 import AdminApplicationDetails from './pages/admin/AdminApplicationDetails';
 
 
-function AdminRoute({ children }) {
-  // Hinglish: Simple client-side guard (sirf UI level) - backend pe protect+adminOnly already laga hai
-  try {
-    const cookie = document.cookie.split(';').find(c => c.trim().startsWith('user='));
-    if (!cookie) return <div className="p-6">Unauthorized (admin login required)</div>;
-    const user = JSON.parse(cookie.split('=')[1]);
-    if (user?.role !== 'admin') return <div className="p-6">Unauthorized (admin only)</div>;
-    return children;
-  } catch {
-    return <div className="p-6">Unauthorized</div>;
-  }
-}
+import { AdminRoute, StudentRoute, CompanyRoute } from './components/Shared/RoleRoutes';
 
 function App() {
   return (
@@ -83,35 +72,35 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         {/* Add your other routes here */}
 
-         {/* Hinglish: Student Profile Management Routes */}
-        <Route path="/student/dashboard" element={<Dashboard />} />
-        <Route path="/student/profile" element={<StudentProfile />} />
-        <Route path="/student/browse-projects" element={<BrowseProjects />} />
-        <Route path="/student/projects/browse-projects" element={<BrowseProjects />} />
-        <Route path="/student/about" element={<About />} />
-        <Route path="/student/help" element={<Help />} />
-        <Route path="/student/projects/help" element={<Help />} />
+  {/* Hinglish: Student Profile Management Routes */}
+  <Route path="/student/dashboard" element={<StudentRoute><Dashboard /></StudentRoute>} />
+  <Route path="/student/profile" element={<StudentRoute><StudentProfile /></StudentRoute>} />
+  <Route path="/student/browse-projects" element={<StudentRoute><BrowseProjects /></StudentRoute>} />
+  <Route path="/student/projects/browse-projects" element={<StudentRoute><BrowseProjects /></StudentRoute>} />
+  <Route path="/student/about" element={<StudentRoute><About /></StudentRoute>} />
+  <Route path="/student/help" element={<StudentRoute><Help /></StudentRoute>} />
+  <Route path="/student/projects/help" element={<StudentRoute><Help /></StudentRoute>} />
 
-        {/* Company Profile Management Routes */}
-        <Route path="/company/dashboard" element={<CompanyDashboard />} />
-        <Route path="/company/profile" element={<CompanyProfile />} />
-        <Route path="/company/about" element={<About />} />
-        <Route path="/company/help" element={<Help />} />
+  {/* Company Profile Management Routes */}
+  <Route path="/company/dashboard" element={<CompanyRoute><CompanyDashboard /></CompanyRoute>} />
+  <Route path="/company/profile" element={<CompanyRoute><CompanyProfile /></CompanyRoute>} />
+  <Route path="/company/about" element={<CompanyRoute><About /></CompanyRoute>} />
+  <Route path="/company/help" element={<CompanyRoute><Help /></CompanyRoute>} />
         
         {/* Phase 4.1: Company Project Management Routes */}
-        <Route path="/company/post-project" element={<PostProject />} />
-        <Route path="/company/projects" element={<MyProjects />} />
-        <Route path="/company/projects/:id" element={<ProjectDetails />} />
+  <Route path="/company/post-project" element={<CompanyRoute><PostProject /></CompanyRoute>} />
+  <Route path="/company/projects" element={<CompanyRoute><MyProjects /></CompanyRoute>} />
+  <Route path="/company/projects/:id" element={<CompanyRoute><ProjectDetails /></CompanyRoute>} />
         
         {/* Phase 4.2: Student Project Browsing & Applications Routes */}
         <Route path="/browse-projects" element={<BrowseProjects />} />
         <Route path="/company/browse-projects" element={<BrowseProjects />} />
-        <Route path="/student/projects/:id" element={<StudentProjectDetails />} />
-        <Route path="/student/my-applications" element={<MyApplications />} />
+  <Route path="/student/projects/:id" element={<StudentRoute><StudentProjectDetails /></StudentRoute>} />
+  <Route path="/student/my-applications" element={<StudentRoute><MyApplications /></StudentRoute>} />
 
         {/* Phase 4.3: Company Application Management Routes */}
-        <Route path="/company/applications" element={<CompanyApplications />} />
-        <Route path="/company/applications/:applicationId" element={<ApplicationDetails />} />
+  <Route path="/company/applications" element={<CompanyRoute><CompanyApplications /></CompanyRoute>} />
+  <Route path="/company/applications/:applicationId" element={<CompanyRoute><ApplicationDetails /></CompanyRoute>} />
         {/* <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<BrowseProjects />} />
         <Route path="/profile" element={<Profile />} />

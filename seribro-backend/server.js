@@ -16,9 +16,21 @@ connectDB();
 const app = express();
 
 // CORS Configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:5174',
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
 }));
 
 // Body Parser Middleware
@@ -145,11 +157,33 @@ try {
   app.use('/api/notifications', require('./backend/routes/notificationRoutes'));
   console.log('   ✅ /api/notifications routes mounted');
 
-  // Phase 4.5: Application Selection System routes
-  console.log('📌 Mounting /api/applications/selection (Phase 4.5)...');
-  app.use('/api/applications', require('./backend/routes/applicationSelectionRoutes'));
-  console.log('   ✅ /api/applications selection routes mounted');
-  
+  /**
+   * ⚠️ PHASE 6 - DORMANT / FUTURE WORK ⚠️
+   * 
+   * ARCHITECTURAL DECISION: Advanced Multi-Stage Selection System (DISABLED)
+   *
+   * Current MVP uses ONLY the simple approval flow:
+   *   - `companyApplicationController.approveStudentForProject`
+   *   - Routes: `/api/company/applications/:applicationId/approve`
+   *
+   * The advanced multi-stage selection system is reserved for Phase 6:
+   *   - `applicationSelectionController` + `applicationSelectionRoutes`
+   *   - Routes: `/api/applications/*` (shortlist, select, accept, decline)
+   *   - Background job: `applicationTimeoutJob.js`
+   *
+   * This system is NOT mounted to ensure clean separation and prevent conflicts.
+   * All related files are marked with "PHASE 6 - DORMANT" headers.
+   *
+   * To enable in Phase 6:
+   *   1. Uncomment routes below
+   *   2. Uncomment background job initialization
+   *   3. Update frontend to use new endpoints
+   *   4. Test thoroughly for conflicts with Project Workspace logic
+   */
+  // console.log('📌 Mounting /api/applications/selection (Phase 6)...');
+  // app.use('/api/applications', require('./backend/routes/applicationSelectionRoutes'));
+  // console.log('   ✅ /api/applications selection routes mounted');
+
   console.log('\n🚀 All routes mounted successfully!\n');
 } catch (err) {
   console.error('\n💥 Route mounting error:', err);
@@ -161,17 +195,30 @@ console.log('⏰ Starting Cron Job Scheduler...');
 const { initializeCronJobs } = require('./backend/utils/cronScheduler');
 initializeCronJobs();
 
-// Initialize Application Selection System Background Job (Phase 4.5)
-console.log('⏰ Starting Application Timeout Background Job (Phase 4.5)...');
-try {
-  const { startApplicationTimeoutJob } = require('./backend/utils/background/applicationTimeoutJob');
-  // Run auto-timeout check every 5 minutes
-  startApplicationTimeoutJob(5 * 60 * 1000);
-  console.log('   ✅ Application timeout job started (interval: 5 minutes)');
-} catch (err) {
-  console.error('   ⚠️  Warning: Could not start application timeout job:', err.message);
-  // Don't exit - system can still run without background job
-}
+/**
+ * ⚠️ PHASE 6 - DORMANT / FUTURE WORK ⚠️
+ * 
+ * ARCHITECTURAL DECISION: Application Selection System Background Job (DISABLED)
+ *
+ * This background job is part of the advanced multi-stage selection system
+ * reserved for Phase 6. The current MVP uses the simpler approveStudentForProject
+ * flow which doesn't require timeout handling.
+ *
+ * To enable in Phase 6:
+ *   1. Uncomment the block below
+ *   2. Ensure selection routes are mounted above
+ *   3. Test integration with Project Workspace logic
+ */
+// console.log('⏰ Starting Application Timeout Background Job (Phase 4.5)...');
+// try {
+//   const { startApplicationTimeoutJob } = require('./backend/utils/background/applicationTimeoutJob');
+//   // Run auto-timeout check every 5 minutes
+//   startApplicationTimeoutJob(5 * 60 * 1000);
+//   console.log('   ✅ Application timeout job started (interval: 5 minutes)');
+// } catch (err) {
+//   console.error('   ⚠️  Warning: Could not start application timeout job:', err.message);
+//   // Don't exit - system can still run without background job
+// }
 
 // Health Check Route
 app.get('/', (req, res) => {

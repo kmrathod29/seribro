@@ -13,7 +13,13 @@ AdminAPI.interceptors.response.use(
   (error) => {
     // Hinglish: Agar 401/403 aaya toh user ko login ya unauthorized dikhao
     if (error.response?.status === 401) {
-      window.location.href = '/login';
+      // Only redirect to login if NOT on a public route
+      const publicRoutes = ['/', '/login', '/signup', '/help', '/about', '/forgot-password', '/reset-password'];
+      const currentPath = window.location.pathname;
+      
+      if (!publicRoutes.includes(currentPath)) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

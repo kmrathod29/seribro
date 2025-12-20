@@ -26,8 +26,14 @@ API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('jwtToken');
-      window.location.href = '/login';
+      // Only redirect to login if NOT on a public route
+      const publicRoutes = ['/', '/login', '/signup', '/help', '/about', '/forgot-password', '/reset-password'];
+      const currentPath = window.location.pathname;
+      
+      if (!publicRoutes.includes(currentPath)) {
+        localStorage.removeItem('jwtToken');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
