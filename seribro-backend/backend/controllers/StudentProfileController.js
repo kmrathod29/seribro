@@ -636,18 +636,70 @@ exports.submitForVerification = async (req, res) => {
 exports.getDashboard = async (req, res) => {
     try {
         const studentId = getStudentId(req);
-        const profile = await findProfile(studentId);
+        const userId = getUserId(req);
 
-        // If no profile exists
-        if (!profile) {
-            return sendResponse(res, 200, true, 'Dashboard data fetched', {
-                profileCompletion: 0,
-                verificationStatus: 'not_created',
-                totalProjects: 0,
-                alerts: ['⚠️ Your profile is not created. Start by filling basic information.'],
-                basicInfo: null
-            });
+        if (!studentId || !userId) {
+            return sendResponse(res, 401, false, 'Authentication data missing. Please login again.');
         }
+
+    let profile = await findProfile(studentId);
+
+            // If no profile exists, create an initial empty profile (same behavior as GET /profile)
+            if (!profile) {
+                // Ensure Student and User exist
+                const student = await Student.findById(studentId);
+                const user = await User.findById(req.user?._id || req.user?.id);
+
+                // Create an initialized profile so dashboard can show basic info immediately
+                profile = await StudentProfile.create({
+                    student: studentId,
+                    user: req.user?._id || req.user?.id,
+                    basicInfo: {
+                        fullName: (student && student.fullName) ? student.fullName : (user && user.email ? user.email.split('@')[0] : ''),
+                        email: (user && user.email) ? user.email : '',
+                        phone: '',
+                        collegeName: (student && student.college) ? student.college : '',
+                        degree: '',
+                        branch: '',
+                        graduationYear: '',
+                        currentYear: '',
+                        semester: '',
+                        studentId: '',
+                        rollNumber: '',
+                        location: '',
+                        bio: ''
+                    },
+                    skills: {
+                        technical: [],
+                        soft: [],
+                        languages: [],
+                        primarySkills: [],
+                        techStack: []
+                    },
+                    projects: [],
+                    documents: {
+                        resume: { filename: null, path: null, uploadedAt: null },
+                        collegeId: { filename: null, path: null, uploadedAt: null },
+                        certificates: []
+                    },
+                    links: {
+                        github: '',
+                        linkedin: '',
+                        portfolio: ''
+                    },
+                    profileStats: {
+                        profileCompletion: 0,
+                        lastUpdated: new Date()
+                    },
+                    verification: {
+                        status: 'incomplete',
+                        submittedAt: null,
+                        reviewedAt: null,
+                        reviewNotes: ''
+                    },
+                    status: 'active'
+                });
+            }
 
         // Update completion
         profile.calculateProfileCompletion();

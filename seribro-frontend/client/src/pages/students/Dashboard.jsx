@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, AlertCircle, Clock, Edit2, RefreshCw, TrendingUp } from 'lucide-react';
 import Navbar from '../../components/Navbar';
@@ -13,11 +13,9 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        loadDashboard();
-    }, []);
-
-    const loadDashboard = async () => {
+    // Stable loader so we can re-use it in event listeners
+    // firstAttempt: whether this is the first try (we'll retry once after a short delay on failure)
+    const loadDashboard = useCallback(async (firstAttempt = true) => {
         try {
             setLoading(true);
             setError(null);
@@ -30,10 +28,44 @@ const Dashboard = () => {
             const apiError = formatApiError(err);
             setError(apiError.message);
             console.error('Dashboard load error:', err);
+
+            // Defensive UX: sometimes the first dashboard call may race with auth setup on server
+            // Retry one time after a short delay to hide transient 500s. Do not loop indefinitely.
+            if (firstAttempt) {
+                console.log('Dashboard initial load failed, scheduling one retry...');
+                setTimeout(() => loadDashboard(false), 800);
+            }
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        // Initial load
+        loadDashboard();
+
+        // If auth state changes in the same tab (we dispatch a custom event), refresh
+        const onAuthChanged = () => {
+            console.log('authChanged event received - reloading dashboard');
+            loadDashboard();
+        };
+
+        // Storage events fire in other tabs; react to token changes there as well
+        const onStorage = (e) => {
+            if (e.key === 'token' || e.key === 'jwtToken' || e.key === 'authToken') {
+                console.log('storage token change detected - reloading dashboard');
+                loadDashboard();
+            }
+        };
+
+        window.addEventListener('authChanged', onAuthChanged);
+        window.addEventListener('storage', onStorage);
+
+        return () => {
+            window.removeEventListener('authChanged', onAuthChanged);
+            window.removeEventListener('storage', onStorage);
+        };
+    }, [loadDashboard]);
 
     if (loading) {
         return (
