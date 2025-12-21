@@ -8,8 +8,13 @@ const User = require('../models/User');
 const protect = asyncHandler(async (req, res, next) => {
   let token;
 
-  // Hinglish: Cookie se token nikalna
-  if (req.cookies.jwt) {
+  // Priority 1: Authorization header (Bearer token) - allow frontend to send token via header
+  if (req.headers && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  // Fallback: Cookie (httpOnly) - existing behavior
+  if (!token && req.cookies && req.cookies.jwt) {
     token = req.cookies.jwt;
   }
 

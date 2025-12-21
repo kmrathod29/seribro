@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Auth/Login';
 import Signup from './pages/Auth/Signup';
+import GoogleSuccess from './pages/Auth/GoogleSuccess';
 import NotFound from './pages/NotFound/NotFound';
 import About from './pages/About';
 import Help from './pages/Help';
@@ -49,6 +50,9 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+  <Route path="/auth/google/success" element={<GoogleSuccess />} />
+  {/* Generic dashboard entry that redirects based on token role (guards will check token) */}
+  <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/help" element={<Help />} />
         <Route path="/about" element={<About />} />
         

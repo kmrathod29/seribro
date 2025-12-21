@@ -9,10 +9,11 @@ const STUDENT_API = axios.create({
     timeout: 30000,
 });
 
-// Interceptor to add JWT token to all requests
+// Interceptor to add JWT token to all requests. Use canonical 'token' key,
+// but fall back to legacy 'jwtToken' if present for backward compatibility.
 STUDENT_API.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('jwtToken');
+        const token = localStorage.getItem('token') || localStorage.getItem('jwtToken');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }

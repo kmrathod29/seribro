@@ -1,28 +1,79 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { getLoggedInUser } from '../../utils/authUtils';
+
+// Small helper to decode JWT payload (no external deps)
+const decodeJwt = (token) => {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = decodeURIComponent(
+      atob(payload)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+    return JSON.parse(decoded);
+  } catch (err) {
+    console.error('Failed to decode JWT', err);
+    return null;
+  }
+};
 
 function RoleRoute({ children, allowedRoles = [] }) {
-  try {
-    const user = getLoggedInUser();
-    // If no user found, redirect to login
-    if (!user) return <Navigate to="/login" replace />;
+  const [checking, setChecking] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
+  const [unauthorizedReason, setUnauthorizedReason] = useState(null);
 
-    // If role not allowed, show an unauthorized placeholder
-    if (!allowedRoles.includes(user.role)) {
-      return (
-        <div className="p-6">
-          <h3 className="text-lg font-semibold">Unauthorized</h3>
-          <p className="text-sm text-gray-600">You do not have permission to view this page.</p>
-        </div>
-      );
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setUnauthorizedReason('no-token');
+        setChecking(false);
+        return;
+      }
+
+      const payload = decodeJwt(token);
+      if (!payload) {
+        setUnauthorizedReason('invalid-token');
+        setChecking(false);
+        return;
+      }
+
+      const role = payload.role;
+      if (!allowedRoles || allowedRoles.length === 0) {
+        setAuthorized(true);
+      } else if (allowedRoles.includes(role)) {
+        setAuthorized(true);
+      } else {
+        setUnauthorizedReason('role-mismatch');
+      }
+    } catch (err) {
+      console.error('RoleRoute check failed', err);
+      setUnauthorizedReason('error');
+    } finally {
+      setChecking(false);
     }
+  }, [allowedRoles]);
 
-    return children;
-  } catch {
-    // On parse/other errors, redirect to login
+  if (checking) {
+    // Prevent redirect until we've checked localStorage
+    return (
+      <div className="p-6 text-center">
+        <p className="text-sm text-gray-600">Checking authentication…</p>
+      </div>
+    );
+  }
+
+  if (!authorized) {
+    // Redirect to login when token missing/invalid
     return <Navigate to="/login" replace />;
   }
+
+  return children;
 }
 
 export const AdminRoute = ({ children }) => (

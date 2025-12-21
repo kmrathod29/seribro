@@ -7,9 +7,11 @@ const Student = require("../models/Student");
 const Company = require("../models/Company");
 const OTP = require("../models/OTP");
 const generateToken = require("../utils/generateToken");
+const jwt = require('jsonwebtoken');
 const generateResetToken = require("../utils/generateResetToken");
 const generateOTP = require("../utils/generateOTP");
 const sendEmail = require("../utils/sendEmail");
+const axios = require('axios');
 const path = require("path");
 const fs = require("fs");
 
@@ -199,7 +201,12 @@ const createStudentAccount = asyncHandler(async (req, res) => {
     session.endSession();
 
     // Issue JWT and return user info
-    generateToken(res, user[0]._id, user[0].role);
+  // include student's fullName and email in token payload so frontend can show name immediately
+  const studentRecord = student[0];
+  const extras = { name: studentRecord.fullName, email: user[0].email };
+  generateToken(res, user[0]._id, user[0].role, extras);
+  // Also sign a token string to return so frontend can persist it in localStorage
+  const token = jwt.sign({ userId: user[0]._id, role: user[0].role, ...extras }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_COOKIE_EXPIRE });
 
     res.status(201).json({
       message: "Account created and logged in",
@@ -207,6 +214,7 @@ const createStudentAccount = asyncHandler(async (req, res) => {
       email: user[0].email,
       role: user[0].role,
       profileCompleted: false,
+      token,
     });
   } catch (error) {
     await session.abortTransaction();
@@ -369,8 +377,11 @@ const createCompanyAccount = asyncHandler(async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    // Issue JWT and return user info
-    generateToken(res, user[0]._id, user[0].role);
+    // Issue JWT and return user info (include contact person name/email)
+    const companyRecord = company[0];
+    const extras = { name: companyRecord.contactPersonName || contactPerson || '', email: user[0].email };
+    generateToken(res, user[0]._id, user[0].role, extras);
+    const token = jwt.sign({ userId: user[0]._id, role: user[0].role, ...extras }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_COOKIE_EXPIRE });
 
     res.status(201).json({
       message: "Account created and logged in",
@@ -378,6 +389,7 @@ const createCompanyAccount = asyncHandler(async (req, res) => {
       email: user[0].email,
       role: user[0].role,
       profileCompleted: false,
+      token,
     });
   } catch (error) {
     await session.abortTransaction();
@@ -537,6 +549,12 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ email }).select("+password");
 
+  // If user exists but has no password (OAuth-only account), return explicit message
+  if (user && !user.password) {
+    res.status(401);
+    throw new Error("This account was created using Google. Please login with Google or set a password.");
+  }
+
   if (user && (await user.matchPassword(password))) {
     if (!user.emailVerified || user.emailVerified !== true) {
       console.log("🔐 Login attempt with unverified email:", {
@@ -591,7 +609,18 @@ const loginUser = asyncHandler(async (req, res) => {
 
     await user.save();
 
-    generateToken(res, user._id, user.role);
+    // Determine a display name from associated profile records (if any)
+    let displayName = null;
+    if (user.role === 'student') {
+      const srec = await Student.findOne({ user: user._id });
+      displayName = srec?.fullName || null;
+    } else if (user.role === 'company') {
+      const crec = await Company.findOne({ user: user._id });
+      displayName = crec?.contactPersonName || null;
+    }
+    const extras = { name: displayName || '', email: user.email };
+    generateToken(res, user._id, user.role, extras);
+    const token = jwt.sign({ userId: user._id, role: user.role, ...extras }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_COOKIE_EXPIRE });
 
     res.json({
       _id: user._id,
@@ -600,11 +629,174 @@ const loginUser = asyncHandler(async (req, res) => {
       emailVerified: user.emailVerified,
       profileCompleted: user.profileCompleted,
       message: "Login successful",
+      token,
     });
   } else {
     res.status(401);
     throw new Error("Invalid email or password");
   }
+});
+
+// ---------------- Google OAuth (manual, no Passport) ----------------
+// Redirect user to Google's OAuth consent screen
+const googleAuthRedirect = asyncHandler(async (req, res) => {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const redirectUri = `${process.env.BACKEND_URL || 'http://localhost:7000'}/auth/google/callback`;
+  const scope = encodeURIComponent('openid email profile');
+  // Allow frontend to pass a desired role via ?role=student|company (sent as state to Google and returned on callback)
+  const role = req.query.role || req.query.state || '';
+  // Sanitize role to allowed enums to avoid passing arbitrary values
+  const allowedRoles = ['student', 'company', 'admin'];
+  const safeRole = allowedRoles.includes(role) ? role : '';
+  const stateParam = safeRole ? `&state=${encodeURIComponent(safeRole)}` : '';
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=online&prompt=select_account${stateParam}`;
+  // Redirect browser to Google
+  res.redirect(authUrl);
+});
+
+// Callback handler: exchange code -> tokens -> get profile -> handle user linking/creation -> issue JWT
+const googleAuthCallback = asyncHandler(async (req, res) => {
+  const code = req.query.code;
+  if (!code) {
+    res.status(400);
+    throw new Error('Missing code from Google');
+  }
+
+  const tokenEndpoint = 'https://oauth2.googleapis.com/token';
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const redirectUri = `${process.env.BACKEND_URL || 'http://localhost:7000'}/auth/google/callback`;
+
+  // Exchange code for tokens
+  const params = new URLSearchParams();
+  params.append('code', code);
+  params.append('client_id', clientId);
+  params.append('client_secret', clientSecret);
+  params.append('redirect_uri', redirectUri);
+  params.append('grant_type', 'authorization_code');
+
+  const tokenResp = await axios.post(tokenEndpoint, params.toString(), {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+
+  const accessToken = tokenResp.data.access_token;
+  if (!accessToken) {
+    res.status(400);
+    throw new Error('Could not obtain access token from Google');
+  }
+
+  // Fetch profile
+  const profileResp = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const profile = profileResp.data;
+
+  // Identify user by email only
+  const email = profile.email && profile.email.toLowerCase();
+  if (!email) {
+    res.status(400);
+    throw new Error('Google account did not provide an email');
+  }
+
+  // Find user (include password for linking decisions)
+  let user = await User.findOne({ email }).select('+password');
+  // If Google redirect included a state param (we used it to pass role), prefer it when creating new users
+  const requestedRole = req.query.state || req.query.role || null;
+
+  if (!user) {
+    // Create new user using Google profile
+    const role = requestedRole || 'student'; // use requested role if provided
+    
+    // Use transaction to ensure User and Student/Company are created atomically
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
+    try {
+      user = await User.create([{
+        email,
+        password: null, // explicitly null for OAuth accounts
+        role,
+        emailVerified: true,
+        googleId: profile.id,
+        authProvider: ['google'],
+      }], { session });
+      user = user[0]; // extract from array returned by create with session
+      
+      // Create Student or Company record based on role
+      if (role === 'student') {
+        await Student.create([{
+          user: user._id,
+          fullName: profile.name || email.split('@')[0],
+        }], { session });
+      } else if (role === 'company') {
+        await Company.create([{
+          user: user._id,
+          contactPerson: profile.name || email.split('@')[0],
+        }], { session });
+      }
+      
+      await session.commitTransaction();
+      session.endSession();
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      console.error('Google OAuth user creation failed:', error);
+      res.status(500);
+      throw new Error('Failed to create user account');
+    }
+  } else {
+    // User exists
+    // If user exists with password (email/password account) and googleId not set, link accounts
+    if (user.password && !user.googleId) {
+      user.googleId = profile.id;
+      user.authProvider = Array.from(new Set([...(user.authProvider || []), 'google']));
+      await user.save();
+    }
+    // If user already has google linked or is oauth-only, nothing to change
+    
+    // Ensure Student/Company record exists for this user
+    if (user.role === 'student') {
+      const studentExists = await Student.findOne({ user: user._id });
+      if (!studentExists) {
+        await Student.create({
+          user: user._id,
+          fullName: profile.name || email.split('@')[0],
+        });
+      }
+    } else if (user.role === 'company') {
+      const companyExists = await Company.findOne({ user: user._id });
+      if (!companyExists) {
+        await Company.create({
+          user: user._id,
+          contactPerson: profile.name || email.split('@')[0],
+        });
+      }
+    }
+  }
+
+  // Determine display name for token payload (prefer Google profile name, then DB records)
+  let displayName = profile.name || null;
+  if (!displayName) {
+    if (user.role === 'student') {
+      const srec = await Student.findOne({ user: user._id });
+      displayName = srec?.fullName || email.split('@')[0];
+    } else if (user.role === 'company') {
+      const crec = await Company.findOne({ user: user._id });
+      displayName = crec?.contactPersonName || email.split('@')[0];
+    } else {
+      displayName = email.split('@')[0];
+    }
+  }
+
+  const extras = { name: displayName, email };
+  // Issue JWT cookie using existing utility (include name/email)
+  generateToken(res, user._id, user.role, extras);
+  // Also sign a token string (same payload/expiry) so frontend can persist it in localStorage
+  const token = jwt.sign({ userId: user._id, role: user.role, ...extras }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_COOKIE_EXPIRE });
+
+  // Redirect to dedicated frontend success page which will persist the token and then navigate
+  const frontendBase = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+  return res.redirect(`${frontendBase.replace(/\/$/, '')}/auth/google/success?token=${encodeURIComponent(token)}`);
 });
 
 // @desc    Logout user / clear cookie
@@ -751,4 +943,6 @@ module.exports = {
   logoutUser,
   forgotPassword,
   resetPassword,
+  googleAuthRedirect,
+  googleAuthCallback,
 };

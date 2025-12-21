@@ -131,6 +131,11 @@ const Login = () => {
       if (response.status === 200) {
         console.log('✅ Login successful with verified email');
         const userData = response.data;
+        // Persist token in localStorage under canonical key 'token' for guards
+        if (response.data?.token) {
+          try { localStorage.setItem('token', response.data.token); window.dispatchEvent(new Event('authChanged')); } catch (err) { console.error('Failed to save token', err); }
+        }
+
         const saved = saveUserToCookie(userData);
 
         if (saved) {
@@ -181,6 +186,18 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Redirect user to backend Google OAuth endpoint
+  // If a role is passed (student/company), include it so backend can create the correct role
+  const continueWithGoogle = (role) => {
+    // Defensive: if called as an event (onClick without arg), the first param will be an event object.
+    // Ensure we only use a string role value.
+    const safeRole = typeof role === 'string' ? role : userType;
+    // Derive backend root from API baseURL (which is set to http://localhost:7000/api/auth)
+    const backendRoot = API.defaults.baseURL.replace(/\/api\/auth\/?$/, '');
+    const url = safeRole ? `${backendRoot}/auth/google?role=${encodeURIComponent(safeRole)}` : `${backendRoot}/auth/google`;
+    window.location.href = url;
   };
 
   return (
@@ -374,7 +391,7 @@ const Login = () => {
 
           {/* Social Login Buttons (only Chrome/Browser sign-in remains) */}
           <div className="grid grid-cols-1 gap-3">
-            <button type="button" className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-primary hover:bg-primary/5 transition-all duration-300 transform hover:scale-105 disabled:opacity-50" disabled={isLoading}>
+            <button type="button" onClick={() => continueWithGoogle(userType)} className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-primary hover:bg-primary/5 transition-all duration-300 transform hover:scale-105 disabled:opacity-50" disabled={isLoading}>
               <Chrome className="text-gray-600 group-hover:text-primary transition-colors" size={20} />
             </button>
           </div>

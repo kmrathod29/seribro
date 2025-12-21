@@ -11,9 +11,18 @@ const UserSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'], // Hinglish: Password zaroori hai
+    // Make password optional to support OAuth-only accounts (we'll handle validation in logic)
     minlength: 6,
-    select: false, // Hinglish: Jab bhi user fetch hoga, password nahi dikhega
+    select: false, // Do not return password by default
+  },
+  // OAuth support
+  googleId: {
+    type: String,
+    default: null,
+  },
+  authProvider: {
+    type: [String],
+    default: [],
   },
   role: {
     type: String,
@@ -44,12 +53,12 @@ const UserSchema = new mongoose.Schema({
 
 // Pre-save hook to hash password (Hinglish: Save hone se pehle password ko hash karna)
 UserSchema.pre('save', async function (next) {
-  // Agar password modify nahi hua hai, toh aage badho (Hinglish: If password is not modified, move on)
-  if (!this.isModified('password')) {
+  // If password was not modified or is falsy (null/undefined/empty), skip hashing
+  if (!this.isModified('password') || !this.password) {
     return next();
   }
 
-  // Password hash karna (Hinglish: Hashing the password)
+  // Hash password only when present
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
@@ -57,7 +66,8 @@ UserSchema.pre('save', async function (next) {
 
 // Method to compare password (Hinglish: Password compare karne ka method)
 UserSchema.methods.matchPassword = async function (enteredPassword) {
-  // Hinglish: Entered password ko stored hashed password se compare karna
+  // If no password set (OAuth-only account), return false
+  if (!this.password) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };
 

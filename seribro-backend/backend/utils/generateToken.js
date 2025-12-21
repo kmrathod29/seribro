@@ -3,9 +3,11 @@
 const jwt = require('jsonwebtoken');
 
 // Hinglish: JWT token generate karke response mein HTTP-only cookie set karta hai
-const generateToken = (res, userId, role) => {
+// extras: optional object with additional fields to include in token payload (e.g., name, email)
+const generateToken = (res, userId, role, extras = {}) => {
   // Token payload (Hinglish: Token mein kya data jayega)
-  const token = jwt.sign({ userId, role }, process.env.JWT_SECRET, {
+  const payload = Object.assign({ userId, role }, extras || {});
+  const token = jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_COOKIE_EXPIRE, // Hinglish: Token ki expiry
   });
 

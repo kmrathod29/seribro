@@ -213,6 +213,11 @@ const Signup = () => {
       const endpoint = userType === 'student' ? '/student/create-account' : '/company/create-account';
       const res = await API.post(endpoint, payload);
 
+      // Persist token (returned by backend) in localStorage under the canonical key 'token'
+      if (res?.data?.token) {
+        try { localStorage.setItem('token', res.data.token); window.dispatchEvent(new Event('authChanged')); } catch (err) { console.error('Failed to persist token', err); }
+      }
+
       // Save minimal user info (frontend visible) and navigate to dashboard
       saveUserToCookie({ _id: res.data._id, email: res.data.email, role: res.data.role });
       const dashboard = res.data.role === 'student' ? '/student/dashboard' : res.data.role === 'company' ? '/company/dashboard' : '/';
@@ -529,6 +534,29 @@ const Signup = () => {
               </Link>
             </p>
           </div>
+            {/* Social Login (Google) - show a subtle divider and Google button */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500 font-medium">Or continue with</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const backendRoot = API.defaults.baseURL.replace(/\/api\/auth\/?$/, '');
+                  // pass the selected userType so the backend can set role for new Google users
+                  window.location.href = `${backendRoot}/auth/google?role=${encodeURIComponent(userType)}`;
+                }}
+                className="group flex items-center justify-center py-3 border-2 border-gray-200 rounded-xl hover:border-primary hover:bg-primary/5 transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+              >
+                <Chrome className="text-gray-600 group-hover:text-primary transition-colors" size={20} />
+              </button>
+            </div>
         </div>
 
         {/* Footer Text */}

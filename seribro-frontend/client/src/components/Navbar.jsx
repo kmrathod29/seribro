@@ -2,14 +2,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Bell, LogOut, Settings, BarChart3 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getLoggedInUser, logoutUser } from '../utils/authUtils';
+import { getLoggedInUser, logoutUser, getAuthFromLocalToken } from '../utils/authUtils';
 import NotificationBell from './NotificationBell';
 
 const Navbar = ({ variant } = {}) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [user, setUser] = useState(getLoggedInUser());
+  const [user, setUser] = useState(() => getAuthFromLocalToken() || getLoggedInUser());
 
   const userMenuRef = useRef(null);
   const navigate = useNavigate();
@@ -37,6 +37,38 @@ const Navbar = ({ variant } = {}) => {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isUserMenuOpen]);
+
+  // Listen to auth changes (localStorage and custom events) so navbar updates immediately
+  useEffect(() => {
+    const syncUser = () => {
+      try {
+        const newUser = getAuthFromLocalToken() || getLoggedInUser();
+        setUser(newUser);
+      } catch (err) {
+        console.error('Navbar syncUser error', err);
+        setUser(null);
+      }
+    };
+
+    const onStorage = (e) => {
+      if (!e) return syncUser();
+      if (e.key === 'token' || e.key === null) syncUser();
+    };
+
+    const onAuthChanged = () => syncUser();
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('authChanged', onAuthChanged);
+
+    // In case the app navigated back from OAuth flow without firing storage event
+    // (same-window), check once on mount
+    syncUser();
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('authChanged', onAuthChanged);
+    };
+  }, []);
 
   const handleLogout = () => {
     logoutUser();
@@ -81,9 +113,20 @@ const Navbar = ({ variant } = {}) => {
       userObj.profile?.email,
     ];
     for (const e of tryEmails) {
-      if (e && String(e).includes('@')) return String(e).split('@')[0];
+      if (e && String(e).includes('@')) {
+        const local = String(e).split('@')[0];
+        return capitalize(local);
+      }
     }
     return null;
+  };
+
+  // Helper: capitalize a short username (e.g., from email) into nicer display form
+  const capitalize = (s) => {
+    if (!s) return s;
+    const str = String(s).trim();
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
   return (

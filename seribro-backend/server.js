@@ -107,6 +107,10 @@ try {
   console.log('📌 Mounting /api/auth...');
   app.use('/api/auth', authRoutes);
   console.log('   ✅ /api/auth mounted');
+  // Mount Google OAuth routes at /auth so the redirect URI http://localhost:7000/auth/google/callback works
+  console.log('📌 Mounting /auth (Google OAuth)...');
+  app.use('/auth', require('./backend/routes/googleAuthRoutes'));
+  console.log('   ✅ /auth (Google OAuth) mounted');
   
   console.log('📌 Mounting /api/student...');
   app.use('/api/student', studentProfileRoutes);
