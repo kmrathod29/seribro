@@ -20,7 +20,10 @@ import { saveUserToCookie } from "../../utils/authUtils.js";
 const Signup = () => {
   const [userType, setUserType] = useState("student");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  // Replace single shared loading state with explicit states per action
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -93,17 +96,18 @@ const Signup = () => {
 
   // -------------------- Submit --------------------
   const handleSubmit = async () => {
-    setIsLoading(true);
+    // This action sends OTP (PHASE 1)
+    setIsSendingOtp(true);
     setError("");
 
     try {
       // Validate form
       if (userType === "student" && !validateStudentForm()) {
-        setIsLoading(false);
+        setIsSendingOtp(false);
         return;
       }
       if (userType === "company" && !validateCompanyForm()) {
-        setIsLoading(false);
+        setIsSendingOtp(false);
         return;
       }
 
@@ -124,11 +128,11 @@ const Signup = () => {
       // ---- PHASE 1: SEND OTP (do NOT create user) ----
       // We will call the /send-otp endpoint with purpose='signup'. This sends the OTP email
       // but does NOT create a User. Account creation is a separate step after OTP verification.
-      await API.post('/send-otp', { email: userType === 'student' ? studentData.email : companyData.email, purpose: 'signup' });
+  await API.post('/send-otp', { email: userType === 'student' ? studentData.email : companyData.email, purpose: 'signup' });
 
       // Show OTP UI so user can verify
       setOtpData({ ...otpData, showOtpField: true, otpSent: true });
-      setIsLoading(false);
+  setIsSendingOtp(false);
       setError('');
       alert('OTP sent to your email. Enter it below to verify, then click Create Account.');
       return; // stop here — wait for OTP verification step
@@ -140,7 +144,7 @@ const Signup = () => {
         err.response?.data?.message || "Signup failed. Please try again."
       );
     } finally {
-      setIsLoading(false);
+      setIsSendingOtp(false);
     }
   };
 
@@ -151,7 +155,8 @@ const Signup = () => {
       setError('Please enter your email to send OTP');
       return;
     }
-    setIsLoading(true);
+    // Sending (or resending) OTP
+    setIsSendingOtp(true);
     setError('');
     try {
       await API.post('/send-otp', { email });
@@ -160,7 +165,7 @@ const Signup = () => {
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send OTP');
     } finally {
-      setIsLoading(false);
+      setIsSendingOtp(false);
     }
   };
 
@@ -170,7 +175,8 @@ const Signup = () => {
       setError('Please provide email and OTP');
       return;
     }
-    setIsLoading(true);
+    // Verifying OTP
+    setIsVerifyingOtp(true);
     setError('');
     try {
       // verify-otp now issues JWT (cookie) and returns user info
@@ -187,7 +193,7 @@ const Signup = () => {
     } catch (err) {
       setError(err.response?.data?.message || 'OTP verification failed');
     } finally {
-      setIsLoading(false);
+      setIsVerifyingOtp(false);
     }
   };
 
@@ -196,7 +202,8 @@ const Signup = () => {
   // This call will create the User + Student/Company records, set emailVerified=true,
   // issue the JWT (httpOnly cookie) and return the user info.
   const handleCreateAccount = async () => {
-    setIsLoading(true);
+    // Creating account
+    setIsCreatingAccount(true);
     setError('');
     try {
       const payload = userType === 'student'
@@ -213,7 +220,7 @@ const Signup = () => {
     } catch (err) {
       setError(err.response?.data?.message || 'Account creation failed');
     } finally {
-      setIsLoading(false);
+      setIsCreatingAccount(false);
     }
   };
 
@@ -305,7 +312,7 @@ const Signup = () => {
                     onChange={handleStudentChange}
                     placeholder="John Doe"
                     className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
-                    disabled={isLoading}
+                    disabled={isCreatingAccount}
                   />
                 </div>
               </div>
@@ -323,7 +330,7 @@ const Signup = () => {
                     onChange={handleStudentChange}
                     placeholder="student@college.edu"
                     className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
-                    disabled={isLoading}
+                    disabled={isCreatingAccount}
                   />
                 </div>
               </div>
@@ -343,13 +350,13 @@ const Signup = () => {
                     onChange={handleStudentChange}
                     placeholder="Create a strong password"
                     className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
-                    disabled={isLoading}
+                    disabled={isCreatingAccount}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-navy transition-colors disabled:opacity-50"
-                    disabled={isLoading}
+                    disabled={isCreatingAccount}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -375,7 +382,7 @@ const Signup = () => {
                     onChange={handleCompanyChange}
                     placeholder="Jane Smith"
                     className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
-                    disabled={isLoading}
+                    disabled={isCreatingAccount}
                   />
                 </div>
               </div>
@@ -395,7 +402,7 @@ const Signup = () => {
                     onChange={handleCompanyChange}
                     placeholder="hr@company.com"
                     className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
-                    disabled={isLoading}
+                    disabled={isCreatingAccount}
                   />
                 </div>
               </div>
@@ -413,13 +420,13 @@ const Signup = () => {
                     onChange={handleCompanyChange}
                     placeholder="Create a strong password"
                     className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
-                    disabled={isLoading}
+                    disabled={isCreatingAccount}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-navy transition-colors disabled:opacity-50"
-                    disabled={isLoading}
+                    disabled={isCreatingAccount}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -430,13 +437,17 @@ const Signup = () => {
             </div>
           )}
 
-          {/* OTP Section (shown after registration) */}
-          {otpData.showOtpField && (
+          {/*
+            OTP Section: show verification UI ONLY after OTP has been sent.
+            - `otpData.otpSent` === true => show OTP input, Verify button, and Resend link-style button
+            - This ensures the original 'Send OTP' (primary form action) is hidden after send
+          */}
+          {otpData.otpSent && (
             <div className="space-y-3 border-t pt-4 border-gray-100">
               <p className="text-sm text-gray-600 font-medium">
                 We've sent an OTP to your email. Enter it below to verify and continue.
               </p>
-              <div className="flex space-x-3">
+              <div className="flex items-center space-x-3">
                 <div className="relative flex-grow">
                   <input
                     type="text"
@@ -446,62 +457,64 @@ const Signup = () => {
                     placeholder="Enter 6-digit OTP"
                     maxLength={6}
                     className="w-full pl-4 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all duration-300 text-sm disabled:bg-gray-100"
-                    disabled={isLoading}
+                    disabled={isCreatingAccount}
                   />
                 </div>
+
+                {/* Verify - primary action for OTP area */}
                 <button
                   type="button"
-                  onClick={otpData.otpSent ? handleVerifyOtp : handleSendOtp}
-                  disabled={isLoading || !(userType === 'student' ? studentData.email : companyData.email)}
-                  className={`py-3 px-4 rounded-xl font-bold text-sm text-white transition-all duration-300 disabled:opacity-50 ${
-                    otpData.otpSent ? 'bg-green-500 hover:bg-green-600' : 'bg-primary hover:bg-navy'
-                  }`}
+                  onClick={handleVerifyOtp}
+                  disabled={isVerifyingOtp || !(userType === 'student' ? studentData.email : companyData.email)}
+                  className={`py-2.5 px-4 rounded-lg font-semibold text-sm text-white transition-all duration-200 disabled:opacity-60 ${isVerifyingOtp ? 'bg-green-500' : 'bg-green-600 hover:bg-green-700'}`}
                 >
-                  <span className="flex items-center space-x-1">
-                    {otpData.otpSent ? 'Verify' : 'Send OTP'}
-                  </span>
+                  {isVerifyingOtp ? 'Verifying...' : 'Verify'}
                 </button>
+
+                {/* Resend - link / secondary style */}
                 <button
                   type="button"
                   onClick={handleSendOtp}
-                  disabled={isLoading}
-                  className="py-3 px-3 rounded-xl font-medium text-sm text-gray-700 border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                  disabled={isSendingOtp}
+                  className="py-2 px-3 text-sm text-primary hover:underline disabled:opacity-50"
                 >
-                  Resend
+                  {isSendingOtp ? 'Resending...' : 'Resend'}
                 </button>
               </div>
             </div>
           )}
 
-          {/* Send OTP Button (PHASE 1) */}
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isLoading || !(userType === 'student' ? (studentData.fullName && studentData.email && studentData.password.length >= 6) : (companyData.contactPerson && companyData.email && companyData.password.length >= 6))}
-            className="group w-full relative py-3.5 rounded-xl font-bold text-base text-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] mt-6 disabled:opacity-75 disabled:cursor-not-allowed"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-primary to-navy"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500 disabled:opacity-0"></div>
-            <span className="relative z-10 flex items-center justify-center space-x-2">
-              <span>{isLoading ? "Sending OTP..." : "Send OTP"}</span>
-              {!isLoading && (
-                <ArrowRight
-                  className="transform group-hover:translate-x-1 transition-transform duration-300"
-                  size={18}
-                />
-              )}
-            </span>
-          </button>
+          {/* Send OTP Button (PHASE 1)
+              - Visible ONLY before OTP is sent (otpData.otpSent === false)
+              - Content-width, secondary appearance (not a full-width primary CTA)
+          */}
+          {!otpData.otpSent && (
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSendingOtp || !(userType === 'student' ? (studentData.fullName && studentData.email && studentData.password.length >= 6) : (companyData.contactPerson && companyData.email && companyData.password.length >= 6))}
+                className={`inline-flex items-center gap-2 py-2 px-4 rounded-lg font-semibold text-sm transition-colors duration-200 ${isSendingOtp ? 'opacity-70 cursor-wait' : 'bg-white hover:bg-primary/5'} border border-primary text-primary`}
+                style={{ width: 'fit-content' }}
+              >
+                <span>{isSendingOtp ? 'Sending OTP...' : 'Send OTP'}</span>
+                {!isSendingOtp && <ArrowRight size={16} />}
+              </button>
+            </div>
+          )}
 
           {/* Create Account Button (PHASE 3) - enabled only after OTP is verified */}
+          {/* Create Account - primary CTA
+              - Disabled and looks clearly disabled until otpVerified === true
+              - Becomes strong brand color once otpVerified
+          */}
           <button
             type="button"
             onClick={handleCreateAccount}
-            disabled={!otpVerified || isLoading}
-            className="group w-full relative py-3.5 rounded-xl font-bold text-base text-white overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!otpVerified || isCreatingAccount}
+            className={`w-full relative py-3.5 rounded-xl font-bold text-base text-white overflow-hidden shadow-lg transition-all duration-200 transform hover:scale-[1.01] mt-4 ${!otpVerified ? 'bg-gray-200 text-gray-600 cursor-not-allowed' : (isCreatingAccount ? 'bg-green-500' : 'bg-green-600 hover:bg-green-700')}`}
           >
-            <div className="absolute inset-0 bg-green-600"></div>
-            <span className="relative z-10">{isLoading ? 'Processing...' : 'Create Account'}</span>
+            <span className="relative z-10">{isCreatingAccount ? 'Creating account...' : 'Create Account'}</span>
           </button>
 
           {/* Login Link */}
