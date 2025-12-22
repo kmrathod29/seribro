@@ -198,21 +198,6 @@ export const uploadCollegeId = async (file) => {
     }
 };
 
-export const uploadCertificates = async (files) => {
-    try {
-        const formData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-            formData.append('certificates', files[i]);
-        }
-        const response = await STUDENT_API.post('/profile/certificates', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        return handleResponse(response);
-    } catch (error) {
-        return handleError(error);
-    }
-};
-
 // ======================== VERIFICATION ========================
 
 export const submitForVerification = async () => {

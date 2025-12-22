@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle, AlertCircle, Clock, Edit2, RefreshCw, TrendingUp } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import DocumentUpload from '../../components/studentComponent/DocumentUpload';
-// ProfileCompletionBar not used in redesigned layout
 import { fetchDashboardData, formatApiError } from '../../apis/studentProfileApi';
 
 const Dashboard = () => {
@@ -108,12 +106,13 @@ const Dashboard = () => {
         verificationStatus = 'incomplete',
         totalProjects = 0,
         alerts = [],
-        basicInfo = {}
+        basicInfo = {},
+        documents = {},
     } = dashboardData || {};
 
-    // Prefer the uploaded College ID image. Backend sometimes provides `documents.collegeId.url` or `documents.collegeId.path`.
+    // Prefer the uploaded College ID image coming from normalized `documents.collegeId`.
     // Fall back to any legacy/profile photo fields if present.
-    const collegeIdUrl = dashboardData?.documents?.collegeId?.url || dashboardData?.documents?.collegeId?.path || basicInfo?.collegeIdUrl || basicInfo?.profilePhotoUrl || null;
+    const collegeIdUrl = documents?.collegeId?.url || documents?.collegeId?.path || basicInfo?.collegeIdUrl || basicInfo?.profilePhotoUrl || null;
 
     // status helpers removed (not used in this redesigned layout)
 
@@ -127,7 +126,7 @@ const Dashboard = () => {
                 <div className="mb-8 flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-                            Welcome back, <span className="text-[#fb923c]">{basicInfo?.fullName || 'Student'}</span>
+                            Welcome, <span className="text-[#fb923c]">{basicInfo?.fullName || 'Student'}</span>
                         </h1>
                         <p className="text-[#94a3b8]">Complete your profile to start getting projects</p>
                     </div>
@@ -227,36 +226,31 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="p-6 rounded-xl flex items-center justify-center" style={{ background: '#475569' }}>
+                    <div className="p-6 rounded-xl flex flex-col items-center justify-center" style={{ background: '#475569' }}>
                         <div className="text-center">
-                                {/* <p className="text-sm text-[#94a3b8] mb-3">Your Profile Photo</p> */}
-                                {collegeIdUrl ? (
-                                    <img src={collegeIdUrl} alt="College ID" className="w-40 h-40 object-cover rounded-lg mx-auto border-2 border-[#0f172a]" />
-                                ) : (
-                                    <div className="w-40 h-40 rounded-lg mx-auto bg-[#0f172a] flex items-center justify-center">
+                            {collegeIdUrl ? (
+                                <>
+                                    <img src={collegeIdUrl} alt="College ID" className="w-40 h-40 object-cover rounded-lg mx-auto border-2 border-[#0f172a] mb-4" />
+                                    <p className="text-sm text-[#94a3b8] mb-3">Your College ID</p>
+                                    <a 
+                                        href={collegeIdUrl} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="text-gold hover:text-yellow-400 text-sm font-medium transition-colors"
+                                    >
+                                        Open College ID (opens in new tab)
+                                    </a>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="w-40 h-40 rounded-lg mx-auto bg-[#0f172a] flex items-center justify-center mb-4">
                                         <span className="text-3xl font-bold text-white">{(basicInfo?.fullName || 'S').split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase()}</span>
                                     </div>
-                                )}
-                                <p className="text-sm text-[#94a3b8] mt-3">Your College ID</p>
-                                {/* Debug helpers to inspect Cloudinary URL */}
-                                {collegeIdUrl ? (
-                                    <div className="mt-2 text-sm">
-                                        <a href={collegeIdUrl} target="_blank" rel="noopener noreferrer" className="text-gold underline">Open College ID (opens in new tab)</a>
-                                        <div className="text-xs text-gray-400 mt-1 break-words">{collegeIdUrl}</div>
-                                    </div>
-                                ) : (
-                                    <div className="mt-2 text-xs text-red-400">No College ID URL available from server</div>
-                                )}
-
-                                {/* Upload widget: allow student to upload/change college ID directly from dashboard */}
-                                <div className="mt-4 w-full">
-                                    <DocumentUpload
-                                        type="collegeId"
-                                        currentDocument={{ path: dashboardData?.documents?.collegeId?.url || dashboardData?.documents?.collegeId?.path || null, filename: 'College ID' }}
-                                        onRefresh={loadDashboard}
-                                    />
-                                </div>
-                            </div>
+                                    <p className="text-sm text-[#94a3b8] mb-3">Your College ID</p>
+                                    <p className="text-xs text-gray-500">Upload from your profile page</p>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 

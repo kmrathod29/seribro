@@ -642,64 +642,64 @@ exports.getDashboard = async (req, res) => {
             return sendResponse(res, 401, false, 'Authentication data missing. Please login again.');
         }
 
-    let profile = await findProfile(studentId);
+        let profile = await findProfile(studentId);
 
-            // If no profile exists, create an initial empty profile (same behavior as GET /profile)
-            if (!profile) {
-                // Ensure Student and User exist
-                const student = await Student.findById(studentId);
-                const user = await User.findById(req.user?._id || req.user?.id);
+        // If no profile exists, create an initial empty profile (same behavior as GET /profile)
+        if (!profile) {
+            // Ensure Student and User exist
+            const student = await Student.findById(studentId);
+            const user = await User.findById(req.user?._id || req.user?.id);
 
-                // Create an initialized profile so dashboard can show basic info immediately
-                profile = await StudentProfile.create({
-                    student: studentId,
-                    user: req.user?._id || req.user?.id,
-                    basicInfo: {
-                        fullName: (student && student.fullName) ? student.fullName : (user && user.email ? user.email.split('@')[0] : ''),
-                        email: (user && user.email) ? user.email : '',
-                        phone: '',
-                        collegeName: (student && student.college) ? student.college : '',
-                        degree: '',
-                        branch: '',
-                        graduationYear: '',
-                        currentYear: '',
-                        semester: '',
-                        studentId: '',
-                        rollNumber: '',
-                        location: '',
-                        bio: ''
-                    },
-                    skills: {
-                        technical: [],
-                        soft: [],
-                        languages: [],
-                        primarySkills: [],
-                        techStack: []
-                    },
-                    projects: [],
-                    documents: {
-                        resume: { filename: null, path: null, uploadedAt: null },
-                        collegeId: { filename: null, path: null, uploadedAt: null },
-                        certificates: []
-                    },
-                    links: {
-                        github: '',
-                        linkedin: '',
-                        portfolio: ''
-                    },
-                    profileStats: {
-                        profileCompletion: 0,
-                        lastUpdated: new Date()
-                    },
-                    verification: {
-                        status: 'incomplete',
-                        submittedAt: null,
-                        reviewedAt: null,
-                        reviewNotes: ''
-                    },
-                    status: 'active'
-                });
-            }
+            // Create an initialized profile so dashboard can show basic info immediately
+            profile = await StudentProfile.create({
+                student: studentId,
+                user: req.user?._id || req.user?.id,
+                basicInfo: {
+                    fullName: (student && student.fullName) ? student.fullName : (user && user.email ? user.email.split('@')[0] : ''),
+                    email: (user && user.email) ? user.email : '',
+                    phone: '',
+                    collegeName: (student && student.college) ? student.college : '',
+                    degree: '',
+                    branch: '',
+                    graduationYear: '',
+                    currentYear: '',
+                    semester: '',
+                    studentId: '',
+                    rollNumber: '',
+                    location: '',
+                    bio: ''
+                },
+                skills: {
+                    technical: [],
+                    soft: [],
+                    languages: [],
+                    primarySkills: [],
+                    techStack: []
+                },
+                projects: [],
+                documents: {
+                    resume: { filename: null, path: null, uploadedAt: null },
+                    collegeId: { filename: null, path: null, uploadedAt: null },
+                    certificates: []
+                },
+                links: {
+                    github: '',
+                    linkedin: '',
+                    portfolio: ''
+                },
+                profileStats: {
+                    profileCompletion: 0,
+                    lastUpdated: new Date()
+                },
+                verification: {
+                    status: 'incomplete',
+                    submittedAt: null,
+                    reviewedAt: null,
+                    reviewNotes: ''
+                },
+                status: 'active'
+            });
+        }
 
         // Update completion
         profile.calculateProfileCompletion();
@@ -739,6 +739,10 @@ exports.getDashboard = async (req, res) => {
             alerts.push('✔️ Your profile is verified!');
         }
 
+        // Normalize document objects so frontend can render previews/avatars without guessing
+        const resumeDoc = profile.documents?.resume || {};
+        const collegeIdDoc = profile.documents?.collegeId || {};
+
         const dashboardData = {
             profileCompletion: completion,
             verificationStatus: profile.verification.status,
@@ -750,11 +754,29 @@ exports.getDashboard = async (req, res) => {
                 degree: profile.basicInfo.degree,
                 email: profile.basicInfo.email,
                 phone: profile.basicInfo.phone,
+                city: profile.basicInfo.location || '',
+                // Convenience flags so dashboard "Action Items" can behave correctly
+                resumeUploaded: !!resumeDoc.path,
+                collegeIdUploaded: !!collegeIdDoc.path,
+            },
+            documents: {
+                resume: {
+                    uploaded: !!resumeDoc.path,
+                    url: resumeDoc.path || resumeDoc.url || null,
+                    filename: resumeDoc.filename || null,
+                    uploadedAt: resumeDoc.uploadedAt || null,
+                },
+                collegeId: {
+                    uploaded: !!collegeIdDoc.path,
+                    url: collegeIdDoc.path || collegeIdDoc.url || null,
+                    filename: collegeIdDoc.filename || null,
+                    uploadedAt: collegeIdDoc.uploadedAt || null,
+                },
             },
             stats: {
                 viewCount: profile.profileStats.viewCount,
-                lastUpdated: profile.profileStats.lastUpdated
-            }
+                lastUpdated: profile.profileStats.lastUpdated,
+            },
         };
 
         return sendResponse(res, 200, true, 'Dashboard data fetched successfully', dashboardData);

@@ -1,15 +1,16 @@
 // frontend/src/components/Profile/DocumentUpload.jsx
-// Hinglish: Resume, College ID, aur Certificates upload karne ka component with improved UI
+// Resume & College ID upload component with consistent UX and immediate previews
 
 import React, { useState } from 'react';
-import { uploadResume, uploadCollegeId, uploadCertificates } from '../../apis/studentProfileApi';
+import { uploadResume, uploadCollegeId } from '../../apis/studentProfileApi';
 import { Upload, FileText, Image, CheckCircle, AlertCircle, X, File } from 'lucide-react';
 
 const DocumentUpload = ({ type, currentDocument, onRefresh }) => {
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
-    const [preview, setPreview] = useState(null);
+    const [preview, setPreview] = useState(null); // image preview for college ID
+    const [uploadedDocument, setUploadedDocument] = useState(null); // latest uploaded doc from API (Cloudinary URL)
 
     const config = {
         resume: {
@@ -22,20 +23,11 @@ const DocumentUpload = ({ type, currentDocument, onRefresh }) => {
         },
         collegeId: {
             title: 'Upload College ID',
-            description: ' Only Image, max 5MB',
+            description: 'Only image files, max 5MB',
             endpoint: uploadCollegeId,
             accept: 'image/*',
             icon: Image,
             color: 'green'
-        },
-        certificates: {
-            title: 'Upload Certificates',
-            description: 'Multiple files allowed (Image/PDF)',
-            endpoint: uploadCertificates,
-            accept: 'image/*,.pdf',
-            multiple: true,
-            icon: File,
-            color: 'purple'
         },
     };
 
@@ -112,7 +104,18 @@ const DocumentUpload = ({ type, currentDocument, onRefresh }) => {
         setMessage('');
 
         try {
-            await endpoint(file);
+            // Call API and capture the uploaded document payload (contains Cloudinary URL)
+            const uploaded = await endpoint(file);
+
+            // Normalise the document shape so UI doesn't care about `url` vs `path`
+            if (uploaded) {
+                const normalised = {
+                    ...uploaded,
+                    url: uploaded.path || uploaded.url || uploaded.secure_url || null,
+                };
+                setUploadedDocument(normalised);
+            }
+
             setMessage('success:File uploaded successfully!');
             setFile(null);
             setPreview(null);
@@ -146,14 +149,17 @@ const DocumentUpload = ({ type, currentDocument, onRefresh }) => {
         return file ? file.name : '';
     };
 
+    // Prefer the most recent upload response for preview; fall back to parent-provided document
+    const effectiveCurrentDocument = uploadedDocument || currentDocument || null;
+
     const messageType = message.split(':')[0];
     const messageText = message.split(':')[1] || message;
 
     return (
-        <div className={`border-2 rounded-xl p-6 transition-all ${colorClasses[color]}`}>
-            <div className="flex items-center gap-3 mb-4">
-                <div className={`p-2 rounded-lg bg-${color}-500/20`}>
-                    <Icon className={`text-${color}-400`} size={24} />
+        <div className="border-2 rounded-xl p-6 transition-all border-white/20 bg-white/5 backdrop-blur-sm">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 rounded-lg bg-gradient-to-br from-white/10 to-white/5">
+                    <Icon className="text-gold" size={24} />
                 </div>
                 <div>
                     <h4 className="text-lg font-bold text-white">{title}</h4>
@@ -161,18 +167,20 @@ const DocumentUpload = ({ type, currentDocument, onRefresh }) => {
                 </div>
             </div>
 
-            {/* Current Document Status */}
-            {currentDocument && currentDocument.path && (
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-4">
-                    <p className="text-sm text-gray-300 mb-2">Current Document:</p>
+            {/* Current / Just Uploaded Document Status - Only show if no file is being edited */}
+            {!file && effectiveCurrentDocument && (effectiveCurrentDocument.path || effectiveCurrentDocument.url) && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-6">
+                    <p className="text-sm text-gray-300 mb-3 font-medium">
+                        {uploadedDocument ? '✓ Just uploaded' : '✓ Current Document'}
+                    </p>
                     <a 
-                        href={currentDocument.path} 
+                        href={effectiveCurrentDocument.path || effectiveCurrentDocument.url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-gold hover:text-yellow-400 text-sm flex items-center gap-2"
+                        className="text-gold hover:text-yellow-400 text-sm flex items-center gap-2 break-all"
                     >
-                        <CheckCircle size={16} />
-                        {currentDocument.filename || 'View Document'}
+                        <CheckCircle size={16} className="flex-shrink-0" />
+                        <span className="break-words">{effectiveCurrentDocument.filename || (type === 'resume' ? 'View Resume' : 'View Document')}</span>
                     </a>
                 </div>
             )}

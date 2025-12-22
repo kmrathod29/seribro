@@ -202,12 +202,12 @@ exports.getStudentDashboard = asyncHandler(async (req, res) => {
       documents: {
         resume: {
           uploaded: !!profile.documents?.resume?.path,
-          url: profile.documents?.resume?.path || null,
+          url: profile.documents?.resume?.path || profile.documents?.resume?.url || null,
           uploadedAt: profile.documents?.resume?.uploadedAt || null,
         },
         collegeId: {
           uploaded: !!profile.documents?.collegeId?.path,
-          url: profile.documents?.collegeId?.path || null,
+          url: profile.documents?.collegeId?.path || profile.documents?.collegeId?.url || null,
           uploadedAt: profile.documents?.collegeId?.uploadedAt || null,
         },
         certificates: profile.documents?.certificates?.map(cert => ({
@@ -224,10 +224,10 @@ exports.getStudentDashboard = asyncHandler(async (req, res) => {
       projectsCount: profile.projects?.length || 0,
 
       // Hinglish: Resume URL
-      resumeUrl: profile.documents?.resume?.path || null,
+      resumeUrl: profile.documents?.resume?.path || profile.documents?.resume?.url || null,
 
-      // Hinglish: College ID
-      collegeId: profile.collegeId || student.collegeId || null,
+      // Hinglish: College ID (normalized to Cloudinary/stored URL)
+      collegeId: profile.documents?.collegeId?.path || profile.documents?.collegeId?.url || student.collegeId || null,
 
       // Hinglish: Alerts
       alerts: [

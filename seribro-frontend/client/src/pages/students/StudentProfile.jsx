@@ -274,12 +274,6 @@ const StudentProfile = () => {
                                 currentDocument={documents?.collegeId}
                                 onRefresh={loadProfile}
                             />
-                            
-                            <DocumentUpload 
-                                type="certificates"
-                                currentDocument={documents?.certificates}
-                                onRefresh={loadProfile}
-                            />
                         </div>
                     )}
 

@@ -275,10 +275,10 @@ const StudentDashboard = () => {
                 <div className="text-center">
                   <p className="text-sm text-[#94a3b8] mb-3">Your Profile Photo</p>
                   {(
-                    dashboard.student.profilePhotoUrl || dashboard.documents.collegeId?.url
+                    dashboard.student.profilePhotoUrl || dashboard.documents.collegeId?.url || dashboard.documents.collegeId?.path
                   ) ? (
                     <img
-                      src={dashboard.student.profilePhotoUrl || dashboard.documents.collegeId?.url}
+                      src={dashboard.student.profilePhotoUrl || dashboard.documents.collegeId?.url || dashboard.documents.collegeId?.path}
                       alt="profile"
                       className="w-40 h-40 object-cover rounded-lg mx-auto border-2 border-[#0f172a]"
                     />

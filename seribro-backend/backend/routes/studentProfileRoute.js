@@ -15,7 +15,6 @@ const {
     addProject,
     updateProject,
     deleteProject,
-    uploadCertificates,
     uploadCollegeId,
     submitForVerification,
     getDashboard
@@ -45,7 +44,7 @@ router.put('/profile/links', updatePortfolioLinks);
 // Document Upload Routes
 router.post('/profile/resume', uploadMiddleware.single('resume'), uploadResume);
 router.post('/profile/college-id', uploadMiddleware.single('collegeId'), uploadCollegeId);
-router.post('/profile/certificates', uploadMiddleware.array('certificates', 5), uploadCertificates);
+// Certificates upload route intentionally removed as per updated requirements
 
 // Project Management Routes
 router.post('/profile/projects', validationMiddleware('project'), addProject);
