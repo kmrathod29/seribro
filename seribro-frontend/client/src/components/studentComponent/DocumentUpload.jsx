@@ -14,7 +14,7 @@ const DocumentUpload = ({ type, currentDocument, onRefresh }) => {
 
     const config = {
         resume: {
-            title: 'Upload Resume',
+            title: 'Resume',
             description: 'PDF format only, max 5MB',
             endpoint: uploadResume,
             accept: '.pdf',
@@ -22,7 +22,7 @@ const DocumentUpload = ({ type, currentDocument, onRefresh }) => {
             color: 'blue'
         },
         collegeId: {
-            title: 'Upload College ID',
+            title: 'College ID',
             description: 'Only image files, max 5MB',
             endpoint: uploadCollegeId,
             accept: 'image/*',

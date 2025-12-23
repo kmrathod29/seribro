@@ -3,7 +3,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { updateBasicInfo } from '../../apis/studentProfileApi';
+
 import { User, Phone, GraduationCap, Calendar, BookOpen, FileText, AlertCircle, CheckCircle, MapPin, Zap, Lock, Code } from 'lucide-react';
+
+
 
 const BasicInfoForm = ({ initialData, onUpdate }) => {
     const [formData, setFormData] = useState(initialData || {});
@@ -13,6 +16,7 @@ const BasicInfoForm = ({ initialData, onUpdate }) => {
 
     useEffect(() => {
         setFormData(initialData || {});
+       
     }, [initialData]);
 
     const validateForm = () => {
@@ -78,11 +82,15 @@ const BasicInfoForm = ({ initialData, onUpdate }) => {
         }
     };
 
+   
+
     const messageType = message.split(':')[0];
     const messageText = message.split(':')[1] || message;
 
+    
+
     return (
-        <div className="max-w-4xl mx-auto">
+         <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
                 <User className="text-gold" size={28} />
                 <h3 className="text-2xl font-bold text-white">Basic Information</h3>
@@ -340,23 +348,6 @@ const BasicInfoForm = ({ initialData, onUpdate }) => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Student ID */}
-                    <div className="space-y-2">
-                        <label htmlFor="studentId" className="flex items-center gap-2 text-white font-semibold">
-                            <Lock size={18} />
-                            Student ID <span className="text-gray-400">(Optional)</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="studentId"
-                            name="studentId"
-                            value={formData.studentId || ''}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent transition-all"
-                            placeholder="e.g., STU123456"
-                        />
-                    </div>
-
                     {/* Roll Number */}
                     <div className="space-y-2">
                         <label htmlFor="rollNumber" className="flex items-center gap-2 text-white font-semibold">
@@ -396,26 +387,31 @@ const BasicInfoForm = ({ initialData, onUpdate }) => {
                     </p>
                 </div>
 
-                <button 
-                    type="submit" 
-                    disabled={loading} 
+               
+
+                <button
+                    type="submit"
+                    disabled={loading}
                     className="w-full bg-gradient-to-r from-gold to-yellow-400 hover:shadow-lg hover:shadow-gold/50 text-navy font-bold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {loading ? (
                         <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-navy"></div>
+                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-navy"></div>
                             Updating...
                         </>
                     ) : (
                         <>
-                            <CheckCircle size={20} />
+                           <CheckCircle size={20} />
                             Save Basic Info
                         </>
                     )}
                 </button>
             </form>
+
+          
         </div>
     );
 };
 
 export default BasicInfoForm;
+

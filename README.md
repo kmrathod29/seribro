@@ -116,3 +116,7 @@ Run backend and frontend in separate terminals
 
 🧑‍💻 Author
 Arman Mahetar and Krunal Rathod
+
+
+cd .\seribro-backend
+cd .\seribro-frontend\client

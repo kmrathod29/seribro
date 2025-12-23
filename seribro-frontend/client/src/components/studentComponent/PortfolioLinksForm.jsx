@@ -200,12 +200,12 @@ const PortfolioLinksForm = ({ initialData, onUpdate }) => {
                     {/* GitHub */}
                     <LinkCard
                         icon={Github}
-                        label="GitHub Repository"
+                        label="GitHub Profile"
                         name="github"
-                        placeholder="https://github.com/username/repository"
+                        placeholder="https://github.com/username/"
                         value={linksData.github}
                         error={errors.github}
-                        hint="Link to your GitHub repository or profile"
+                        hint="Link to your GitHub Profile"
                         onChange={handleChange}
                     />
 
