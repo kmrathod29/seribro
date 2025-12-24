@@ -226,7 +226,7 @@ exports.getProjectDetails = async (req, res) => {
             }
         }
 
-        // Get student profile for skill comparison
+        // Get student profile for skill comparison and identity
         const studentProfile = await StudentProfile.findOne({ user: req.user.id }).lean();
         
         // Extract skills from nested structure (technical, soft, languages)
@@ -246,6 +246,14 @@ exports.getProjectDetails = async (req, res) => {
             (skill) => studentSkills.includes(skill.toLowerCase())
         );
 
+        // Per-student assignment status based on assignedStudent / selectedStudentId
+        const assignedStudentId = project.assignedStudent || project.selectedStudentId || null;
+        const isAssignedToYou =
+            !!assignedStudentId &&
+            !!studentProfile &&
+            assignedStudentId.toString() === studentProfile._id.toString();
+        const isAssignedToOther = !!assignedStudentId && !isAssignedToYou;
+
         return sendResponse(
             res,
             true,
@@ -262,7 +270,8 @@ exports.getProjectDetails = async (req, res) => {
                     projectDuration: project.projectDuration,
                     requiredSkills: project.requiredSkills,
                     status: project.status,
-                    assignedStudent: project.assignedStudent,
+                assignedStudent: project.assignedStudent,
+                selectedStudentId: project.selectedStudentId || null,
                     applicationsCount: project.applicationsCount || 0,
                     company: companyData ? {
                         name: companyData.companyName,
@@ -273,7 +282,10 @@ exports.getProjectDetails = async (req, res) => {
                     skillMatch: matchPercentage,
                     matchedSkills,
                     hasApplied: !!hasApplied,
-                    applicationStatus: hasApplied?.status || null,
+                applicationStatus: hasApplied?.status || null,
+                // Per-student assignment flags for frontend logic
+                isAssignedToYou,
+                isAssignedToOther,
                 },
             },
             200

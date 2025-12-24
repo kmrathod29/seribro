@@ -459,8 +459,9 @@ exports.assignProject = async (req, res) => {
             return sendResponse(res, false, 'Student profile nahi mila.', null, 404);
         }
 
-        // Assign karo
-        project.selectedStudentId = studentId;
+        // Assign karo - keep both legacy and new fields in sync
+        project.selectedStudentId = studentId; // Legacy selection field (Phase 4.1)
+        project.assignedStudent = studentId;   // Phase 4.5 canonical assigned student field
         project.status = 'assigned';
 
         // Shortlist se remove karo (sirf assigned student rhe)

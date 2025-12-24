@@ -584,6 +584,10 @@ exports.approveStudentForProject = async (req, res) => {
         }
 
         // PART 6: Step 3 - Update project document
+        // IMPORTANT: Keep both selectedStudentId and assignedStudent in sync
+        // - selectedStudentId: original Phase 4.1 field used by some views
+        // - assignedStudent: Phase 4.5 canonical field used by new flows
+        project.selectedStudentId = application.studentId;
         project.assignedStudent = application.studentId;
         project.status = 'assigned';
         
@@ -725,6 +729,8 @@ exports.acceptApplication = async (req, res) => {
         await application.save({ session });
 
         // Update project status
+        // IMPORTANT: Keep both selection fields in sync for backward compatibility
+        project.selectedStudentId = application.studentId;
         project.status = 'assigned';
         project.assignedStudent = application.studentId;
         await project.save({ session });

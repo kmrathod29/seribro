@@ -424,7 +424,9 @@ exports.acceptApplication = async (req, res) => {
 
         // Update project
         const project = await Project.findById(application.projectId).session(session);
+        // IMPORTANT: Keep both legacy and new selection fields in sync
         project.status = 'assigned';
+        project.selectedStudentId = application.studentId;
         project.assignedStudent = application.studentId;
         project.selectionHistory.push({
             studentId: application.studentId,
@@ -568,7 +570,7 @@ exports.declineApplication = async (req, res) => {
             .sort({ shortlistPriority: 1, createdAt: 1 })
             .session(session);
 
-        if (nextStudent) {
+                if (nextStudent) {
             // Update next student to awaiting_acceptance
             const newDeadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -602,7 +604,7 @@ exports.declineApplication = async (req, res) => {
                 'selected',
                 nextStudent._id
             );
-        } else {
+                } else {
             // No backup students - reopen project
             project.status = 'open';
             project.studentUnderConsideration = null;

@@ -320,8 +320,16 @@ const ProjectDetails = () => {
 
                                 {/* Application Section */}
                                 <div className="bg-gradient-to-r from-amber-500/10 to-yellow-400/10 border border-amber-500/30 rounded-xl p-6">
-                                    {/* PART 7: Show "Project Assigned" if assignedStudent exists */}
-                                    {project.assignedStudent ? (
+                                    {/* PART 7: Student-specific assignment messaging */}
+                                    {project.isAssignedToYou ? (
+                                        <div className="flex items-center gap-3">
+                                            <CheckCircle className="w-6 h-6 text-green-400" />
+                                            <div>
+                                                <h3 className="font-semibold text-white">Project Assigned to You</h3>
+                                                <p className="text-sm text-gray-400">You have been selected and assigned to this project.</p>
+                                            </div>
+                                        </div>
+                                    ) : project.isAssignedToOther ? (
                                         <div className="flex items-center gap-3">
                                             <X className="w-6 h-6 text-gray-400" />
                                             <div>
