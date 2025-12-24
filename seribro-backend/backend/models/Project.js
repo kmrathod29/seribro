@@ -206,6 +206,20 @@ const ProjectSchema = new mongoose.Schema(
             },
         ],
 
+        // Workspace tracking
+        lastActivity: {
+            type: Date,
+            default: Date.now,
+        },
+        workspaceCreatedAt: {
+            type: Date,
+            default: null,
+        },
+        messageCount: {
+            type: Number,
+            default: 0,
+        },
+
         // Soft delete ke liye
         isDeleted: {
             type: Boolean,
@@ -231,5 +245,11 @@ ProjectSchema.index({ status: 1 }); // Status ke basis par filter karo
 ProjectSchema.index({ createdAt: -1 }); // Latest projects pehle
 ProjectSchema.index({ companyId: 1, status: 1 }); // Company + Status ke basis par
 ProjectSchema.index({ isDeleted: 1 }); // Soft delete ke liye
+
+// Workspace helper - update last activity timestamp
+ProjectSchema.methods.updateLastActivity = function () {
+    this.lastActivity = new Date();
+    return this.save();
+};
 
 module.exports = mongoose.model('Project', ProjectSchema);

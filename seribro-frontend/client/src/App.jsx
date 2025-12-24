@@ -39,6 +39,9 @@ import AdminProjects from './pages/admin/AdminProjects';
 import AdminProjectDetails from './pages/admin/AdminProjectDetails';
 import AdminApplications from './pages/admin/AdminApplications';
 import AdminApplicationDetails from './pages/admin/AdminApplicationDetails';
+import ProjectWorkspace from './pages/workspace/ProjectWorkspace';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 import { AdminRoute, StudentRoute, CompanyRoute } from './components/Shared/RoleRoutes';
@@ -105,6 +108,9 @@ function App() {
         {/* Phase 4.3: Company Application Management Routes */}
   <Route path="/company/applications" element={<CompanyRoute><CompanyApplications /></CompanyRoute>} />
   <Route path="/company/applications/:applicationId" element={<CompanyRoute><ApplicationDetails /></CompanyRoute>} />
+
+        {/* Workspace (Phase 5.1) */}
+        <Route path="/workspace/projects/:projectId" element={<ProjectWorkspace />} />
         {/* <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<BrowseProjects />} />
         <Route path="/profile" element={<Profile />} />
@@ -116,6 +122,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
 
       </Routes>
+    <ToastContainer position="top-right" autoClose={3500} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
     </Router>
   );
 }

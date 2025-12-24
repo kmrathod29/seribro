@@ -243,6 +243,14 @@ const MyApplications = () => {
                                         <div className="text-xs text-gray-500">
                                             Applied: {formatDate(app.appliedAt)}
                                         </div>
+                                        {['accepted', 'approved'].includes(app.status) && app.project?._id && (
+                                            <button
+                                                onClick={() => navigate(`/workspace/projects/${app.project._id}`)}
+                                                className="w-full px-3 py-1 rounded text-xs bg-blue-600 hover:bg-blue-700 text-white border border-blue-500/50 font-medium transition-colors"
+                                            >
+                                                View Workspace →
+                                            </button>
+                                        )}
                                         {app.status === 'pending' && (
                                             <button
                                                 onClick={() =>

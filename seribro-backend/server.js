@@ -161,6 +161,11 @@ try {
   app.use('/api/notifications', require('./backend/routes/notificationRoutes'));
   console.log('   ✅ /api/notifications routes mounted');
 
+  // Phase 5.1: Workspace routes (project message board)
+  console.log('📌 Mounting /api/workspace (Phase 5.1)...');
+  app.use('/api/workspace', require('./backend/routes/workspaceRoutes'));
+  console.log('   ✅ /api/workspace routes mounted');
+
   /**
    * ⚠️ PHASE 6 - DORMANT / FUTURE WORK ⚠️
    * 

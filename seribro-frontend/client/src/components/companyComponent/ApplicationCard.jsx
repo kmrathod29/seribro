@@ -187,6 +187,15 @@ const ApplicationCard = ({
                         </button>
                     </>
                 )}
+
+                {application.status === 'accepted' && application.projectId && (
+                    <Link
+                        to={`/workspace/projects/${application.projectId._id || application.projectId}`}
+                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-3 rounded transition-colors text-center"
+                    >
+                        Open Workspace →
+                    </Link>
+                )}
             </div>
         </div>
     );
