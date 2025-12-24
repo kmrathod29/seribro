@@ -616,6 +616,8 @@ StudentProfileSchema.methods.updateProject = async function(projectId, projectDa
     
     Object.assign(project, projectData);
     this.profileStats.lastUpdated = new Date();
+    await this.save();
+    return project;
 };
 
 // Earnings update used when payment released or pending
@@ -650,9 +652,6 @@ StudentProfileSchema.methods.updateRating = function(newRating) {
     const key = this._getRatingKey(newRating);
     this.ratings.ratingDistribution[key] = (this.ratings.ratingDistribution[key] || 0) + 1;
     return this.save();
-};
-    await this.save();
-    return project;
 };
 
 // Delete project
