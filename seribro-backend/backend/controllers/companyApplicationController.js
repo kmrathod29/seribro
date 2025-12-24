@@ -648,6 +648,48 @@ exports.approveStudentForProject = async (req, res) => {
 
         await session.commitTransaction();
 
+        // Phase 5.3: Create payment order for project assignment (non-blocking)
+        try {
+            const amount = project.budgetMax || project.budgetMin || 0;
+            const platformPercent = Number(process.env.PLATFORM_FEE_PERCENTAGE || 7);
+            const platformFee = Math.round((amount * platformPercent) / 100);
+            const netAmount = amount - platformFee;
+
+            // Attempt to create Razorpay order; if not available, create a pending Payment record
+            let order = null;
+            try {
+                const { createRazorpayOrder } = require('../utils/payment/razorpayHelper');
+                order = await createRazorpayOrder(amount, project._id, application.studentId);
+            } catch (err) {
+                console.warn('Razorpay order could not be created at assignment:', err.message);
+            }
+
+            const Payment = require('../models/Payment');
+            const createdPayment = await Payment.create({
+                razorpayOrderId: order ? order.id : null,
+                project: project._id,
+                company: companyProfile._id,
+                student: application.studentId,
+                amount,
+                platformFee,
+                netAmount,
+                status: 'pending'
+            });
+
+            await project.linkPayment(createdPayment._id, amount);
+
+            // Notify company to complete payment (in-app and email)
+            await createNotification(
+                req.user._id,
+                'company',
+                `Please complete payment of ₹${amount} to confirm assignment for project "${project.title}".`,
+                'payment_required',
+                project._id
+            );
+        } catch (err) {
+            console.warn('Non-fatal: payment setup failed after assignment:', err.message);
+        }
+
         return sendResponse(res, true, 'Student approved and project assigned successfully', {
             application,
             project: {

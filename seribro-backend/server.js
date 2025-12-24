@@ -166,6 +166,24 @@ try {
   app.use('/api/workspace', require('./backend/routes/workspaceRoutes'));
   console.log('   ✅ /api/workspace routes mounted');
 
+  // Phase 5.2: Work Submission & Review routes
+  console.log('📌 Mounting /api/workspace (Phase 5.2 - submissions)...');
+  app.use('/api/workspace', require('./backend/routes/workSubmissionRoutes'));
+  console.log('   ✅ /api/workspace submissions routes mounted');
+
+  // Phase 5.3: Payments and Ratings (mounting new routes)
+  try {
+    console.log('📌 Mounting /api/payments (Phase 5.3 - payments)...');
+    app.use('/api/payments', require('./backend/routes/paymentRoutes'));
+    console.log('   ✅ /api/payments routes mounted');
+
+    console.log('📌 Mounting /api/ratings (Phase 5.3 - ratings)...');
+    app.use('/api/ratings', require('./backend/routes/ratingRoutes'));
+    console.log('   ✅ /api/ratings routes mounted');
+  } catch (err) {
+    console.warn('   ⚠️ /api/payments or /api/ratings mount skipped:', err.message);
+  }
+
   /**
    * ⚠️ PHASE 6 - DORMANT / FUTURE WORK ⚠️
    * 

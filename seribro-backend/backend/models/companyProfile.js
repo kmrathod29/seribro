@@ -137,6 +137,24 @@ const CompanyProfileSchema = new mongoose.Schema(
         verifiedByAdmin: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
         rejectionReason: { type: String, default: '', maxlength: 500 },
         
+        // ========== Phase 5.3: Payment & Rating Tracking ==========
+        payments: {
+            totalSpent: { type: Number, default: 0 },
+            completedProjects: { type: Number, default: 0 },
+            lastPaymentDate: Date
+        },
+        ratings: {
+            averageRating: { type: Number, default: 0, min: 0, max: 5 },
+            totalRatings: { type: Number, default: 0 },
+            ratingDistribution: {
+                five: { type: Number, default: 0 },
+                four: { type: Number, default: 0 },
+                three: { type: Number, default: 0 },
+                two: { type: Number, default: 0 },
+                one: { type: Number, default: 0 }
+            }
+        },
+
         // Phase 4.1: Project management fields
         postedProjectsCount: {
             type: Number,
@@ -154,6 +172,35 @@ const CompanyProfileSchema = new mongoose.Schema(
 
 // Duplicate index warning ko fix karne ke liye yeh line remove kar di gayi
 // CompanyProfileSchema.index({ user: 1 }); // ❌ Yeh line hatai gayi
+
+// Methods for updating payments and ratings
+CompanyProfileSchema.methods._getRatingKey = function(rating) {
+    if (rating >= 5) return 'five';
+    if (rating >= 4) return 'four';
+    if (rating >= 3) return 'three';
+    if (rating >= 2) return 'two';
+    return 'one';
+};
+
+CompanyProfileSchema.methods.updatePayments = function(amount) {
+    if (!this.payments) this.payments = { totalSpent: 0, completedProjects: 0 };
+    this.payments.totalSpent = (this.payments.totalSpent || 0) + amount;
+    this.payments.completedProjects = (this.payments.completedProjects || 0) + 1;
+    this.payments.lastPaymentDate = new Date();
+    return this.save();
+};
+
+CompanyProfileSchema.methods.updateRating = function(newRating) {
+    if (!this.ratings) this.ratings = { averageRating: 0, totalRatings: 0, ratingDistribution: { five:0,four:0,three:0,two:0,one:0 } };
+    const total = this.ratings.totalRatings || 0;
+    const current = this.ratings.averageRating || 0;
+
+    this.ratings.averageRating = ((current * total) + newRating) / (total + 1);
+    this.ratings.totalRatings = total + 1;
+    const key = this._getRatingKey(newRating);
+    this.ratings.ratingDistribution[key] = (this.ratings.ratingDistribution[key] || 0) + 1;
+    return this.save();
+};
 
 // Check if model already exists to prevent OverwriteModelError
 const CompanyProfile = mongoose.models.CompanyProfile || mongoose.model('CompanyProfile', CompanyProfileSchema);

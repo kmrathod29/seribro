@@ -18,10 +18,13 @@ const uploadToCloudinary = async (filePath, folder, userId) => {
             throw new Error('File not found at provided path');
         }
 
+        const ext = path.extname(filePath).toLowerCase();
+        const resourceType = ext === '.pdf' ? 'raw' : 'auto';
+
         const result = await cloudinary.uploader.upload(filePath, {
             folder: `seribro/${folder}`,
             public_id: `${userId}_${Date.now()}_${path.basename(filePath, path.extname(filePath))}`,
-            resource_type: 'auto',
+            resource_type: resourceType,
             timeout: 60000 // 60 second timeout
         });
 

@@ -121,9 +121,122 @@ const ProjectSchema = new mongoose.Schema(
         // Project status
         status: {
             type: String,
-            enum: ['open', 'selection_pending', 'assigned', 'in-progress', 'completed', 'cancelled', 'closed'],
+            enum: ['open', 'selection_pending', 'assigned', 'in-progress', 'submitted', 'under-review', 'revision-requested', 'approved', 'completed', 'cancelled', 'closed', 'disputed'],
             default: 'open',
         },
+
+        // Work submission tracking
+        submissions: [
+            {
+                version: { type: Number, required: true },
+                files: [
+                    {
+                        filename: String,
+                        originalName: String,
+                        fileType: String,
+                        url: String,
+                        public_id: String,
+                        size: Number,
+                        uploadedAt: { type: Date, default: Date.now },
+                    },
+                ],
+                links: [
+                    {
+                        url: String,
+                        description: String,
+                        addedAt: { type: Date, default: Date.now },
+                    },
+                ],
+                message: {
+                    type: String,
+                    maxlength: 2000,
+                },
+                submittedBy: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'StudentProfile',
+                    required: true,
+                },
+                submittedAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+                status: {
+                    type: String,
+                    enum: ['submitted', 'under-review', 'approved', 'revision-requested', 'rejected'],
+                    default: 'submitted',
+                },
+                reviewedAt: Date,
+                reviewedBy: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User',
+                },
+                companyFeedback: {
+                    type: String,
+                    maxlength: 2000,
+                },
+                revisionRequested: {
+                    type: Boolean,
+                    default: false,
+                },
+                revisionReason: String,
+            },
+        ],
+
+        currentSubmission: {
+            version: Number,
+            submissionId: mongoose.Schema.Types.ObjectId,
+            status: String,
+            submittedAt: Date,
+        },
+
+        revisionCount: {
+            type: Number,
+            default: 0,
+            max: Number(process.env.MAX_SUBMISSION_REVISIONS || 2),
+        },
+        maxRevisionsAllowed: {
+            type: Number,
+            default: Number(process.env.MAX_SUBMISSION_REVISIONS || 2),
+        },
+        revisionHistory: [
+            {
+                version: Number,
+                requestedAt: Date,
+                requestedBy: mongoose.Schema.Types.ObjectId,
+                reason: String,
+                resubmittedAt: Date,
+            },
+        ],
+
+        // Status timestamps
+        startedAt: Date,
+        submittedAt: Date,
+        reviewedAt: Date,
+        approvedAt: Date,
+        completedAt: Date,
+
+        workStarted: {
+            type: Boolean,
+            default: false,
+        },
+
+        // ========== Phase 5.3: Payment & Rating Tracking ==========
+        paymentStatus: {
+            type: String,
+            enum: ['not_required','pending','captured','ready_for_release','released','refunded'],
+            default: 'pending',
+        },
+        payment: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Payment',
+            default: null,
+        },
+        paymentAmount: { type: Number },
+        paymentCapturedAt: Date,
+        paymentReleasedAt: Date,
+
+        ratingCompleted: { type: Boolean, default: false },
+        rating: { type: mongoose.Schema.Types.ObjectId, ref: 'Rating' },
 
         // Applications count
         applicationsCount: {
@@ -250,6 +363,183 @@ ProjectSchema.index({ isDeleted: 1 }); // Soft delete ke liye
 ProjectSchema.methods.updateLastActivity = function () {
     this.lastActivity = new Date();
     return this.save();
+};
+
+// Start work on project
+ProjectSchema.methods.startWork = async function () {
+    if (this.status !== 'assigned') {
+        throw new Error('Can only start work on assigned projects');
+    }
+    this.status = 'in-progress';
+    this.workStarted = true;
+    this.startedAt = new Date();
+    await this.save();
+    return this;
+};
+
+// Submit work
+ProjectSchema.methods.submitWork = async function (submissionData, studentId) {
+    if (!['in-progress', 'revision-requested'].includes(this.status)) {
+        throw new Error('Cannot submit work at this stage');
+    }
+
+    const version = (this.submissions ? this.submissions.length : 0) + 1;
+
+    const submission = {
+        version,
+        files: submissionData.files || [],
+        links: submissionData.links || [],
+        message: submissionData.message || '',
+        submittedBy: studentId,
+        submittedAt: new Date(),
+        status: 'submitted',
+    };
+
+    this.submissions = this.submissions || [];
+    this.submissions.push(submission);
+
+    const submissionId = this.submissions[this.submissions.length - 1]._id;
+
+    this.currentSubmission = {
+        version,
+        submissionId,
+        status: 'submitted',
+        submittedAt: new Date(),
+    };
+
+    this.status = 'under-review';
+    if (version === 1 && !this.submittedAt) {
+        this.submittedAt = new Date();
+    }
+
+    await this.save();
+    return { submission: this.submissions.id(submissionId), project: this };
+};
+
+// Link a payment to this project
+ProjectSchema.methods.linkPayment = async function (paymentId, amount) {
+    this.payment = paymentId;
+    this.paymentAmount = amount || this.paymentAmount || this.budgetMax;
+    this.paymentStatus = 'pending';
+    await this.save();
+    return this;
+};
+
+ProjectSchema.methods.markPaymentCaptured = async function () {
+    this.paymentStatus = 'captured';
+    this.paymentCapturedAt = new Date();
+    await this.save();
+    return this;
+};
+
+ProjectSchema.methods.markPaymentReadyForRelease = async function () {
+    this.paymentStatus = 'ready_for_release';
+    await this.save();
+    return this;
+};
+
+ProjectSchema.methods.markPaymentReleased = async function () {
+    this.paymentStatus = 'released';
+    this.paymentReleasedAt = new Date();
+    await this.save();
+    return this;
+};
+
+ProjectSchema.methods.markPaymentRefunded = async function () {
+    this.paymentStatus = 'refunded';
+    await this.save();
+    return this;
+};
+
+// Approve work
+ProjectSchema.methods.approveWork = async function (reviewerId, feedback = '') {
+    if (this.status !== 'under-review') {
+        throw new Error('Can only approve work that is under review');
+    }
+
+    const currentSubId = this.currentSubmission && this.currentSubmission.submissionId;
+    const currentSub = this.submissions.id(currentSubId);
+    if (!currentSub) {
+        throw new Error('Current submission not found');
+    }
+
+    currentSub.status = 'approved';
+    currentSub.reviewedAt = new Date();
+    currentSub.reviewedBy = reviewerId;
+    currentSub.companyFeedback = feedback;
+
+    this.status = 'approved';
+    this.reviewedAt = new Date();
+    this.approvedAt = new Date();
+
+    await this.save();
+    return { submission: currentSub, project: this };
+};
+
+// Request revision
+ProjectSchema.methods.requestRevision = async function (reviewerId, reason) {
+    if (this.status !== 'under-review') {
+        throw new Error('Can only request revision for work under review');
+    }
+
+    if (this.revisionCount >= this.maxRevisionsAllowed) {
+        throw new Error(`Maximum ${this.maxRevisionsAllowed} revisions reached. Please approve or reject.`);
+    }
+
+    const currentSubId = this.currentSubmission && this.currentSubmission.submissionId;
+    const currentSub = this.submissions.id(currentSubId);
+    if (!currentSub) {
+        throw new Error('Current submission not found');
+    }
+
+    currentSub.status = 'revision-requested';
+    currentSub.reviewedAt = new Date();
+    currentSub.reviewedBy = reviewerId;
+    currentSub.revisionRequested = true;
+    currentSub.revisionReason = reason;
+
+    this.revisionHistory = this.revisionHistory || [];
+    this.revisionHistory.push({
+        version: currentSub.version,
+        requestedAt: new Date(),
+        requestedBy: reviewerId,
+        reason: reason,
+    });
+
+    this.revisionCount = (this.revisionCount || 0) + 1;
+    this.status = 'revision-requested';
+    this.reviewedAt = new Date();
+
+    await this.save();
+    return { submission: currentSub, project: this };
+};
+
+// Reject work (opens dispute)
+ProjectSchema.methods.rejectWork = async function (reviewerId, reason) {
+    if (this.status !== 'under-review') {
+        throw new Error('Can only reject work that is under review');
+    }
+
+    if (this.revisionCount < this.maxRevisionsAllowed) {
+        throw new Error('Please use revision request instead. Rejection is only allowed after maximum revisions.');
+    }
+
+    const currentSubId = this.currentSubmission && this.currentSubmission.submissionId;
+    const currentSub = this.submissions.id(currentSubId);
+    if (!currentSub) {
+        throw new Error('Current submission not found');
+    }
+
+    currentSub.status = 'rejected';
+    currentSub.reviewedAt = new Date();
+    currentSub.reviewedBy = reviewerId;
+    currentSub.companyFeedback = reason;
+
+    this.status = 'disputed';
+    this.reviewedAt = new Date();
+
+    await this.save();
+    return { submission: currentSub, project: this };
 };
 
 module.exports = mongoose.model('Project', ProjectSchema);

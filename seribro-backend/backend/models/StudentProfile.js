@@ -424,7 +424,25 @@ const StudentProfileSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Application'
     }],
+    // ========== Phase 5.3: Earnings & Ratings Tracking ==========
+    earnings: {
+        totalEarned: { type: Number, default: 0 },
+        pendingPayments: { type: Number, default: 0 },
+        completedProjects: { type: Number, default: 0 },
+        lastPaymentDate: Date
+    },
 
+    ratings: {
+        averageRating: { type: Number, default: 0, min: 0, max: 5 },
+        totalRatings: { type: Number, default: 0 },
+        ratingDistribution: {
+            five: { type: Number, default: 0 },
+            four: { type: Number, default: 0 },
+            three: { type: Number, default: 0 },
+            two: { type: Number, default: 0 },
+            one: { type: Number, default: 0 }
+        }
+    },
     // ========== STATUS ==========
     status: {
         isActive: {
@@ -598,6 +616,41 @@ StudentProfileSchema.methods.updateProject = async function(projectId, projectDa
     
     Object.assign(project, projectData);
     this.profileStats.lastUpdated = new Date();
+};
+
+// Earnings update used when payment released or pending
+StudentProfileSchema.methods.updateEarnings = function(amount, action) {
+    if (!this.earnings) this.earnings = { totalEarned: 0, pendingPayments: 0, completedProjects: 0 };
+    if (action === 'add') {
+        this.earnings.totalEarned += amount;
+        this.earnings.pendingPayments = Math.max(0, (this.earnings.pendingPayments || 0) - amount);
+        this.earnings.completedProjects = (this.earnings.completedProjects || 0) + 1;
+        this.earnings.lastPaymentDate = new Date();
+    } else if (action === 'pending') {
+        this.earnings.pendingPayments = (this.earnings.pendingPayments || 0) + amount;
+    }
+    return this.save();
+};
+
+StudentProfileSchema.methods._getRatingKey = function(rating) {
+    if (rating >= 5) return 'five';
+    if (rating >= 4) return 'four';
+    if (rating >= 3) return 'three';
+    if (rating >= 2) return 'two';
+    return 'one';
+};
+
+StudentProfileSchema.methods.updateRating = function(newRating) {
+    if (!this.ratings) this.ratings = { averageRating: 0, totalRatings: 0, ratingDistribution: { five:0,four:0,three:0,two:0,one:0 } };
+    const total = this.ratings.totalRatings || 0;
+    const current = this.ratings.averageRating || 0;
+
+    this.ratings.averageRating = ((current * total) + newRating) / (total + 1);
+    this.ratings.totalRatings = total + 1;
+    const key = this._getRatingKey(newRating);
+    this.ratings.ratingDistribution[key] = (this.ratings.ratingDistribution[key] || 0) + 1;
+    return this.save();
+};
     await this.save();
     return project;
 };

@@ -34,12 +34,18 @@ import PendingCompanies from './pages/admin/PendingCompanies';
 import StudentReview from './pages/admin/StudentReview';
 import CompanyReview from './pages/admin/CompanyReview';
 import AdminVerification from './pages/admin/AdminVerification';
+import AdminPaymentReleases from './pages/admin/AdminPaymentReleases';
 // Phase 2.1: Admin Project & Application Monitoring
 import AdminProjects from './pages/admin/AdminProjects';
+import StudentEarnings from './pages/student/StudentEarnings';
 import AdminProjectDetails from './pages/admin/AdminProjectDetails';
 import AdminApplications from './pages/admin/AdminApplications';
 import AdminApplicationDetails from './pages/admin/AdminApplicationDetails';
 import ProjectWorkspace from './pages/workspace/ProjectWorkspace';
+import SubmitWork from './pages/workspace/SubmitWork';
+import ReviewWork from './pages/workspace/ReviewWork';
+import PaymentPage from './pages/payment/PaymentPage';
+import RateProject from './pages/workspace/RateProject';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -61,7 +67,11 @@ function App() {
         
 <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path="/admin/verification" element={<AdminRoute><AdminVerification /></AdminRoute>} />
+        <Route path="/admin/payment-releases" element={<AdminRoute><AdminPaymentReleases /></AdminRoute>} />
         <Route path="/admin/students/pending" element={<AdminRoute><PendingStudents /></AdminRoute>} />
+
+  {/* Student earnings */}
+  <Route path="/student/earnings" element={<StudentRoute><StudentEarnings /></StudentRoute>} />
         <Route path="/admin/companies/pending" element={<AdminRoute><PendingCompanies /></AdminRoute>} />
         <Route path="/admin/student/:id" element={<AdminRoute><StudentReview /></AdminRoute>} />
         <Route path="/admin/company/:id" element={<AdminRoute><CompanyReview /></AdminRoute>} />
@@ -111,6 +121,15 @@ function App() {
 
         {/* Workspace (Phase 5.1) */}
         <Route path="/workspace/projects/:projectId" element={<ProjectWorkspace />} />
+        {/* Sub-Phase 2: Work Submission & Review */}
+        <Route path="/workspace/projects/:projectId/submit" element={<SubmitWork />} />
+        <Route path="/workspace/projects/:projectId/review" element={<ReviewWork />} />
+
+        {/* Phase 5.3: Payment */}
+        <Route path="/payment/:projectId" element={<CompanyRoute><PaymentPage /></CompanyRoute>} />
+
+        {/* Rating */}
+        <Route path="/workspace/projects/:projectId/rate" element={<RateProject />} />
         {/* <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<BrowseProjects />} />
         <Route path="/profile" element={<Profile />} />

@@ -17,7 +17,7 @@ const validateWorkspaceAccess = async (project, user) => {
     }
 
     // Only allow when project is in a workspace-ready status
-    const allowedStatuses = ['assigned', 'in-progress', 'submitted', 'under-review', 'completed'];
+    const allowedStatuses = ['assigned', 'in-progress', 'submitted', 'under-review', 'revision-requested', 'approved', 'completed', 'disputed'];
     if (!allowedStatuses.includes(project.status)) {
         return { hasAccess: false, role: null, error: 'Workspace not available for this project status' };
     }

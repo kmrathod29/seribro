@@ -165,9 +165,62 @@ const ProjectWorkspace = () => {
       <div className="flex-1 px-4 py-8 md:py-12 max-w-6xl mx-auto w-full space-y-6">
         <WorkspaceHeader project={project} daysRemaining={workspace?.workspace?.daysRemaining} />
 
+        {/* Action bar: Start Work (student), Review actions (company) */}
+        <div className="flex justify-end items-center">
+          {workspace?.workspace?.role === 'student' && workspace?.workspace?.canSubmitWork && project?.status === 'assigned' && (
+            <button
+              onClick={async () => {
+                try {
+                  const confirmStart = window.confirm('Start work on this project? This will change the project status to In Progress.');
+                  if (!confirmStart) return;
+                  // optimistic UI change
+                  const previous = project.status;
+                  setWorkspace((prev) => ({ ...prev, project: { ...prev.project, status: 'in-progress' } }));
+                  const startRes = await import('../../apis/workSubmissionApi').then((m) => m.startWork(project._id));
+                  if (startRes.success) {
+                    toast.success('Work started successfully');
+                    // reload workspace to ensure latest state
+                    await loadWorkspace();
+                  } else {
+                    // rollback
+                    setWorkspace((prev) => ({ ...prev, project: { ...prev.project, status: previous } }));
+                    toast.error(startRes.message || 'Failed to start work');
+                  }
+                } catch (err) {
+                  toast.error('Server error while starting work');
+                  // In case we optimistically changed, reload workspace
+                  await loadWorkspace();
+                }
+              }}
+              className="px-4 py-2 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 transition-colors"
+            >
+              Start Work
+            </button>
+          )}
+
+          {workspace?.workspace?.role === 'company' && project?.paymentStatus === 'pending' && project?.status === 'assigned' && (
+            <button onClick={() => navigate(`/payment/${project._id}`)} className="px-4 py-2 bg-amber-400 text-navy rounded-md font-semibold hover:bg-amber-500 transition-colors">Pay Now</button>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <ProjectOverviewCard project={project} />
+
+            {/* Rating prompt after completion */}
+            {project?.status === 'completed' && !project?.ratingCompleted && (
+              <div className="bg-slate-800/60 border border-white/10 rounded-xl p-4 shadow-lg mt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-white font-semibold">Project completed</div>
+                    <div className="text-sm text-gray-300">Please rate your counterparty to help future users.</div>
+                  </div>
+                  <div>
+                    <button onClick={() => navigate(`/workspace/projects/${project._id}/rate`)} className="px-3 py-2 bg-amber-400 text-navy rounded font-semibold">Rate Project</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Message Board */}
             <MessageBoard
