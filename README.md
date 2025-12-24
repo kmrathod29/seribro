@@ -37,7 +37,7 @@ Copy code
 cp .env.example .env
 Fill in the required values (database, JWT, email, etc.).
 
-Step 4: Start backend server
+🎨  Step 4: Start backend server
 bash
 Copy code
 npm start
