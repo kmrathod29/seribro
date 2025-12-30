@@ -20,9 +20,17 @@ export const verifyPayment = async (payload) => {
   }
 };
 
-export const getPendingReleases = async (page = 1) => {
+export const getPendingReleases = async (params = {}) => {
   try {
-    const res = await axios.get(`${BASE}/admin/pending-releases?page=${page}`);
+    const queryParams = new URLSearchParams();
+    queryParams.append('page', params.page || 1);
+    queryParams.append('limit', params.limit || 20);
+    
+    if (params.dateRange) queryParams.append('dateRange', params.dateRange);
+    if (params.searchQuery) queryParams.append('search', params.searchQuery);
+    if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+    
+    const res = await axios.get(`${BASE}/admin/pending-releases?${queryParams.toString()}`);
     return res.data;
   } catch (err) {
     return { success: false, message: err?.response?.data?.message || err.message };
@@ -56,4 +64,34 @@ export const getStudentEarnings = async () => {
   }
 };
 
-export default { createOrder, verifyPayment, getPendingReleases, releasePayment, refundPayment, getStudentEarnings };
+export const getPaymentDetails = async (paymentId) => {
+  try {
+    const res = await axios.get(`${BASE}/${paymentId}`);
+    return res.data;
+  } catch (err) {
+    return { success: false, message: err?.response?.data?.message || err.message };
+  }
+};
+
+export const bulkReleasePayments = async (paymentIds, data) => {
+  try {
+    const res = await axios.post(`${BASE}/admin/bulk-release`, {
+      paymentIds,
+      ...data
+    });
+    return res.data;
+  } catch (err) {
+    return { success: false, message: err?.response?.data?.message || err.message };
+  }
+};
+
+export default { 
+  createOrder, 
+  verifyPayment, 
+  getPendingReleases, 
+  releasePayment, 
+  refundPayment, 
+  getStudentEarnings,
+  getPaymentDetails,
+  bulkReleasePayments
+};

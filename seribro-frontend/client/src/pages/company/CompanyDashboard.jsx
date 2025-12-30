@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Loader, CheckCircle, Clock, Edit2, TrendingUp, RefreshCw } from 'lucide-react';
+import { AlertCircle, Loader, CheckCircle, Clock, Edit2, TrendingUp, RefreshCw, DollarSign, ChevronRight } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { fetchCompanyDashboard, formatApiError, initializeCompanyProfile } from '../../apis/companyProfileApi';
@@ -168,6 +168,37 @@ const CompanyDashboard = () => {
                         <h3 className="text-white font-semibold text-lg mb-2">Edit Profile</h3>
                         <p className="text-gray-300 text-sm">Update your company details</p>
                     </div>
+                </div>
+
+                {/* Payment & Workflow Management Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <button
+                        onClick={() => navigate('/payments/verify')}
+                        className="group bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl p-8 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-left"
+                    >
+                        <div className="flex items-center gap-4">
+                            <DollarSign className="w-12 h-12 flex-shrink-0 group-hover:rotate-12 transition-transform duration-300" />
+                            <div>
+                                <h3 className="font-bold text-xl mb-1">Verify Payment</h3>
+                                <p className="text-blue-100 text-sm">Verify Razorpay payments and release funds</p>
+                            </div>
+                            <ChevronRight className="ml-auto w-6 h-6 group-hover:translate-x-1 transition-transform duration-300 flex-shrink-0" />
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => navigate('/workflow/payments')}
+                        className="group bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl p-8 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-left"
+                    >
+                        <div className="flex items-center gap-4">
+                            <TrendingUp className="w-12 h-12 flex-shrink-0 group-hover:rotate-12 transition-transform duration-300" />
+                            <div>
+                                <h3 className="font-bold text-xl mb-1">Payment Workflow</h3>
+                                <p className="text-purple-100 text-sm">Learn about the complete payment process</p>
+                            </div>
+                            <ChevronRight className="ml-auto w-6 h-6 group-hover:translate-x-1 transition-transform duration-300 flex-shrink-0" />
+                        </div>
+                    </button>
                 </div>
 
                 {/* Company Information Section */}

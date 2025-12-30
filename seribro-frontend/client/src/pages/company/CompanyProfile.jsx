@@ -12,6 +12,7 @@ import CompanyDetailsForm from '../../components/companyComponent/DetailsForm';
 import AuthorizedPersonForm from '../../components/companyComponent/AuthorizedPersonForm';
 import LogoUpload from '../../components/companyComponent/LogoUpload';
 import DocumentUpload from '../../components/companyComponent/DocumentUpload';
+import PaymentSection from '../../components/companyComponent/PaymentSection';
 import { fetchCompanyProfile, submitCompanyForVerification, formatApiError, initializeCompanyProfile } from '../../apis/companyProfileApi';
 
 const CompanyProfile = () => {
@@ -112,13 +113,17 @@ const CompanyProfile = () => {
         documents = [],
         authorizedPerson = {},
         officeAddress = {},
+        payments = {}
     } = profile || {};
+
+    const completedProjects = payments?.completedProjects || 0;
 
     const tabs = [
         { id: 'basic', label: 'Basic Info', icon: '🏢' },
         { id: 'details', label: 'Company Details', icon: '📋' },
         { id: 'person', label: 'Authorized Person', icon: '👤' },
         { id: 'logo', label: 'Logo', icon: '🎨' },
+        { id: 'payments', label: 'Payment & Ratings', icon: '💳' },
         { id: 'documents', label: 'Documents', icon: '📄' },
         { id: 'verification', label: 'Verification', icon: '✓' },
     ];
@@ -192,6 +197,13 @@ const CompanyProfile = () => {
                             currentLogo={logoUrl}
                             onUpdate={(data) => setProfile(data.profile || data)}
                         />
+                    )}
+
+                    {activeTab === 'payments' && (
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-6">Payment History & Ratings</h2>
+                            <PaymentSection completedProjects={completedProjects} />
+                        </div>
                     )}
 
                     {activeTab === 'documents' && (

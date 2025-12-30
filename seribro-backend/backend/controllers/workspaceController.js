@@ -11,6 +11,7 @@ const { uploadToCloudinary } = require('../utils/students/uploadToCloudinary');
 const sendEmail = require('../utils/sendEmail');
 const { sendNotification } = require('../utils/notifications/sendNotification');
 const { validateWorkspaceAccess } = require('../utils/workspace/validateWorkspaceAccess');
+const { emitNewMessage } = require('../utils/socket/socketManager');
 
 const sendResponse = (res, success, message, data = null, status = 200) => {
     return res.status(status).json({ success, message, data });
@@ -253,6 +254,22 @@ exports.sendMessage = async (req, res) => {
                     console.warn('Email notification failed (non-blocking):', emailErr.message || emailErr);
                 }
             }
+        }
+
+        // Emit message via Socket.io for real-time delivery
+        try {
+            emitNewMessage(projectId, {
+                _id: newMessage._id,
+                message: newMessage.message,
+                sender: newMessage.sender,
+                senderName: newMessage.senderName,
+                senderRole: newMessage.senderRole,
+                attachments: newMessage.attachments,
+                createdAt: newMessage.createdAt,
+                isRead: newMessage.isRead,
+            });
+        } catch (socketErr) {
+            console.warn('[Socket.io] Failed to emit message (non-blocking):', socketErr.message);
         }
 
         return sendResponse(res, true, 'Message sent successfully', { message: newMessage }, 201);

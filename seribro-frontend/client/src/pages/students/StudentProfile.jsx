@@ -12,6 +12,7 @@ import SkillsForm from '../../components/studentComponent/SkillsForm';
 import PortfolioLinksForm from '../../components/studentComponent/PortfolioLinksForm';
 import DocumentUpload from '../../components/studentComponent/DocumentUpload';
 import ProjectForm from '../../components/studentComponent/ProjectForm';
+import EarningsSection from '../../components/studentComponent/EarningsSection';
 import { fetchProfile, submitForVerification, formatApiError } from '../../apis/studentProfileApi';
 
 const StudentProfile = () => {
@@ -95,14 +96,16 @@ const StudentProfile = () => {
         );
     }
 
-    const { basicInfo, skills, techStack, projects = [], documents, profileStats, verification } = profile || {};
+    const { basicInfo, skills, techStack, projects = [], documents, profileStats, verification, earnings } = profile || {};
     const completion = profileStats?.profileCompletion || 0;
+    const completedProjects = earnings?.completedProjects || 0;
 
     const tabs = [
         { id: 'basic', label: 'Basic Info', icon: '👤' },
         { id: 'skills', label: 'Skills', icon: '🎯' },
         { id: 'links', label: 'Portfolio Links', icon: '🔗' },
         { id: 'projects', label: 'Projects', icon: '📁' },
+        { id: 'earnings', label: 'Earnings & Ratings', icon: '💰' },
         { id: 'documents', label: 'Documents', icon: '📄' },
         { id: 'verification', label: 'Verification', icon: '✓' },
     ];
@@ -257,6 +260,14 @@ const StudentProfile = () => {
                                 </div>
                             )
                         )}
+
+                    {/* Earnings & Ratings Tab */}
+                    {activeTab === 'earnings' && (
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-6">Earnings & Ratings</h2>
+                            <EarningsSection completedProjects={completedProjects} />
+                        </div>
+                    )}
 
                     {/* Documents Tab */}
                     {activeTab === 'documents' && (

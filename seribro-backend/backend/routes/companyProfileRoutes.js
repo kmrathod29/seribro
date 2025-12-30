@@ -14,6 +14,7 @@ const {
 const {
     validateBasicInfo, validateAuthorizedPerson, validateDetails,
 } = require('../middleware/company/validationMiddleware');
+const { getCompanyRatings } = require('../controllers/ratingController');
 
 // Routes
 router.post('/profile/init', protect, roleCheck('company'), initializeCompanyProfile);
@@ -25,5 +26,8 @@ router.put('/profile/person', protect, roleCheck('company'), validateAuthorizedP
 router.post('/profile/logo', protect, roleCheck('company'), logoUploader, uploadLogo);
 router.post('/profile/documents', protect, roleCheck('company'), documentsUploader, uploadDocuments);
 router.post('/profile/submit-verification', protect, roleCheck('company'), submitForVerification);
+
+// Ratings Route
+router.get('/ratings', protect, roleCheck('company'), getCompanyRatings);
 
 module.exports = router;

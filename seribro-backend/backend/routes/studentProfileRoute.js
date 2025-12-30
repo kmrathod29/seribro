@@ -20,6 +20,9 @@ const {
     getDashboard
 } = require('../controllers/StudentProfileController');
 
+// Rating Controller Imports
+const { getStudentRatings } = require('../controllers/ratingController');
+
 // Middleware Imports - All from student-specific folder
 const { protect } = require('../middleware/authMiddleware'); // Phase 1 auth middleware
 const { roleMiddleware } = require('../middleware/student/roleMiddleware');
@@ -50,6 +53,10 @@ router.post('/profile/college-id', uploadMiddleware.single('collegeId'), uploadC
 router.post('/profile/projects', validationMiddleware('project'), addProject);
 router.put('/profile/projects/:id', validationMiddleware('project'), updateProject);
 router.delete('/profile/projects/:id', deleteProject);
+
+// Earnings & Ratings Routes
+router.get('/earnings', require('../controllers/paymentController').getStudentEarnings);
+router.get('/ratings', getStudentRatings);
 
 // Verification Submission Route
 // Note: isProfileVerified checks email verification status

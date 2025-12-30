@@ -293,13 +293,18 @@ const Dashboard = () => {
                             <h4 className="text-white font-semibold">Active Projects</h4>
                             <div className="text-3xl font-bold text-white mt-4">{dashboardData?.activeProjects || 0}</div>
                         </div>
-                        <div className="p-6 rounded-xl flex items-center justify-between" style={{ background: '#334155' }}>
+                        <div className="p-6 rounded-xl flex items-center justify-between cursor-pointer hover:bg-emerald-500/10 transition-all" style={{ background: '#334155' }} onClick={() => navigate('/student/payments')}>
                             <div>
-                                <h4 className="text-white font-semibold">Verification</h4>
-                                <p className="text-[#94a3b8] mt-2">{verificationStatus}</p>
+                                <h4 className="text-white font-semibold">💰 Earnings</h4>
+                                <p className="text-emerald-400 mt-2 font-medium">View & Track</p>
                             </div>
+                            <span className="text-2xl">→</span>
+                        </div>
+                        <div className="p-6 rounded-xl" style={{ background: '#334155' }}>
+                            <h4 className="text-white font-semibold">Verification</h4>
+                            <p className="text-[#94a3b8] mt-2">{verificationStatus}</p>
                             {verificationStatus !== 'verified' && (
-                                <button onClick={() => navigate('/student/profile?tab=verification')} className="px-4 py-2 rounded-lg font-semibold" style={{ background: '#f59e0b', color: '#0f172a' }}>
+                                <button onClick={() => navigate('/student/profile?tab=verification')} className="px-4 py-2 rounded-lg font-semibold mt-4" style={{ background: '#f59e0b', color: '#0f172a' }}>
                                     Submit for Verification
                                 </button>
                             )}

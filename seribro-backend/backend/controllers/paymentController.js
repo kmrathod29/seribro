@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Payment = require('../models/Payment');
 const Project = require('../models/Project');
 const CompanyProfile = require('../models/companyProfile');
@@ -43,7 +44,7 @@ exports.createOrder = async (req, res) => {
         status: 'pending',
       });
       await project.linkPayment(payment._id, amount);
-      return sendResponse(res, true, 'Payment record created, but Razorpay is not configured. Complete configuration to generate an order.', { orderId: null, amount, currency: 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, payment });
+      return sendResponse(res, 200, true, 'Payment record created, but Razorpay is not configured. Complete configuration to generate an order.', { orderId: null, amount, currency: 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, payment });
     }
 
     const paymentDoc = await Payment.create({
@@ -59,10 +60,10 @@ exports.createOrder = async (req, res) => {
 
     await project.linkPayment(paymentDoc._id, amount);
 
-    return sendResponse(res, true, 'Order created', { orderId: order.id, amount, currency: order.currency || 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, projectId: project._id, projectTitle: project.title });
+    return sendResponse(res, 200, true, 'Order created', { orderId: order.id, amount, currency: order.currency || 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, projectId: project._id, projectTitle: project.title });
   } catch (error) {
     console.error('createOrder error:', error);
-    return sendResponse(res, false, 'Failed to create order', null, 500);
+    return sendResponse(res, 500, false, 'Failed to create order');
   }
 };
 
@@ -75,12 +76,12 @@ exports.verifyPayment = async (req, res) => {
 
     // verify using helper
     let valid = false;
-    try { valid = verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature); } catch (err) { return sendResponse(res, false, 'Razorpay verification failed: ' + err.message, null, 400); }
+    try { valid = verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature); } catch (err) { return sendResponse(res, 400, false, 'Razorpay verification failed: ' + err.message); }
     if (!valid) {
       payment.status = 'failed';
       await payment.addTransactionHistory('failed', req.user._id, 'Signature verification failed');
       await payment.save();
-      return sendResponse(res, false, 'Invalid payment signature', null, 400);
+      return sendResponse(res, 400, false, 'Invalid payment signature');
     }
 
     payment.razorpayPaymentId = razorpayPaymentId;
@@ -110,7 +111,7 @@ exports.verifyPayment = async (req, res) => {
     return sendResponse(res, true, 'Payment verified successfully', { payment, project });
   } catch (error) {
     console.error('verifyPayment error:', error);
-    return sendResponse(res, false, 'Failed to verify payment', null, 500);
+    return sendResponse(res, 500, false, 'Failed to verify payment');
   }
 };
 
@@ -133,10 +134,10 @@ exports.markReadyForRelease = async (req, res) => {
     // Notify admins
     await sendAdminNotification(`Payment release pending for project ${project.title}`, 'payment_release_pending', 'project', project._id);
 
-    return sendResponse(res, true, 'Payment marked ready for release', { paymentId: payment._id });
+    return sendResponse(res, 200, true, 'Payment marked ready for release', { paymentId: payment._id });
   } catch (error) {
     console.error('markReadyForRelease error:', error);
-    return sendResponse(res, false, 'Failed to mark ready for release', null, 500);
+    return sendResponse(res, 500, false, 'Failed to mark ready for release');
   }
 };
 
@@ -146,15 +147,121 @@ exports.getPendingReleases = async (req, res) => {
     const page = Number(req.query.page || 1);
     const limit = Number(req.query.limit || 20);
     const skip = (page - 1) * limit;
+    const dateRange = req.query.dateRange || 'all';
+    const sortBy = req.query.sortBy || 'oldest';
+    const search = req.query.search || '';
 
-    const query = { status: 'ready_for_release' };
-    const total = await Payment.countDocuments(query);
-    const payments = await Payment.find(query).populate('project company student').sort({ createdAt: 1 }).skip(skip).limit(limit);
+    // Build date filter
+    let dateFilter = {};
+    const now = new Date();
+    if (dateRange === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      dateFilter = { capturedAt: { $gte: startOfDay } };
+    } else if (dateRange === '7days') {
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      dateFilter = { capturedAt: { $gte: sevenDaysAgo } };
+    } else if (dateRange === '30days') {
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      dateFilter = { capturedAt: { $gte: thirtyDaysAgo } };
+    }
 
-    return sendResponse(res, true, 'Pending releases fetched', { payments, pagination: { total, page, limit } });
+    // Build search filter
+    let searchFilter = {};
+    if (search && search.trim()) {
+      searchFilter = {
+        $or: [
+          { 'project.title': { $regex: search, $options: 'i' } },
+          { 'company.companyName': { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
+    const query = {
+      status: 'ready_for_release',
+      ...dateFilter
+    };
+
+    // For search, we need aggregation
+    let payments;
+    let total;
+
+    if (Object.keys(searchFilter).length > 0) {
+      const pipeline = [
+        { $match: query },
+        {
+          $lookup: {
+            from: 'projects',
+            localField: 'project',
+            foreignField: '_id',
+            as: 'project'
+          }
+        },
+        { $unwind: '$project' },
+        {
+          $lookup: {
+            from: 'companyprofiles',
+            localField: 'company',
+            foreignField: '_id',
+            as: 'company'
+          }
+        },
+        { $unwind: '$company' },
+        { $match: searchFilter },
+        {
+          $lookup: {
+            from: 'studentprofiles',
+            localField: 'student',
+            foreignField: '_id',
+            as: 'student'
+          }
+        },
+        { $unwind: '$student' }
+      ];
+
+      // Add sorting
+      if (sortBy === 'newest') {
+        pipeline.push({ $sort: { createdAt: -1 } });
+      } else if (sortBy === 'highest_amount') {
+        pipeline.push({ $sort: { amount: -1 } });
+      } else {
+        pipeline.push({ $sort: { createdAt: 1 } });
+      }
+
+      pipeline.push({ $skip: skip }, { $limit: limit });
+
+      payments = await Payment.collection.aggregate(pipeline).toArray();
+      total = await Payment.collection.aggregate([
+        ...pipeline.slice(0, -2),
+        { $count: 'total' }
+      ]).toArray();
+      total = total[0]?.total || 0;
+
+      // Convert MongoDB objects back to model instances if needed
+      payments = await Payment.populate(payments, [
+        { path: 'project' },
+        { path: 'company' },
+        { path: 'student' }
+      ]);
+    } else {
+      total = await Payment.countDocuments(query);
+      let sort = { createdAt: 1 };
+      if (sortBy === 'newest') sort = { createdAt: -1 };
+      else if (sortBy === 'highest_amount') sort = { amount: -1 };
+
+      payments = await Payment.find(query)
+        .populate('project company student')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit);
+    }
+
+    return sendResponse(res, 200, true, 'Pending releases fetched', {
+      payments,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) }
+    });
   } catch (error) {
     console.error('getPendingReleases error:', error);
-    return sendResponse(res, false, 'Failed to fetch pending releases', null, 500);
+    return sendResponse(res, 500, false, 'Failed to fetch pending releases');
   }
 };
 
@@ -195,10 +302,10 @@ exports.releasePayment = async (req, res) => {
     const companyProfile = await CompanyProfile.findById(payment.company);
     if (companyProfile) await companyProfile.updatePayments(payment.amount);
 
-    return sendResponse(res, true, 'Payment released successfully', { payment });
+    return sendResponse(res, 200, true, 'Payment released successfully', { payment });
   } catch (error) {
     console.error('releasePayment error:', error);
-    return sendResponse(res, false, 'Failed to release payment', null, 500);
+    return sendResponse(res, 500, false, 'Failed to release payment');
   }
 };
 
@@ -233,15 +340,55 @@ exports.refundPayment = async (req, res) => {
       try { await sendEmail({ email: companyUser.email, subject: 'Refund processed', message: `<p>Refund of ₹${refundAmount} processed for project ${project ? project.title : ''}. Reason: ${reason}</p>` }); } catch (e) { console.warn('Email send failed for refundPayment:', e.message); }
     }
 
-    return sendResponse(res, true, 'Refund processed', { payment });
+    return sendResponse(res, 200, true, 'Refund processed', { payment });
   } catch (error) {
     console.error('refundPayment error:', error);
-    return sendResponse(res, false, 'Failed to process refund', null, 500);
+    return sendResponse(res, 500, false, 'Failed to process refund');
   }
 };
 
 // GET /api/payments/:paymentId
 exports.getPaymentDetails = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    const payment = await Payment.findById(paymentId)
+      .populate({
+        path: 'project',
+        select: 'title description category requiredSkills budgetMin budgetMax'
+      })
+      .populate({
+        path: 'company',
+        select: 'companyName companyLogo companyEmail companyPhone'
+      })
+      .populate({
+        path: 'student',
+        select: 'basicInfo.fullName basicInfo.email'
+      })
+      .lean();
+    
+    if (!payment) return sendResponse(res, 404, false, 'Payment not found');
+
+    // Access control: student/company/admin check
+    const studentProfile = await StudentProfile.findOne({ user: req.user._id });
+    if (req.user.role === 'student' && payment.student._id.toString() !== studentProfile._id.toString()) {
+      return sendResponse(res, 403, false, 'Access denied');
+    }
+    if (req.user.role === 'company') {
+      const companyProfile = await CompanyProfile.findOne({ user: req.user._id });
+      if (payment.company._id.toString() !== companyProfile._id.toString()) {
+        return sendResponse(res, 403, false, 'Access denied');
+      }
+    }
+
+    return sendResponse(res, 200, true, 'Payment details fetched', { payment });
+  } catch (error) {
+    console.error('getPaymentDetails error:', error);
+    return sendResponse(res, 500, false, 'Failed to fetch payment details');
+  }
+};
+
+// GET /api/payments/:paymentId (old method - keeping for backward compatibility)
+const getPaymentDetailsOld = async (req, res) => {
   try {
     const { paymentId } = req.params;
     const payment = await Payment.findById(paymentId).populate('project company student');
@@ -251,10 +398,10 @@ exports.getPaymentDetails = async (req, res) => {
     if (req.user.role === 'student' && payment.student.toString() !== (await StudentProfile.findOne({ user: req.user._id }))._id.toString()) return sendResponse(res, 403, false, 'Access denied');
     if (req.user.role === 'company' && payment.company.toString() !== (await CompanyProfile.findOne({ user: req.user._id }))._id.toString()) return sendResponse(res, 403, false, 'Access denied');
 
-    return sendResponse(res, true, 'Payment details fetched', { payment });
+    return sendResponse(res, 200, true, 'Payment details fetched', { payment });
   } catch (error) {
     console.error('getPaymentDetails error:', error);
-    return sendResponse(res, false, 'Failed to fetch payment details', null, 500);
+    return sendResponse(res, 500, false, 'Failed to fetch payment details');
   }
 };
 
@@ -264,24 +411,253 @@ exports.getStudentEarnings = async (req, res) => {
     const student = await StudentProfile.findOne({ user: req.user._id });
     if (!student) return sendResponse(res, 404, false, 'Student profile not found');
 
-    const recentPayments = await Payment.find({ student: student._id }).sort({ createdAt: -1 }).limit(10);
+    // Fetch recent payments (limit 10) with populated details
+    const recentPayments = await Payment.find({ student: student._id })
+      .populate({
+        path: 'project',
+        select: 'title description category budgetMax budgetMin'
+      })
+      .populate({
+        path: 'company',
+        select: 'companyName companyLogo'
+      })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    // Fetch monthly earnings for last 12 months
     const monthly = await Payment.aggregate([
-      { $match: { student: student._id, status: 'released' } },
-      { $project: { month: { $dateToString: { format: "%Y-%m", date: "$releasedAt" } }, amount: "$amount" } },
-      { $group: { _id: "$month", total: { $sum: "$amount" } } },
-      { $sort: { _id: 1 } }
+      { $match: { student: new mongoose.Types.ObjectId(student._id), status: 'released' } },
+      { 
+        $group: { 
+          _id: { $dateToString: { format: "%Y-%m", date: "$releasedAt" } }, 
+          total: { $sum: { $ifNull: ["$netAmount", "$amount"] } },
+          count: { $sum: 1 }
+        } 
+      },
+      { $sort: { _id: 1 } },
+      { $limit: 12 }
     ]);
 
-    return sendResponse(res, true, 'Earnings fetched', {
-      totalEarned: student.earnings?.totalEarned || 0,
-      pendingPayments: student.earnings?.pendingPayments || 0,
-      completedProjects: student.earnings?.completedProjects || 0,
-      lastPaymentDate: student.earnings?.lastPaymentDate || null,
-      recentPayments,
-      monthlyEarnings: monthly
+    // Calculate summary stats
+    const totalEarned = student.earnings?.totalEarned || 0;
+    const pendingPayments = student.earnings?.pendingPayments || 0;
+    const completedProjects = student.earnings?.completedProjects || 0;
+    const lastPaymentDate = student.earnings?.lastPaymentDate || null;
+
+    // Calculate available for withdrawal (released but not transferred)
+    const allPayments = await Payment.find({ student: student._id, status: 'released' }).lean();
+    const availableForWithdrawal = allPayments.reduce((sum, p) => sum + (p.netAmount || p.amount), 0);
+
+    return sendResponse(res, 200, true, 'Earnings fetched', {
+      summary: {
+        totalEarned,
+        pendingPayments,
+        completedProjects,
+        lastPaymentDate,
+        availableForWithdrawal
+      },
+      recentPayments: recentPayments.map(p => ({
+        _id: p._id,
+        amount: p.amount,
+        netAmount: p.netAmount || (p.amount - (p.platformFee || 0)),
+        status: p.status,
+        createdAt: p.createdAt,
+        capturedAt: p.capturedAt,
+        releasedAt: p.releasedAt,
+        projectName: p.project?.title || 'Unknown Project',
+        projectId: p.project?._id,
+        companyName: p.company?.companyName || 'Unknown Company',
+        companyId: p.company?._id,
+        transactionId: p.razorpayPaymentId || p.razorpayOrderId,
+        paymentMethod: p.paymentMethod || 'Razorpay'
+      })),
+      monthlyEarnings: monthly.map(m => ({
+        month: m._id,
+        total: m.total,
+        projectCount: m.count
+      }))
     });
   } catch (error) {
     console.error('getStudentEarnings error:', error);
-    return sendResponse(res, false, 'Failed to fetch earnings', null, 500);
+    return sendResponse(res, 500, false, 'Failed to fetch earnings');
+  }
+};
+
+// POST /api/admin/payments/bulk-release
+exports.bulkReleasePayments = async (req, res) => {
+  try {
+    const { paymentIds, method = 'manual_transfer', notes = '' } = req.body;
+    
+    if (!Array.isArray(paymentIds) || paymentIds.length === 0) {
+      return sendResponse(res, 400, false, 'Invalid payment IDs');
+    }
+
+    const results = {
+      released: 0,
+      failed: 0,
+      errors: []
+    };
+
+    // Process each payment
+    for (const paymentId of paymentIds) {
+      try {
+        const payment = await Payment.findById(paymentId);
+        if (!payment) {
+          results.failed++;
+          results.errors.push({ paymentId, error: 'Payment not found' });
+          continue;
+        }
+
+        if (payment.status !== 'ready_for_release') {
+          results.failed++;
+          results.errors.push({ paymentId, error: 'Payment not ready for release' });
+          continue;
+        }
+
+        // Release the payment
+        await payment.releasePayment(req.user._id, method, notes);
+
+        // Update project
+        const project = await Project.findById(payment.project);
+        if (project) {
+          await project.markPaymentReleased();
+          project.status = 'completed';
+          project.completedAt = new Date();
+          await project.save();
+        }
+
+        // Update student's earnings
+        const studentProfile = await StudentProfile.findById(payment.student);
+        if (studentProfile) {
+          await studentProfile.updateEarnings(payment.amount, 'add');
+          await sendNotification(
+            studentProfile.user,
+            'student',
+            `Payment of ₹${payment.amount} released for project ${project ? project.title : ''}`,
+            'payment_released',
+            'project',
+            project?._id
+          );
+
+          // Send email notification
+          try {
+            const studentUser = await User.findById(studentProfile.user);
+            if (studentUser && studentUser.email && process.env.EMAIL_NOTIFY_ON_PAYMENT !== 'false') {
+              await sendEmail({
+                email: studentUser.email,
+                subject: 'Payment released',
+                message: `<p>Payment of ₹${payment.amount} has been released to you for project <strong>${project ? project.title : ''}</strong>.</p>`
+              });
+            }
+          } catch (e) {
+            console.warn('Email send failed for bulk release:', e.message);
+          }
+        }
+
+        // Update company stats
+        const companyProfile = await CompanyProfile.findById(payment.company);
+        if (companyProfile) {
+          await companyProfile.updatePayments(payment.amount);
+        }
+
+        results.released++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          paymentId,
+          error: error.message
+        });
+      }
+    }
+
+    return sendResponse(res, 200, true, 'Bulk release completed', {
+      released: results.released,
+      failed: results.failed,
+      errors: results.errors.length > 0 ? results.errors : undefined
+    });
+  } catch (error) {
+    console.error('bulkReleasePayments error:', error);
+    return sendResponse(res, 500, false, 'Failed to process bulk release');
+  }
+};
+
+// GET /api/company/payments - Get company payment history
+exports.getCompanyPayments = async (req, res) => {
+  try {
+    const company = await CompanyProfile.findOne({ user: req.user._id });
+    if (!company) return sendResponse(res, 404, false, 'Company profile not found');
+
+    // Fetch recent payments (limit 10)
+    const recentPayments = await Payment.find({ company: company._id })
+      .populate({
+        path: 'project',
+        select: 'title description category budgetMax budgetMin'
+      })
+      .populate({
+        path: 'student',
+        select: 'basicInfo.fullName basicInfo.email'
+      })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    // Fetch monthly spending for last 12 months
+    const monthly = await Payment.aggregate([
+      { $match: { company: new mongoose.Types.ObjectId(company._id), status: 'released' } },
+      { 
+        $group: { 
+          _id: { $dateToString: { format: "%Y-%m", date: "$releasedAt" } }, 
+          total: { $sum: { $ifNull: ["$netAmount", "$amount"] } },
+          count: { $sum: 1 }
+        } 
+      },
+      { $sort: { _id: 1 } },
+      { $limit: 12 }
+    ]);
+
+    // Calculate summary stats
+    const totalSpent = company.payments?.totalSpent || 0;
+    const completedProjects = company.payments?.completedProjects || 0;
+    const lastPaymentDate = company.payments?.lastPaymentDate || null;
+
+    // Count active projects
+    const Project = require('../models/Project');
+    const activeProjects = await Project.countDocuments({ 
+      companyId: company._id,
+      status: { $in: ['open', 'assigned', 'in-progress'] }
+    });
+
+    return sendResponse(res, 200, true, 'Company payments fetched', {
+      summary: {
+        totalSpent,
+        completedProjects,
+        activeProjects,
+        lastPaymentDate
+      },
+      recentPayments: recentPayments.map(p => ({
+        _id: p._id,
+        amount: p.amount,
+        netAmount: p.netAmount || (p.amount - (p.platformFee || 0)),
+        status: p.status,
+        createdAt: p.createdAt,
+        capturedAt: p.capturedAt,
+        releasedAt: p.releasedAt,
+        projectName: p.project?.title || 'Unknown Project',
+        projectId: p.project?._id,
+        studentName: p.student?.basicInfo?.fullName || 'Unknown Student',
+        studentId: p.student?._id,
+        transactionId: p.razorpayPaymentId || p.razorpayOrderId,
+        paymentMethod: p.paymentMethod || 'Razorpay'
+      })),
+      monthlySpending: monthly.map(m => ({
+        month: m._id,
+        total: m.total,
+        projectCount: m.count
+      }))
+    });
+  } catch (error) {
+    console.error('getCompanyPayments error:', error);
+    return sendResponse(res, 500, false, 'Failed to fetch company payments');
   }
 };

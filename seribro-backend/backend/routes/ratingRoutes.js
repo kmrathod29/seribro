@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
-const roleMiddleware = require('../middleware/student/roleMiddleware');
+const { roleMiddleware } = require('../middleware/student/roleMiddleware');
 const { rateStudent, rateCompany, getProjectRating, getUserRatings } = require('../controllers/ratingController');
 
 router.post('/projects/:projectId/rate-student', protect, roleMiddleware(['company']), rateStudent);

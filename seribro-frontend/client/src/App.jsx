@@ -46,6 +46,11 @@ import SubmitWork from './pages/workspace/SubmitWork';
 import ReviewWork from './pages/workspace/ReviewWork';
 import PaymentPage from './pages/payment/PaymentPage';
 import RateProject from './pages/workspace/RateProject';
+import StudentPaymentPage from './pages/StudentPaymentPage';
+import AdminPaymentPage from './pages/AdminPaymentPage';
+import PaymentVerificationPage from './pages/PaymentVerificationPage';
+import RatingPage from './pages/RatingPage';
+import PaymentWorkflowPage from './pages/PaymentWorkflowPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -57,6 +62,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
   <Route path="/auth/google/success" element={<GoogleSuccess />} />
@@ -127,9 +133,17 @@ function App() {
 
         {/* Phase 5.3: Payment */}
         <Route path="/payment/:projectId" element={<CompanyRoute><PaymentPage /></CompanyRoute>} />
+        <Route path="/workspace/projects/:projectId/payment" element={<CompanyRoute><PaymentPage /></CompanyRoute>} />
 
         {/* Rating */}
         <Route path="/workspace/projects/:projectId/rate" element={<RateProject />} />
+
+        {/* Phase 5.4.8: New Payment & Rating Pages */}
+        <Route path="/student/payments" element={<StudentRoute><StudentPaymentPage /></StudentRoute>} />
+        <Route path="/admin/payments" element={<AdminRoute><AdminPaymentPage /></AdminRoute>} />
+        <Route path="/payments/verify" element={<CompanyRoute><PaymentVerificationPage /></CompanyRoute>} />
+        <Route path="/workspace/projects/:projectId/rating" element={<StudentRoute><RatingPage /></StudentRoute>} />
+        <Route path="/workflow/payments" element={<PaymentWorkflowPage />} />
         {/* <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<BrowseProjects />} />
         <Route path="/profile" element={<Profile />} />

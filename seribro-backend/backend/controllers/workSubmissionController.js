@@ -245,9 +245,7 @@ exports.requestRevision = async (req, res) => {
 
     if (project.status !== 'under-review') return sendResponse(res, 400, false, 'No submission under review');
 
-    if (project.revisionCount >= project.maxRevisionsAllowed) return sendResponse(res, 400, false, 'Maximum revisions reached');
-
-    const { submission, project: updated } = await project.requestRevision(req.user._id, reason);
+    const { submission, project: updated } = await project.requestRevision(req.user._id, (reason || '').toString().slice(0, 2000));
 
     // Update lastActivity
     await updated.updateLastActivity();
@@ -255,18 +253,18 @@ exports.requestRevision = async (req, res) => {
     // Notify student
     const studentProfile = await StudentProfile.findById(submission.submittedBy);
     if (studentProfile) {
-      await sendNotification(studentProfile.user, 'student', `Company requested revision for project ${updated.title}`, 'revision-requested', 'project', updated._id);
+      await sendNotification(studentProfile.user, 'student', `Your submission for project ${updated.title} has been requested for revision.`, 'revision-requested', 'project', updated._id);
       try {
         const studentUser = await User.findById(studentProfile.user);
         if (studentUser && studentUser.email && process.env.EMAIL_NOTIFY_ON_REVIEW !== 'false') {
-          await sendEmail({ email: studentUser.email, subject: 'Revision requested', message: `<p>The company requested changes for project <strong>${updated.title}</strong>:</p><p>${reason}</p>` });
+          await sendEmail({ email: studentUser.email, subject: 'Revision requested', message: `<p>Your submission for project <strong>${updated.title}</strong> has been requested for revision.</p>` });
         }
       } catch (e) {
         console.warn('Email send failed for requestRevision:', e.message);
       }
     }
 
-    return sendResponse(res, 200, true, `Revision requested. ${updated.maxRevisionsAllowed - updated.revisionCount} revisions remaining.`, { project: { _id: updated._id, status: updated.status, revisionCount: updated.revisionCount, maxRevisionsAllowed: updated.maxRevisionsAllowed }, revisionDetails: { version: submission.version, reason: submission.revisionReason, requestedAt: submission.reviewedAt } });
+    return sendResponse(res, 200, true, 'Revision requested successfully', { project: { _id: updated._id, status: updated.status, currentSubmission: updated.currentSubmission, revisionCount: updated.revisionCount, maxRevisionsAllowed: updated.maxRevisionsAllowed } });
   } catch (error) {
     console.error('❌ requestRevision error:', error);
     return sendResponse(res, 500, false, 'Server error while requesting revision', null, error.message);
@@ -279,40 +277,60 @@ exports.rejectWork = async (req, res) => {
     const { projectId } = req.params;
     const { reason } = req.body;
 
-    if (!reason || reason.length < 20 || reason.length > 2000) return sendResponse(res, 400, false, 'Rejection reason required (20-2000 chars)');
+    if (!reason || reason.length < 10 || reason.length > 2000) {
+      return sendResponse(res, 400, false, 'Rejection reason required (10-2000 chars)');
+    }
 
     const project = await Project.findById(projectId);
-    if (!project) return sendResponse(res, 404, false, 'Project not found');
+    if (!project) {
+      return sendResponse(res, 404, false, 'Project not found');
+    }
 
     const access = await validateWorkspaceAccess(project, req.user);
-    if (!access.hasAccess || access.role !== 'company') return sendResponse(res, 403, false, access.error || 'Access denied');
+    if (!access.hasAccess || access.role !== 'company') {
+      return sendResponse(res, 403, false, access.error || 'Access denied');
+    }
 
-    if (project.status !== 'under-review') return sendResponse(res, 400, false, 'No submission under review');
-
-    if (project.revisionCount < project.maxRevisionsAllowed) return sendResponse(res, 400, false, 'Please use revision request instead. Rejection allowed only after maximum revisions');
+    if (project.status !== 'under-review') {
+      return sendResponse(res, 400, false, 'No submission under review');
+    }
 
     const { submission, project: updated } = await project.rejectWork(req.user._id, reason);
 
     // Update lastActivity
     await updated.updateLastActivity();
 
-    // Notify student and admin
+    // Notify student
     const studentProfile = await StudentProfile.findById(submission.submittedBy);
     if (studentProfile) {
-      await sendNotification(studentProfile.user, 'student', `Company rejected your submission for project ${updated.title}. Dispute opened.`, 'work-rejected', 'project', updated._id);
+      await sendNotification(
+        studentProfile.user,
+        'student',
+        `Your submission for project ${updated.title} has been rejected. Reason: ${reason}`,
+        'work-rejected',
+        'project',
+        updated._id
+      );
       try {
         const studentUser = await User.findById(studentProfile.user);
         if (studentUser && studentUser.email && process.env.EMAIL_NOTIFY_ON_REVIEW !== 'false') {
-          await sendEmail({ email: studentUser.email, subject: 'Work rejected', message: `<p>Your submission for project <strong>${updated.title}</strong> was rejected and a dispute was opened.</p><p>Reason: ${reason}</p>` });
+          await sendEmail({
+            email: studentUser.email,
+            subject: 'Work rejected',
+            message: `<p>Your submission for project <strong>${updated.title}</strong> has been rejected.</p><p><strong>Reason:</strong> ${reason}</p>`
+          });
         }
       } catch (e) {
         console.warn('Email send failed for rejectWork:', e.message);
       }
     }
 
-    await sendAdminNotification(`Dispute opened for project ${updated.title}`, 'dispute-opened', 'project', updated._id);
+    // Admin notification
+    await sendAdminNotification(`Work rejected for project ${updated.title}`, 'work-rejected', 'project', updated._id);
 
-    return sendResponse(res, 200, true, 'Work rejected. Dispute opened for admin review.', { project: { _id: updated._id, status: updated.status }, disputeInfo: { reason, rejectedAt: updated.reviewedAt } });
+    return sendResponse(res, 200, true, 'Work rejected successfully', {
+      project: { _id: updated._id, status: updated.status, rejectedReason: reason }
+    });
   } catch (error) {
     console.error('❌ rejectWork error:', error);
     return sendResponse(res, 500, false, 'Server error while rejecting work', null, error.message);

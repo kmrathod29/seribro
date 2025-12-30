@@ -15,12 +15,13 @@ const ALLOWED_TYPES = [
   'application/x-zip-compressed',
 ];
 
-const MessageInput = ({ onSend, disabled }) => {
+const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
   const [text, setText] = useState('');
   const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
   const fileRef = useRef(null);
   const textareaRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     // Auto expand textarea up to ~5 lines
@@ -57,7 +58,37 @@ const MessageInput = ({ onSend, disabled }) => {
     setFiles((prev) => prev.filter((f) => f.name !== name));
   };
 
+  const handleTextChange = (e) => {
+    const newText = e.target.value;
+    setText(newText);
+
+    // Emit typing_start when user starts typing
+    if (newText.trim() && onTypingStart) {
+      onTypingStart();
+    }
+
+    // Reset typing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Emit typing_stop after 1 second of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      if (onTypingStop) {
+        onTypingStop();
+      }
+    }, 1000);
+  };
+
   const handleSend = async () => {
+    // Clear typing timeout and emit typing_stop
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    if (onTypingStop) {
+      onTypingStop();
+    }
+
     if (!text.trim() && files.length === 0) {
       setError('Add a message or attachment');
       return;
@@ -83,7 +114,7 @@ const MessageInput = ({ onSend, disabled }) => {
       <textarea
         ref={textareaRef}
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={handleTextChange}
         placeholder="Type your message..."
         className="w-full bg-slate-900/70 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-amber-400 min-h-[60px] resize-none"
         maxLength={2000}

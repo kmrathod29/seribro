@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import AdminAPI from '../../apis/adminApi';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
-import { Bell, X, CheckCircle, AlertCircle, TrendingUp, Users, Building2, Clock, ChevronRight } from 'lucide-react';
+import { Bell, X, CheckCircle, AlertCircle, TrendingUp, Users, Building2, Clock, ChevronRight, DollarSign } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import {
   fetchAdminNotifications,
@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const navigate = useNavigate();
 
   // Hinglish: Dashboard data load karna
   useEffect(() => {
@@ -261,6 +262,37 @@ export default function AdminDashboard() {
               </div>
             );
           })}
+        </div>
+
+        {/* Payment Management Button */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
+          <button
+            onClick={() => navigate('/admin/payments')}
+            className="group bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-2xl p-8 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+          >
+            <div className="flex items-center gap-4">
+              <DollarSign className="w-12 h-12 group-hover:rotate-12 transition-transform duration-300" />
+              <div className="text-left">
+                <h3 className="font-bold text-xl mb-1">Payment Release Dashboard</h3>
+                <p className="text-emerald-100 text-sm">Manage pending payments and release funds</p>
+              </div>
+              <ChevronRight className="ml-auto w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
+            </div>
+          </button>
+
+          <button
+            onClick={() => navigate('/workflow/payments')}
+            className="group bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl p-8 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+          >
+            <div className="flex items-center gap-4">
+              <TrendingUp className="w-12 h-12 group-hover:rotate-12 transition-transform duration-300" />
+              <div className="text-left">
+                <h3 className="font-bold text-xl mb-1">Payment Workflow Guide</h3>
+                <p className="text-purple-100 text-sm">Learn about the complete payment process</p>
+              </div>
+              <ChevronRight className="ml-auto w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
+            </div>
+          </button>
         </div>
 
         {/* Recent Pending Section */}

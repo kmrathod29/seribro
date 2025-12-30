@@ -145,12 +145,29 @@ const AdminProjectDetails = () => {
         <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-8 mb-8 backdrop-blur-sm">
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-yellow-400 mb-2">{project.title}</h1>
+              <h1 className="text-3xl font-bold text-yellow-400 mb-4">{project.title}</h1>
+              
+              {/* Company Information - Enhanced Display */}
               {company && (
-                <p className="text-gray-400 flex items-center gap-2">
-                  <Briefcase className="w-4 h-4" />
-                  {company.name}
-                </p>
+                <div className="bg-gray-900/50 border border-gray-600 rounded-lg p-4 mb-4 max-w-md">
+                  <p className="text-xs uppercase tracking-wider text-gray-400 mb-2 font-semibold">Posted by</p>
+                  <div className="flex items-start gap-3">
+                    <Briefcase className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold text-yellow-300">
+                        {company.companyName || company.name || 'N/A'}
+                      </p>
+                      {(company.officeAddress?.city || company.officeAddress?.state) && (
+                        <p className="text-sm text-gray-400 mt-1 flex items-center gap-1">
+                          <span>📍</span>
+                          {company.officeAddress?.city}
+                          {company.officeAddress?.city && company.officeAddress?.state && ', '}
+                          {company.officeAddress?.state}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
             <div className={`px-4 py-2 rounded-lg font-semibold border ${
@@ -249,10 +266,20 @@ const AdminProjectDetails = () => {
                   {applications.map((app, idx) => (
                     <tr key={app._id} className="border-b border-gray-700 hover:bg-gray-900/50 transition-colors">
                       <td className="px-6 py-4">
-                        <p className="font-medium">{app.studentName || 'Unknown'}</p>
-                        <p className="text-sm text-gray-400">{app.studentEmail || 'N/A'}</p>
+                        <p className="font-medium">
+                          {app.studentName && app.studentName !== 'Unknown' 
+                            ? app.studentName 
+                            : app.student?.basicInfo?.fullName || 'Unknown'}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {app.studentEmail || app.student?.basicInfo?.email || 'N/A'}
+                        </p>
                       </td>
-                      <td className="px-6 py-4 text-gray-400">{app.studentCollege || 'N/A'}</td>
+                      <td className="px-6 py-4 text-gray-400">
+                        {app.studentCollege && app.studentCollege !== 'N/A' 
+                          ? app.studentCollege 
+                          : app.student?.basicInfo?.collegeName || 'N/A'}
+                      </td>
                       <td className="px-6 py-4 text-sm text-gray-400">
                         {new Date(app.appliedAt || app.createdAt).toLocaleDateString()}
                       </td>

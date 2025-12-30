@@ -208,7 +208,7 @@ exports.getProjectDetails = async (req, res) => {
     const { projectId } = req.params;
 
     const project = await Project.findById(projectId)
-      .populate('companyId', 'name email logo industry')
+      .populate('companyId', 'companyName officeAddress.city officeAddress.state email logo industryType')
       .lean();
 
     if (!project) {
@@ -243,6 +243,7 @@ exports.getProjectDetails = async (req, res) => {
 
     return sendResponse(res, true, 'Project details fetched', {
       project,
+      company: project.companyId, // Explicitly pass company data
       applicationStats
     });
   } catch (error) {
@@ -272,18 +273,46 @@ exports.getProjectApplications = async (req, res) => {
       return sendResponse(res, false, 'Project nahi mila', null, 404);
     }
 
-    // Hinglish: Applications nikalo aur student data de
+    // Hinglish: Applications nikalo aur student data populate karo
     const applications = await Application.find({ projectId })
+      .populate('student', 'basicInfo.fullName basicInfo.collegeName basicInfo.location')
       .sort({ appliedAt: -1 })
       .skip(skip)
       .limit(limitNum)
       .lean();
 
+    // Hinglish: Har application ke liye student data extract karo
+    const enrichedApplications = applications.map(app => {
+      // Try to get student name from different sources (priority order)
+      const studentName = 
+        app.studentSnapshot?.name || 
+        app.studentData?.fullName || 
+        app.student?.basicInfo?.fullName || 
+        app.studentName || 
+        'Unknown';
+
+      // Try to get college name from different sources (priority order)
+      const studentCollege = 
+        app.studentSnapshot?.collegeName || 
+        app.studentData?.college || 
+        app.student?.basicInfo?.collegeName || 
+        app.studentCollege || 
+        'N/A';
+
+      return {
+        ...app,
+        // Override with enriched data
+        studentName,
+        studentCollege,
+        studentCity: app.studentSnapshot?.city || app.studentData?.city || app.student?.basicInfo?.location || ''
+      };
+    });
+
     const total = await Application.countDocuments({ projectId });
     const totalPages = Math.ceil(total / limitNum);
 
     return sendResponse(res, true, 'Applications fetched', {
-      applications,
+      applications: enrichedApplications,
       pagination: {
         total,
         page: pageNum,

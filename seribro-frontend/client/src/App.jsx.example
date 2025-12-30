@@ -1,0 +1,273 @@
+// src/App.jsx - Router Integration Example
+// Add these routes to your main App.jsx router configuration
+
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+// Import payment pages
+import StudentPaymentPage from '@/pages/StudentPaymentPage';
+import AdminPaymentPage from '@/pages/AdminPaymentPage';
+import PaymentVerificationPage from '@/pages/PaymentVerificationPage';
+import RatingPage from '@/pages/RatingPage';
+import PaymentWorkflowPage from '@/pages/PaymentWorkflowPage';
+
+// Import other existing pages
+import Login from '@/pages/Login';
+import Dashboard from '@/pages/Dashboard';
+import ProjectDetails from '@/pages/ProjectDetails';
+import AdminDashboard from '@/pages/AdminDashboard';
+import ProtectedRoute from '@/components/ProtectedRoute';
+
+// ============================================
+// ADD THESE ROUTES TO YOUR ROUTES CONFIGURATION
+// ============================================
+
+const paymentRoutes = [
+  // Student: View earnings and payment history
+  {
+    path: '/student/payments',
+    element: (
+      <ProtectedRoute requiredRole="student">
+        <StudentPaymentPage />
+      </ProtectedRoute>
+    ),
+    name: 'Student Payments'
+  },
+
+  // Admin: Manage and release payments
+  {
+    path: '/admin/payments',
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <AdminPaymentPage />
+      </ProtectedRoute>
+    ),
+    name: 'Admin Payments'
+  },
+
+  // Company: Verify Razorpay payments
+  {
+    path: '/payments/verify',
+    element: (
+      <ProtectedRoute requiredRole="company">
+        <PaymentVerificationPage />
+      </ProtectedRoute>
+    ),
+    name: 'Verify Payment'
+  },
+
+  // Student: Rate project after payment
+  {
+    path: '/workspace/projects/:projectId/rating',
+    element: (
+      <ProtectedRoute requiredRole="student">
+        <RatingPage />
+      </ProtectedRoute>
+    ),
+    name: 'Rate Project'
+  },
+
+  // Public: Payment workflow visualization
+  {
+    path: '/workflow/payments',
+    element: <PaymentWorkflowPage />,
+    name: 'Payment Workflow'
+  }
+];
+
+// ============================================
+// COMPLETE APP COMPONENT EXAMPLE
+// ============================================
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        {/* Authentication Routes */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Dashboard Routes */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Project Routes */}
+        <Route 
+          path="/workspace/projects/:projectId" 
+          element={
+            <ProtectedRoute>
+              <ProjectDetails />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* ===== PAYMENT ROUTES START ===== */}
+        {/* Student Payment History */}
+        <Route 
+          path="/student/payments" 
+          element={
+            <ProtectedRoute requiredRole="student">
+              <StudentPaymentPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Admin Payment Release */}
+        <Route 
+          path="/admin/payments" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminPaymentPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Payment Verification */}
+        <Route 
+          path="/payments/verify" 
+          element={
+            <ProtectedRoute requiredRole="company">
+              <PaymentVerificationPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Project Rating */}
+        <Route 
+          path="/workspace/projects/:projectId/rating" 
+          element={
+            <ProtectedRoute requiredRole="student">
+              <RatingPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Payment Workflow */}
+        <Route 
+          path="/workflow/payments" 
+          element={<PaymentWorkflowPage />} 
+        />
+        {/* ===== PAYMENT ROUTES END ===== */}
+
+        {/* 404 Route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
+
+// ============================================
+// NAVIGATION LINKS TO ADD IN NAVBAR/SIDEBAR
+// ============================================
+
+export const paymentNavigationLinks = {
+  student: [
+    {
+      label: 'Payments & Earnings',
+      path: '/student/payments',
+      icon: 'DollarSign',
+      description: 'View your earnings and payment history'
+    },
+    {
+      label: 'My Projects',
+      path: '/workspace/projects',
+      icon: 'Briefcase',
+      description: 'View assigned projects'
+    }
+  ],
+
+  company: [
+    {
+      label: 'Verify Payment',
+      path: '/payments/verify',
+      icon: 'CheckCircle',
+      description: 'Verify Razorpay payments'
+    },
+    {
+      label: 'My Projects',
+      path: '/dashboard/projects',
+      icon: 'Briefcase',
+      description: 'Manage your projects'
+    }
+  ],
+
+  admin: [
+    {
+      label: 'Payment Release',
+      path: '/admin/payments',
+      icon: 'DollarSign',
+      description: 'Manage and release payments'
+    },
+    {
+      label: 'Dashboard',
+      path: '/admin',
+      icon: 'Home',
+      description: 'Admin dashboard'
+    }
+  ]
+};
+
+// ============================================
+// BREADCRUMB CONFIGURATION
+// ============================================
+
+export const paymentBreadcrumbs = {
+  '/student/payments': ['Home', 'Payments'],
+  '/admin/payments': ['Admin', 'Payments'],
+  '/payments/verify': ['Home', 'Verify Payment'],
+  '/workspace/projects/:projectId/rating': ['Projects', 'Rating'],
+  '/workflow/payments': ['Help', 'Payment Workflow']
+};
+
+// ============================================
+// PAGE META INFORMATION
+// ============================================
+
+export const paymentPagesMeta = {
+  '/student/payments': {
+    title: 'Payments & Earnings',
+    description: 'View your earnings and payment history',
+    icon: 'DollarSign',
+    role: 'student'
+  },
+  '/admin/payments': {
+    title: 'Payment Release Dashboard',
+    description: 'Manage and release verified payments',
+    icon: 'DollarSign',
+    role: 'admin'
+  },
+  '/payments/verify': {
+    title: 'Verify Payment',
+    description: 'Verify Razorpay payments',
+    icon: 'CheckCircle',
+    role: 'company'
+  },
+  '/workspace/projects/:projectId/rating': {
+    title: 'Rate Project',
+    description: 'Rate and review your project experience',
+    icon: 'Star',
+    role: 'student'
+  },
+  '/workflow/payments': {
+    title: 'Payment Workflow',
+    description: 'Complete payment process guide',
+    icon: 'GitFlow',
+    role: 'public'
+  }
+};

@@ -6,10 +6,14 @@ const connectDB = require('./backend/config/dbconection');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const cors = require('cors');
+const http = require('http');
+const { initializeSocketIO } = require('./backend/utils/socket/socketManager');
 
 // Load environment variables
 dotenv.config();
 
+
+//what is benifit for add JWT-secured Socket.IO middleware this in our project .explinin hinglish with easy example
 // Connect to Database
 connectDB();
 
@@ -21,6 +25,7 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
   'http://localhost:5173',
   'http://localhost:5174',
+  'http://localhost:3000',
 ].filter(Boolean);
 
 app.use(cors({
@@ -263,9 +268,20 @@ app.use((err, req, res, next) => {
     });
 });
 
-const PORT = process.env.PORT || 5000;
+// Socket.io Configuration
+const SOCKET_PORT = process.env.SOCKET_PORT || process.env.PORT || 7000;
+const SOCKET_CORS_ORIGINS = process.env.SOCKET_CORS_ORIGIN 
+  ? process.env.SOCKET_CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : allowedOrigins;
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+// Create HTTP server and attach Socket.io
+const httpServer = http.createServer(app);
+
+// Initialize Socket.io with CORS configuration
+initializeSocketIO(httpServer, SOCKET_CORS_ORIGINS);
+
+httpServer.listen(SOCKET_PORT, () => {
+    console.log(`🚀 Server running on port ${SOCKET_PORT}`);
+    console.log(`📡 Socket.io ready for real-time connections`);
     console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

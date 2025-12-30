@@ -11,9 +11,28 @@ const statusColors = {
   completed: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
 };
 
-const WorkspaceHeader = ({ project, daysRemaining }) => {
+const WorkspaceHeader = ({ project, daysRemaining, onlineUsers = new Set(), currentUserId, student, company }) => {
   const navigate = useNavigate();
   const badge = statusColors[project?.status] || 'bg-white/10 text-white border-white/20';
+
+  // Determine the other user (not current user)
+  let otherUserId = null;
+  let otherUserName = null;
+
+  if (student && company) {
+    // Determine which is the other party
+    if (student._id?.toString() === currentUserId?.toString()) {
+      // Current user is student, show company
+      otherUserId = company.user;
+      otherUserName = company.companyName;
+    } else {
+      // Current user is company, show student
+      otherUserId = student.user;
+      otherUserName = student.fname;
+    }
+  }
+
+  const isOtherUserOnline = otherUserId && onlineUsers && onlineUsers.has(otherUserId);
 
   return (
     <div className="bg-slate-800/60 border border-white/10 rounded-xl p-4 md:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-lg">
@@ -42,6 +61,16 @@ const WorkspaceHeader = ({ project, daysRemaining }) => {
           </div>
         </div>
       </div>
+
+      {/* Online Status Indicator */}
+      {otherUserName && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-700/40">
+          <div className={`w-2.5 h-2.5 rounded-full ${isOtherUserOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
+          <span className="text-sm font-medium text-gray-200">
+            {otherUserName} {isOtherUserOnline ? '· Online' : '· Offline'}
+          </span>
+        </div>
+      )}
     </div>
   );
 };

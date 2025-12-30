@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import MessageItem from './MessageItem';
 import MessageInput from './MessageInput';
+import TypingIndicator from './TypingIndicator';
 
 const MessageBoard = ({
   messages,
@@ -12,6 +13,9 @@ const MessageBoard = ({
   onLoadMore,
   loading,
   currentUserId,
+  typingUsers = new Map(),
+  onTypingStart,
+  onTypingStop,
 }) => {
   const listRef = useRef(null);
   const [showNewBadge, setShowNewBadge] = useState(false);
@@ -88,6 +92,9 @@ const MessageBoard = ({
             senderRole={msg.senderRole}
           />
         ))}
+
+        {/* Typing Indicator */}
+        <TypingIndicator typingUsers={typingUsers} currentUserId={currentUserId} />
       </div>
 
       {showNewBadge && (
@@ -98,7 +105,12 @@ const MessageBoard = ({
         </div>
       )}
 
-      <MessageInput onSend={onSend} disabled={sending} />
+      <MessageInput 
+        onSend={onSend} 
+        disabled={sending}
+        onTypingStart={onTypingStart}
+        onTypingStop={onTypingStop}
+      />
     </div>
   );
 };

@@ -1,80 +1,476 @@
+// src/pages/payment/PaymentPage.jsx
+// Payment Page with Full Razorpay Integration - Phase 5.4.9
+// Test URL: http://localhost:5173/workspace/projects/[projectId]/payment
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import paymentApi from '../../apis/paymentApi';
 import workspaceApi from '../../apis/workspaceApi';
+import PaymentSummary from '../../components/payment/PaymentSummary';
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronLeft,
+  Loader,
+  ShieldAlert,
+  Zap,
+} from 'lucide-react';
 
 const PaymentPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const [project, setProject] = useState(null);
-  const [loading, setLoading] = useState(true);
 
+  // States
+  const [project, setProject] = useState(null);
+  const [companyProfile, setCompanyProfile] = useState(null);
+  const [orderData, setOrderData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [razorpayKey, setRazorpayKey] = useState(null);
+  const [isTestMode, setIsTestMode] = useState(false);
+
+  // Load project and order data
   useEffect(() => {
-    (async () => {
-      const res = await workspaceApi.getWorkspaceOverview(projectId);
-      if (res.success) setProject(res.data.project);
-      else toast.error(res.message || 'Failed to load project');
-      setLoading(false);
-    })();
+    loadProjectData();
+    loadRazorpayScript();
   }, [projectId]);
 
-  const handlePayment = async () => {
-    if (!project) return;
-    const payload = { projectId, studentId: project.assignedStudent || null };
-    const orderRes = await paymentApi.createOrder(payload);
-    if (!orderRes.success) return toast.error(orderRes.message || 'Failed to create order');
+  // Load Razorpay script
+  const loadRazorpayScript = () => {
+    if (window.Razorpay) return;
 
-    const { orderId, amount, currency, keyId } = orderRes.data || orderRes;
-    if (!orderId) {
-      // Backend created a pending payment (no Razorpay) - instruct company to contact admin
-      toast.info('Payment record created. Configure Razorpay to proceed with online payments.');
-      navigate(`/workspace/projects/${projectId}`);
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => {
+      console.log('Razorpay script loaded successfully');
+    };
+    script.onerror = () => {
+      console.error('Failed to load Razorpay script');
+      toast.error('Payment service unavailable');
+    };
+    document.head.appendChild(script);
+  };
+
+  // Load project and company data
+  const loadProjectData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get project details
+      const projectRes = await workspaceApi.getWorkspaceOverview(projectId);
+      if (!projectRes.success) {
+        setError(projectRes.message || 'Failed to load project');
+        setLoading(false);
+        return;
+      }
+
+      setProject(projectRes.data.project);
+      setCompanyProfile(projectRes.data.company);
+
+      // Create order
+      await createPaymentOrder(projectRes.data.project);
+    } catch (err) {
+      console.error('Error loading project:', err);
+      setError('An error occurred while loading project details');
+    }
+  };
+
+  // Create payment order
+  const createPaymentOrder = async (proj) => {
+    try {
+      setOrderLoading(true);
+      const orderRes = await paymentApi.createOrder({
+        projectId,
+        studentId: proj.assignedStudent || proj.selectedStudentId || null,
+      });
+
+      if (!orderRes.success) {
+        setError(orderRes.message || 'Failed to create payment order');
+        setOrderLoading(false);
+        return;
+      }
+
+      const orderInfo = orderRes.data || orderRes;
+      setOrderData(orderInfo);
+
+      // Check if Razorpay key is in test mode
+      if (orderInfo.keyId) {
+        setRazorpayKey(orderInfo.keyId);
+        setIsTestMode(orderInfo.keyId.startsWith('rzp_test'));
+      } else {
+        setRazorpayKey(import.meta.env.VITE_RAZORPAY_KEY_ID);
+        setIsTestMode(
+          (import.meta.env.VITE_RAZORPAY_KEY_ID || '').startsWith('rzp_test')
+        );
+      }
+
+      setOrderLoading(false);
+    } catch (err) {
+      console.error('Error creating order:', err);
+      setError('Failed to create payment order');
+      setOrderLoading(false);
+    }
+  };
+
+  // Handle payment
+  const handlePayment = async () => {
+    if (!project || !orderData) {
+      toast.error('Missing payment details');
       return;
     }
 
-    const options = {
-      key: keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: amount * 100,
-      currency: currency || 'INR',
-      name: 'Seribro',
-      description: `Payment for ${project.title}`,
-      order_id: orderId,
-      handler: async function (response) {
-        const verifyRes = await paymentApi.verifyPayment({
-          razorpayOrderId: response.razorpay_order_id,
-          razorpayPaymentId: response.razorpay_payment_id,
-          razorpaySignature: response.razorpay_signature,
-          projectId,
-        });
-        if (verifyRes.success) {
-          toast.success('Payment successful');
-          navigate(`/workspace/projects/${projectId}`);
-        } else {
-          toast.error(verifyRes.message || 'Payment verification failed');
-        }
-      },
-      prefill: {
-        name: '',
-        email: '',
-      },
-    };
+    if (!window.Razorpay) {
+      toast.error('Payment service not loaded. Please refresh and try again.');
+      return;
+    }
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+    try {
+      setPaymentProcessing(true);
+
+      // Razorpay options
+      const options = {
+        key: razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: (orderData.amount || project.budget || 0) * 100, // Convert to paise
+        currency: orderData.currency || 'INR',
+        name: 'Seribro',
+        description: `Payment for ${project.title}`,
+        order_id: orderData.orderId || orderData.id,
+        prefill: {
+          name: companyProfile?.name || '',
+          email: companyProfile?.email || '',
+        },
+        theme: {
+          color: '#fbbf24', // Amber color for brand consistency
+        },
+        modal: {
+          ondismiss: () => {
+            setPaymentProcessing(false);
+            toast.info('Payment cancelled');
+          },
+        },
+        handler: async (response) => {
+          await handlePaymentSuccess(response);
+        },
+      };
+
+      // Open Razorpay checkout
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (error) => {
+        handlePaymentFailure(error);
+      });
+      rzp.open();
+    } catch (err) {
+      console.error('Error initiating payment:', err);
+      toast.error('Failed to initiate payment');
+      setPaymentProcessing(false);
+    }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  // Handle payment success
+  const handlePaymentSuccess = async (response) => {
+    try {
+      setPaymentProcessing(true);
+      setPaymentStatus('verifying');
+
+      // Verify payment on backend
+      const verifyRes = await paymentApi.verifyPayment({
+        razorpayOrderId: response.razorpay_order_id,
+        razorpayPaymentId: response.razorpay_payment_id,
+        razorpaySignature: response.razorpay_signature,
+        projectId,
+      });
+
+      if (verifyRes.success) {
+        setPaymentStatus('success');
+        toast.success('Payment successful! Redirecting...');
+
+        // Redirect to project page after 2 seconds
+        setTimeout(() => {
+          navigate(`/workspace/projects/${projectId}`, { replace: true });
+        }, 2000);
+      } else {
+        setPaymentStatus('verification_failed');
+        setError(
+          verifyRes.message ||
+            'Payment verification failed. Payment may have been captured but not verified. Please contact support.'
+        );
+        toast.error(
+          'Payment verification failed. Please contact support with your transaction ID: ' +
+            response.razorpay_payment_id
+        );
+      }
+    } catch (err) {
+      console.error('Error verifying payment:', err);
+      setPaymentStatus('verification_failed');
+      setError('An error occurred during payment verification');
+      toast.error('Payment verification error');
+    } finally {
+      setPaymentProcessing(false);
+    }
+  };
+
+  // Handle payment failure
+  const handlePaymentFailure = (error) => {
+    setPaymentStatus('failed');
+    setError(
+      error?.description ||
+        'Payment failed. Please try again or use a different payment method.'
+    );
+    toast.error(error?.description || 'Payment failed');
+    setPaymentProcessing(false);
+  };
+
+  // Retry payment
+  const handleRetry = () => {
+    setError(null);
+    setPaymentStatus(null);
+    if (!orderData) {
+      createPaymentOrder(project);
+    }
+  };
+
+  // Success screen
+  if (paymentStatus === 'success') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
+        <div className="text-center">
+          <CheckCircle2 size={80} className="text-green-400 mx-auto mb-4" />
+          <h2 className="text-3xl font-bold text-white mb-2">Payment Successful!</h2>
+          <p className="text-gray-300 mb-4">Your payment has been verified successfully.</p>
+          <p className="text-gray-400 text-sm">Redirecting to project...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (loading || orderLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <Loader size={48} className="animate-spin text-amber-400 mx-auto mb-4" />
+          <p className="text-gray-300">Loading payment details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Complete Payment for Project</h2>
-      <div className="bg-slate-800/60 border border-white/10 rounded p-6 mb-4">
-        <h3 className="text-lg font-semibold">{project?.title}</h3>
-        <p className="text-sm text-gray-300">Budget: ₹{project?.budgetMax?.toLocaleString('en-IN')}</p>
-        <p className="text-sm text-gray-300 mt-2">Pay now to confirm assignment and start work.</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 py-8 px-4">
+      <div className="max-w-2xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8"
+        >
+          <ChevronLeft size={20} />
+          Back
+        </button>
+
+        {/* Test Mode Banner */}
+        {isTestMode && (
+          <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4 mb-6 flex gap-3">
+            <Zap size={24} className="text-blue-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-blue-300 font-semibold">Test Mode Active</p>
+              <p className="text-blue-200 text-sm mt-1">
+                Use test card: <span className="font-mono">4111 1111 1111 1111</span>
+              </p>
+              <p className="text-blue-200 text-sm">
+                CVV: Any 3 digits | Expiry: Any future date
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6 flex gap-3">
+            <AlertCircle size={24} className="text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-red-300 font-semibold">Payment Error</p>
+              <p className="text-red-200 text-sm mt-1">{error}</p>
+
+              {/* Retry Button */}
+              {paymentStatus === 'verification_failed' && (
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={handleRetry}
+                    className="px-4 py-2 bg-red-500/30 hover:bg-red-500/40 text-red-300 rounded transition-colors text-sm font-medium"
+                  >
+                    Try Again
+                  </button>
+                  <button
+                    onClick={() => navigate(`/workspace/projects/${projectId}`)}
+                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors text-sm font-medium"
+                  >
+                    Go to Project
+                  </button>
+                </div>
+              )}
+
+              {/* Support Contact */}
+              {paymentStatus === 'verification_failed' && (
+                <p className="text-gray-400 text-xs mt-4">
+                  Need help? Contact support@seribro.com with your transaction ID
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Main Payment Card */}
+        <div className="bg-slate-800/50 border border-slate-700 rounded-lg overflow-hidden shadow-lg">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 border-b border-slate-700">
+            <h1 className="text-2xl font-bold text-white mb-2">Complete Payment</h1>
+            <p className="text-gray-400">
+              Secure payment processing with Razorpay
+            </p>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            {/* Project Details */}
+            {project && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-white">Project Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-slate-900/50 p-4 rounded border border-slate-700">
+                    <p className="text-gray-400 text-sm mb-1">Project Title</p>
+                    <p className="text-white font-medium">{project.title}</p>
+                  </div>
+
+                  <div className="bg-slate-900/50 p-4 rounded border border-slate-700">
+                    <p className="text-gray-400 text-sm mb-1">Budget Amount</p>
+                    <p className="text-white font-medium">
+                      ₹{(project.budget || project.budgetMax || 0).toLocaleString('en-IN')}
+                    </p>
+                  </div>
+
+                  <div className="bg-slate-900/50 p-4 rounded border border-slate-700">
+                    <p className="text-gray-400 text-sm mb-1">Assigned Student</p>
+                    <p className="text-white font-medium">
+                      {project.studentName || 'Not assigned'}
+                    </p>
+                  </div>
+
+                  <div className="bg-slate-900/50 p-4 rounded border border-slate-700">
+                    <p className="text-gray-400 text-sm mb-1">Payment Status</p>
+                    <p className="text-amber-300 font-medium">Pending</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Summary Component */}
+            {orderData && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-white">Payment Summary</h2>
+                <PaymentSummary
+                  payment={{
+                    projectName: project?.title || 'N/A',
+                    studentName: project?.studentName || 'N/A',
+                    baseAmount: orderData.amount || project?.budget || 0,
+                    platformFeePercentage: 5,
+                    status: 'pending',
+                    timestamp: new Date(),
+                    paymentId: orderData.orderId,
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Security Info */}
+            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 flex gap-3">
+              <ShieldAlert size={20} className="text-green-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-green-300 text-sm font-medium">Secure Payment</p>
+                <p className="text-green-200 text-xs mt-1">
+                  Your payment is encrypted and secured with Razorpay
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer with Payment Button */}
+          <div className="bg-slate-900/50 p-6 border-t border-slate-700 flex gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex-1 py-3 px-4 rounded-lg font-medium bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={handlePayment}
+              disabled={paymentProcessing || !orderData || !!error}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
+                paymentProcessing || !orderData || error
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 hover:shadow-lg hover:shadow-amber-500/50 active:scale-95'
+              }`}
+            >
+              {paymentProcessing ? (
+                <>
+                  <Loader size={20} className="animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Zap size={20} />
+                  Pay ₹
+                  {(
+                    orderData?.amount ||
+                    project?.budget ||
+                    project?.budgetMax ||
+                    0
+                  ).toLocaleString('en-IN')}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Info Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+            <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">
+              Security
+            </p>
+            <p className="text-white font-medium text-sm">PCI DSS Compliant</p>
+            <p className="text-gray-400 text-xs mt-1">
+              Your card details are never stored
+            </p>
+          </div>
+
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+            <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">
+              Instant Confirmation
+            </p>
+            <p className="text-white font-medium text-sm">Immediate Verification</p>
+            <p className="text-gray-400 text-xs mt-1">
+              Payment confirmed in real-time
+            </p>
+          </div>
+
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+            <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">
+              Support
+            </p>
+            <p className="text-white font-medium text-sm">24/7 Assistance</p>
+            <p className="text-gray-400 text-xs mt-1">
+              Contact support@seribro.com
+            </p>
+          </div>
+        </div>
       </div>
-      <button onClick={handlePayment} className="px-4 py-2 bg-amber-400 text-navy rounded font-semibold">Pay ₹{project?.budgetMax}</button>
     </div>
   );
 };
