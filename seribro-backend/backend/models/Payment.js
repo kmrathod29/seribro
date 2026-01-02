@@ -9,8 +9,8 @@ const TransactionSchema = new Schema({
 });
 
 const PaymentSchema = new Schema({
-  razorpayOrderId: { type: String, required: true, unique: true, index: true },
-  razorpayPaymentId: { type: String, unique: true, index: true },
+  razorpayOrderId: { type: String, unique: true, index: true, sparse: true },
+  razorpayPaymentId: { type: String, unique: true, index: true, sparse: true },
   razorpaySignature: String,
 
   project: { type: Schema.Types.ObjectId, ref: 'Project', required: true, index: true },

@@ -34,7 +34,9 @@ const NotificationSchema = new mongoose.Schema({
       'profile-submitted', 'approved', 'rejected', 'resubmitted', 'info',
       // Phase 4: Application workflow
       'application_submitted', 'application_received', 'application_shortlisted',
-      'application_accepted', 'application_rejected', 'project_assigned'
+      'application_accepted', 'application_rejected', 'project_assigned',
+      // Phase 5: Workspace messaging
+      'workspace_message'
     ],
     required: true
   },
@@ -46,10 +48,10 @@ const NotificationSchema = new mongoose.Schema({
     index: true
   },
   
-  // Hinglish: Related profile type - student ya company
+  // Hinglish: Related profile type - student ya company ya project
   relatedProfileType: {
     type: String,
-    enum: ['student', 'company', null],
+    enum: ['student', 'company', 'project', null],
     default: null
   },
   

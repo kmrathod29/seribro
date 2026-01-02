@@ -70,14 +70,22 @@ const PaymentPage = () => {
         return;
       }
 
+      if (!projectRes.data || !projectRes.data.project) {
+        setError('Invalid project data received');
+        setLoading(false);
+        return;
+      }
+
       setProject(projectRes.data.project);
       setCompanyProfile(projectRes.data.company);
 
       // Create order
       await createPaymentOrder(projectRes.data.project);
+      setLoading(false);
     } catch (err) {
       console.error('Error loading project:', err);
-      setError('An error occurred while loading project details');
+      setError(err.message || 'An error occurred while loading project details');
+      setLoading(false);
     }
   };
 
@@ -85,9 +93,16 @@ const PaymentPage = () => {
   const createPaymentOrder = async (proj) => {
     try {
       setOrderLoading(true);
+      
+      if (!proj || !proj._id) {
+        setError('Project data is invalid');
+        setOrderLoading(false);
+        return;
+      }
+
       const orderRes = await paymentApi.createOrder({
-        projectId,
-        studentId: proj.assignedStudent || proj.selectedStudentId || null,
+        projectId: proj._id || projectId,
+        studentId: proj.assignedStudent || null,
       });
 
       if (!orderRes.success) {
@@ -97,6 +112,12 @@ const PaymentPage = () => {
       }
 
       const orderInfo = orderRes.data || orderRes;
+      if (!orderInfo) {
+        setError('Invalid order response from server');
+        setOrderLoading(false);
+        return;
+      }
+      
       setOrderData(orderInfo);
 
       // Check if Razorpay key is in test mode
@@ -104,16 +125,15 @@ const PaymentPage = () => {
         setRazorpayKey(orderInfo.keyId);
         setIsTestMode(orderInfo.keyId.startsWith('rzp_test'));
       } else {
-        setRazorpayKey(import.meta.env.VITE_RAZORPAY_KEY_ID);
-        setIsTestMode(
-          (import.meta.env.VITE_RAZORPAY_KEY_ID || '').startsWith('rzp_test')
-        );
+        const envKey = import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+        setRazorpayKey(envKey);
+        setIsTestMode(envKey.startsWith('rzp_test'));
       }
 
       setOrderLoading(false);
     } catch (err) {
       console.error('Error creating order:', err);
-      setError('Failed to create payment order');
+      setError(err.message || 'Failed to create payment order');
       setOrderLoading(false);
     }
   };
@@ -133,16 +153,25 @@ const PaymentPage = () => {
     try {
       setPaymentProcessing(true);
 
+      // Get the amount from orderData or calculate from project
+      const amount = orderData.amount || project.paymentAmount || project.budgetMax || project.budgetMin || 0;
+      
+      if (amount <= 0) {
+        toast.error('Invalid payment amount');
+        setPaymentProcessing(false);
+        return;
+      }
+
       // Razorpay options
       const options = {
         key: razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: (orderData.amount || project.budget || 0) * 100, // Convert to paise
+        amount: amount * 100, // Convert to paise
         currency: orderData.currency || 'INR',
         name: 'Seribro',
         description: `Payment for ${project.title}`,
         order_id: orderData.orderId || orderData.id,
         prefill: {
-          name: companyProfile?.name || '',
+          name: companyProfile?.companyName || '',
           email: companyProfile?.email || '',
         },
         theme: {
@@ -350,7 +379,7 @@ const PaymentPage = () => {
                   <div className="bg-slate-900/50 p-4 rounded border border-slate-700">
                     <p className="text-gray-400 text-sm mb-1">Budget Amount</p>
                     <p className="text-white font-medium">
-                      ₹{(project.budget || project.budgetMax || 0).toLocaleString('en-IN')}
+                      ₹{(project.paymentAmount || project.budgetMax || project.budgetMin || 0).toLocaleString('en-IN')}
                     </p>
                   </div>
 
@@ -428,8 +457,9 @@ const PaymentPage = () => {
                   Pay ₹
                   {(
                     orderData?.amount ||
-                    project?.budget ||
+                    project?.paymentAmount ||
                     project?.budgetMax ||
+                    project?.budgetMin ||
                     0
                   ).toLocaleString('en-IN')}
                 </>

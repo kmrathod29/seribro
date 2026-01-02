@@ -22,6 +22,21 @@ const MessageBoard = ({
   const atBottomRef = useRef(true);
   const prevIdsRef = useRef(new Set());
 
+  // Error-safe wrapper for onSend to prevent white screen errors
+  const handleSendWrapper = async (data) => {
+    try {
+      const result = await onSend(data);
+      if (!result?.success) {
+        console.error('Send failed:', result?.message);
+      }
+      return result;
+    } catch (error) {
+      console.error('Error in handleSendWrapper:', error);
+      toast.error('Failed to send message. Please try again.');
+      return { success: false, message: error.message };
+    }
+  };
+
   useEffect(() => {
     // Track scroll position
     const el = listRef.current;
@@ -106,7 +121,7 @@ const MessageBoard = ({
       )}
 
       <MessageInput 
-        onSend={onSend} 
+        onSend={handleSendWrapper} 
         disabled={sending}
         onTypingStart={onTypingStart}
         onTypingStop={onTypingStop}

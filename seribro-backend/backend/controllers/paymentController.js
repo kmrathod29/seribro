@@ -285,15 +285,17 @@ exports.releasePayment = async (req, res) => {
       await project.save();
     }
 
-    // Update student's earnings (add)
+    // Update student's earnings - use netAmount (amount after platform fee deduction)
     const studentProfile = await StudentProfile.findById(payment.student);
     if (studentProfile) {
-      await studentProfile.updateEarnings(payment.amount, 'add');
-      await sendNotification(studentProfile.user, 'student', `Payment of ₹${payment.amount} released for project ${project ? project.title : ''}`, 'payment_released', 'project', project?._id);
+      const netAmount = payment.netAmount || (payment.amount - (payment.platformFee || 0));
+      await studentProfile.updateEarnings(netAmount, 'released');
+      
+      await sendNotification(studentProfile.user, 'student', `Payment of ₹${netAmount} released for project ${project ? project.title : ''}`, 'payment_released', 'project', project?._id);
       try {
         const studentUser = await User.findById(studentProfile.user);
         if (studentUser && studentUser.email && process.env.EMAIL_NOTIFY_ON_PAYMENT !== 'false') {
-          await sendEmail({ email: studentUser.email, subject: 'Payment released', message: `<p>Payment of ₹${payment.amount} has been released to you for project <strong>${project ? project.title : ''}</strong>.</p>` });
+          await sendEmail({ email: studentUser.email, subject: 'Payment released', message: `<p>Payment of ₹${netAmount} has been released to you for project <strong>${project ? project.title : ''}</strong>.</p>` });
         }
       } catch (e) { console.warn('Email send failed for releasePayment:', e.message); }
     }

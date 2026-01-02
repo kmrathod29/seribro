@@ -62,8 +62,11 @@ function RoleRoute({ children, allowedRoles = [] }) {
   if (checking) {
     // Prevent redirect until we've checked localStorage
     return (
-      <div className="p-6 text-center">
-        <p className="text-sm text-gray-600">Checking authentication…</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-slate-600 border-t-amber-400 rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-gray-300">Checking authentication…</p>
+        </div>
       </div>
     );
   }

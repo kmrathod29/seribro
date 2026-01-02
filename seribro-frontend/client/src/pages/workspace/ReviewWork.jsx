@@ -488,7 +488,8 @@ const ReviewWork = () => {
                 {/* Action Buttons */}
                 {userRole === 'company' &&
                   (currentSubmission.status === 'submitted' ||
-                    currentSubmission.status === 'under-review') && (
+                    currentSubmission.status === 'under-review' ||
+                    currentSubmission.status === 'approved') && (
                     <div className="border-t border-gray-700 pt-6">
                       <h3 className="text-lg font-semibold text-gray-200 mb-4">
                         Review Actions

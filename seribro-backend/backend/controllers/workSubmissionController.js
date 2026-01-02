@@ -1,6 +1,7 @@
 // backend/controllers/workSubmissionController.js
 const Project = require('../models/Project');
 const Company = require('../models/Company');
+const CompanyProfile = require('../models/companyProfile');
 const User = require('../models/User');
 const StudentProfile = require('../models/StudentProfile');
 const sendEmail = require('../utils/sendEmail');
@@ -187,21 +188,72 @@ exports.approveWork = async (req, res) => {
     const access = await validateWorkspaceAccess(project, req.user);
     if (!access.hasAccess || access.role !== 'company') return sendResponse(res, 403, false, access.error || 'Access denied');
 
-    if (project.status !== 'under-review') return sendResponse(res, 400, false, 'No submission under review');
+    if (project.status !== 'under-review' && project.status !== 'approved') return sendResponse(res, 400, false, 'No submission under review');
 
     const { submission, project: updated } = await project.approveWork(req.user._id, (feedback || '').toString().slice(0, 2000));
 
     // Update lastActivity
     await updated.updateLastActivity();
 
-    // Notify student and admin
+    // ========== PHASE 2: Auto-create Payment Record ==========
+    // Get student and company profiles for payment creation
     const studentProfile = await StudentProfile.findById(submission.submittedBy);
+    const companyProfile = await CompanyProfile.findOne({ user: updated.company }) || 
+                           await CompanyProfile.findOne({ company: updated.companyId });
+
+    if (studentProfile && companyProfile) {
+      try {
+        // Check if payment already exists
+        let payment = await Payment.findById(updated.payment);
+        
+        if (!payment) {
+          // Auto-create Payment record after work approval
+          const paymentAmount = updated.paymentAmount || updated.budgetMax || updated.budgetMin || 0;
+          const platformPercent = Number(process.env.PLATFORM_FEE_PERCENTAGE || 7);
+          const platformFee = Math.round((paymentAmount * platformPercent) / 100);
+          const netAmount = paymentAmount - platformFee;
+
+          payment = await Payment.create({
+            project: updated._id,
+            company: companyProfile._id,
+            student: studentProfile._id,
+            amount: paymentAmount,
+            platformFee,
+            netAmount,
+            status: 'ready_for_release',
+            capturedAt: new Date(),
+          });
+
+          // Add transaction history
+          await payment.addTransactionHistory('ready_for_release', req.user._id, 'Auto-created after work approval');
+
+          // Link payment to project
+          await updated.linkPayment(payment._id, paymentAmount);
+          await updated.markPaymentReadyForRelease();
+
+          // Update student earnings - add to pending
+          studentProfile.earnings = studentProfile.earnings || { totalEarned: 0, pendingPayments: 0, completedProjects: 0 };
+          studentProfile.earnings.pendingPayments = (studentProfile.earnings.pendingPayments || 0) + netAmount;
+          await studentProfile.save();
+        } else if (payment.status === 'captured') {
+          // If payment exists but not released, mark as ready
+          await payment.markReadyForRelease(req.user._id, 'Marked ready after company approval');
+          await updated.markPaymentReadyForRelease();
+        }
+      } catch (err) {
+        console.error('Payment auto-creation error:', err);
+        // Non-fatal: continue even if payment creation fails
+        await sendAdminNotification(`⚠️ Payment creation failed for project ${updated.title}: ${err.message}`, 'payment-error', 'project', updated._id);
+      }
+    }
+
+    // Notify student and admin
     if (studentProfile) {
-      await sendNotification(studentProfile.user, 'student', `Your submission for project ${updated.title} has been approved. Payment will be released.`, 'work-approved', 'project', updated._id);
+      await sendNotification(studentProfile.user, 'student', `Your submission for project ${updated.title} has been approved! Payment is pending admin release.`, 'work-approved', 'project', updated._id);
       try {
         const studentUser = await User.findById(studentProfile.user);
         if (studentUser && studentUser.email && process.env.EMAIL_NOTIFY_ON_REVIEW !== 'false') {
-          await sendEmail({ email: studentUser.email, subject: 'Work approved', message: `<p>Your submission for project <strong>${updated.title}</strong> has been approved. Payment will be released.</p>` });
+          await sendEmail({ email: studentUser.email, subject: 'Work approved - Payment pending', message: `<p>Your submission for project <strong>${updated.title}</strong> has been approved! Your payment is now pending admin release.</p>` });
         }
       } catch (e) {
         console.warn('Email send failed for approveWork:', e.message);
@@ -209,20 +261,9 @@ exports.approveWork = async (req, res) => {
     }
 
     // Admin notification for payment release
-    await sendAdminNotification(`Payment release requested for project ${updated.title}`, 'payment-release', 'project', updated._id);
+    await sendAdminNotification(`✅ Payment ready for release: ${updated.title}`, 'payment-release', 'project', updated._id);
 
-    // Mark payment ready for release if payment exists
-    try {
-      const payment = await Payment.findById(updated.payment);
-      if (payment && payment.status === 'captured') {
-        await payment.markReadyForRelease(req.user._id, 'Marked ready after company approval');
-        await updated.markPaymentReadyForRelease();
-      }
-    } catch (err) {
-      console.warn('Non-fatal: could not mark payment ready for release automatically:', err.message);
-    }
-
-    return sendResponse(res, 200, true, 'Work approved successfully. Payment release initiated.', { project: { _id: updated._id, status: updated.status, approvedAt: updated.approvedAt }, submission });
+    return sendResponse(res, 200, true, 'Work approved successfully. Payment created and ready for release.', { project: { _id: updated._id, status: updated.status, approvedAt: updated.approvedAt }, submission });
   } catch (error) {
     console.error('❌ approveWork error:', error);
     return sendResponse(res, 500, false, 'Server error while approving work', null, error.message);

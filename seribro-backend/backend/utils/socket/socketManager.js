@@ -30,6 +30,9 @@ function initializeSocketIO(httpServer, allowedOrigins = []) {
       credentials: true,
     },
     transports: ['websocket', 'polling'],
+    pingInterval: 25000,
+    pingTimeout: 60000,
+    maxHttpBufferSize: 1e6,
   });
 
   // Connection handler
@@ -38,86 +41,104 @@ function initializeSocketIO(httpServer, allowedOrigins = []) {
 
     // Join workspace event: user joins project room
     socket.on('join_workspace', (data) => {
-      const { projectId, userId } = data;
-      if (!projectId || !userId) {
-        console.warn('[Socket.io] join_workspace: Missing projectId or userId');
-        return;
+      try {
+        const { projectId, userId } = data;
+        if (!projectId || !userId) {
+          console.warn('[Socket.io] join_workspace: Missing projectId or userId');
+          return;
+        }
+
+        const roomId = `project_${projectId}`;
+
+        // Track socket -> user mapping
+        if (!socketToUserMap.has(socket.id)) {
+          socketToUserMap.set(socket.id, { userId, projectIds: new Set() });
+        }
+        const socketData = socketToUserMap.get(socket.id);
+        socketData.projectIds.add(projectId);
+
+        // Track user -> socket mapping
+        if (!userToSocketMap.has(userId)) {
+          userToSocketMap.set(userId, { socketId: socket.id, projectIds: new Set() });
+        }
+        const userData = userToSocketMap.get(userId);
+        userData.projectIds.add(projectId);
+
+        // Join the room
+        socket.join(roomId);
+        console.log(`[Socket.io] User ${userId} joined room ${roomId}`);
+
+        // Broadcast user online status to room
+        io.to(roomId).emit('user_online', {
+          userId,
+          timestamp: new Date(),
+          isOnline: true,
+        });
+      } catch (err) {
+        console.error('[Socket.io] Error in join_workspace:', err.message);
       }
-
-      const roomId = `project_${projectId}`;
-
-      // Track socket -> user mapping
-      if (!socketToUserMap.has(socket.id)) {
-        socketToUserMap.set(socket.id, { userId, projectIds: new Set() });
-      }
-      const socketData = socketToUserMap.get(socket.id);
-      socketData.projectIds.add(projectId);
-
-      // Track user -> socket mapping
-      if (!userToSocketMap.has(userId)) {
-        userToSocketMap.set(userId, { socketId: socket.id, projectIds: new Set() });
-      }
-      const userData = userToSocketMap.get(userId);
-      userData.projectIds.add(projectId);
-
-      // Join the room
-      socket.join(roomId);
-      console.log(`[Socket.io] User ${userId} joined room ${roomId}`);
-
-      // Broadcast user online status to room
-      io.to(roomId).emit('user_online', {
-        userId,
-        timestamp: new Date(),
-        isOnline: true,
-      });
     });
 
     // Typing start event
     socket.on('typing_start', (data) => {
-      const { projectId, userId, senderName, senderRole } = data;
-      if (!projectId) return;
+      try {
+        const { projectId, userId, senderName, senderRole } = data;
+        if (!projectId) return;
 
-      const roomId = `project_${projectId}`;
-      socket.to(roomId).emit('typing_start', {
-        userId,
-        senderName,
-        senderRole,
-        timestamp: new Date(),
-      });
+        const roomId = `project_${projectId}`;
+        socket.to(roomId).emit('typing_start', {
+          userId,
+          senderName,
+          senderRole,
+          timestamp: new Date(),
+        });
+      } catch (err) {
+        console.error('[Socket.io] Error in typing_start:', err.message);
+      }
     });
 
     // Typing stop event
     socket.on('typing_stop', (data) => {
-      const { projectId, userId } = data;
-      if (!projectId) return;
+      try {
+        const { projectId, userId } = data;
+        if (!projectId) return;
 
-      const roomId = `project_${projectId}`;
-      socket.to(roomId).emit('typing_stop', {
-        userId,
-        timestamp: new Date(),
-      });
+        const roomId = `project_${projectId}`;
+        socket.to(roomId).emit('typing_stop', {
+          userId,
+          timestamp: new Date(),
+        });
+      } catch (err) {
+        console.error('[Socket.io] Error in typing_stop:', err.message);
+      }
     });
 
     // Disconnect handler
     socket.on('disconnect', () => {
-      console.log(`[Socket.io] User disconnected: ${socket.id}`);
+      try {
+        console.log(`[Socket.io] User disconnected: ${socket.id}`);
 
-      const socketData = socketToUserMap.get(socket.id);
-      if (socketData) {
-        const { userId, projectIds } = socketData;
+        const socketData = socketToUserMap.get(socket.id);
+        if (socketData) {
+          const { userId, projectIds } = socketData;
 
-        // Broadcast offline status to all rooms this user was in
-        projectIds.forEach((projectId) => {
-          const roomId = `project_${projectId}`;
-          io.to(roomId).emit('user_offline', {
-            userId,
-            timestamp: new Date(),
-            isOnline: false,
+          // Broadcast offline status to all rooms this user was in
+          projectIds.forEach((projectId) => {
+            const roomId = `project_${projectId}`;
+            io.to(roomId).emit('user_offline', {
+              userId,
+              timestamp: new Date(),
+              isOnline: false,
+            });
           });
-        });
 
-        // Clean up user mappings
-        userToSocketMap.delete(userId);
+          // Clean up user mappings
+          userToSocketMap.delete(userId);
+          socketToUserMap.delete(socket.id);
+        }
+      } catch (err) {
+        console.error('[Socket.io] Error in disconnect handler:', err.message);
+        // Still attempt cleanup even if error occurs
         socketToUserMap.delete(socket.id);
       }
     });

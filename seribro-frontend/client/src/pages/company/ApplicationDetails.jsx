@@ -1,7 +1,8 @@
 // src/pages/company/ApplicationDetails.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getApplicationDetails } from '../../apis/companyApplicationApi';
+import { toast } from 'react-toastify';
+import { getApplicationDetails, approveStudentForProject, rejectApplication, shortlistApplication } from '../../apis/companyApplicationApi';
 
 const ApplicationDetails = () => {
   const { applicationId } = useParams();
@@ -9,6 +10,13 @@ const ApplicationDetails = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  
+  // Modal states
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectError, setRejectError] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -20,6 +28,83 @@ const ApplicationDetails = () => {
       .catch(err => setError(err?.message || 'Failed to load application'))
       .finally(() => setLoading(false));
   }, [applicationId]);
+
+  const handleApprove = async () => {
+    try {
+      setActionLoading(true);
+      const response = await approveStudentForProject(applicationId);
+      if (response.success) {
+        toast.success('Student approved successfully! Payment process initiated.');
+        setShowApproveModal(false);
+        // Get projectId from the response or data
+        const projectId = response.data?.project?._id || data?.project?._id;
+        if (projectId) {
+          setTimeout(() => navigate(`/payment/${projectId}`), 1000);
+        } else {
+          setTimeout(() => navigate(-1), 1000);
+        }
+      } else {
+        toast.error(response.message || 'Failed to approve application');
+        setError(response.message || 'Failed to approve application');
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to approve application';
+      toast.error(errorMsg);
+      setError(errorMsg);
+      console.error('Approve error:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleShortlist = async () => {
+    try {
+      setActionLoading(true);
+      const response = await shortlistApplication(applicationId);
+      if (response.success) {
+        toast.success('Application shortlisted successfully!');
+        // Refresh the data
+        const res = await getApplicationDetails(applicationId);
+        if (res.success) setData(res.data);
+      } else {
+        toast.error(response.message || 'Failed to shortlist');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to shortlist');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectReason.trim()) {
+      setRejectError('Please provide a rejection reason');
+      return;
+    }
+    
+    if (rejectReason.trim().length < 10) {
+      setRejectError('Rejection reason must be at least 10 characters');
+      return;
+    }
+    
+    try {
+      setActionLoading(true);
+      const response = await rejectApplication(applicationId, rejectReason);
+      if (response.success) {
+        toast.success('Application rejected successfully');
+        setShowRejectModal(false);
+        setTimeout(() => navigate(-1), 1000);
+      } else {
+        toast.error(response.message || 'Failed to reject');
+        setRejectError(response.message || 'Failed to reject application');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to reject');
+      setRejectError(err.message || 'Failed to reject application');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -381,31 +466,125 @@ const ApplicationDetails = () => {
             <div className="flex flex-wrap gap-3 justify-end">
               <button 
                 onClick={() => navigate(-1)}
-                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition-colors"
+                disabled={actionLoading}
+                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Close
-              </button>
-              <button 
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-lg shadow-blue-500/30"
-              >
-                Send Message
               </button>
               {application.status === 'pending' && (
                 <>
                   <button 
-                    className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors"
+                    onClick={handleShortlist}
+                    disabled={actionLoading}
+                    className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Shortlist
+                    {actionLoading ? '⏳' : '⭐'} {actionLoading ? 'Processing...' : 'Shortlist'}
                   </button>
                   <button 
-                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors shadow-lg shadow-green-500/30"
+                    onClick={() => setShowApproveModal(true)}
+                    disabled={actionLoading}
+                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors shadow-lg shadow-green-500/30 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Accept Application
+                    {actionLoading ? '⏳' : '✅'} {actionLoading ? 'Processing...' : 'Accept Application'}
                   </button>
                 </>
               )}
+              {['pending', 'shortlisted'].includes(application.status) && (
+                <button 
+                  onClick={() => setShowRejectModal(true)}
+                  disabled={actionLoading}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {actionLoading ? '⏳' : '❌'} {actionLoading ? 'Processing...' : 'Reject'}
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Approve Confirmation Modal */}
+          {showApproveModal && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-800 border border-green-500/50 rounded-xl max-w-md w-full p-8 shadow-2xl">
+                <div className="text-center mb-6">
+                  <div className="text-5xl mb-4">✅</div>
+                  <h2 className="text-2xl font-bold text-white mb-2">Approve Application?</h2>
+                  <p className="text-slate-300 mb-4">
+                    This action will assign the project to <strong>{data?.student?.name}</strong> and initiate the payment process.
+                  </p>
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+                    <p className="text-green-300 text-sm">
+                      ⚠️ Once approved, all other applications will be automatically rejected and a payment record will be created.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowApproveModal(false)}
+                    disabled={actionLoading}
+                    className="flex-1 px-4 py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleApprove}
+                    disabled={actionLoading}
+                    className="flex-1 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {actionLoading ? '⏳ Processing...' : '✅ Approve'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reject Confirmation Modal */}
+          {showRejectModal && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-800 border border-red-500/50 rounded-xl max-w-md w-full p-8 shadow-2xl">
+                <div className="text-center mb-6">
+                  <div className="text-5xl mb-4">❌</div>
+                  <h2 className="text-2xl font-bold text-white mb-2">Reject Application?</h2>
+                  <p className="text-slate-300 mb-4">
+                    Please provide a detailed rejection reason that will be sent to the student.
+                  </p>
+                </div>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => {
+                    setRejectReason(e.target.value);
+                    if (e.target.value.length >= 10) setRejectError('');
+                  }}
+                  placeholder="Enter a detailed reason for rejection (minimum 10 characters)..."
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 resize-none mb-2"
+                  disabled={actionLoading}
+                />
+                {rejectError && (
+                  <p className="text-red-400 text-sm mb-4">⚠️ {rejectError}</p>
+                )}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowRejectModal(false);
+                      setRejectReason('');
+                      setRejectError('');
+                    }}
+                    disabled={actionLoading}
+                    className="flex-1 px-4 py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRejectSubmit}
+                    disabled={actionLoading || !rejectReason.trim()}
+                    className="flex-1 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {actionLoading ? '⏳ Processing...' : '❌ Reject'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

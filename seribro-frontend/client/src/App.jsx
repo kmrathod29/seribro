@@ -20,6 +20,7 @@ import CompanyProfile from './pages/company/CompanyProfile';
 import PostProject from './pages/company/PostProject';
 import MyProjects from './pages/company/MyProjects';
 import ProjectDetails from './pages/company/ProjectDetails';
+import EditProject from './pages/company/EditProject';
 // Phase 4.2: Student Project Browsing & Applications
 import BrowseProjects from './pages/students/BrowseProjects';
 import StudentProjectDetails from './pages/students/ProjectDetails';
@@ -55,7 +56,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 
-import { AdminRoute, StudentRoute, CompanyRoute } from './components/Shared/RoleRoutes';
+import { AdminRoute, StudentRoute, CompanyRoute, default as RoleRoute } from './components/Shared/RoleRoutes';
 
 function App() {
   return (
@@ -114,6 +115,7 @@ function App() {
   <Route path="/company/post-project" element={<CompanyRoute><PostProject /></CompanyRoute>} />
   <Route path="/company/projects" element={<CompanyRoute><MyProjects /></CompanyRoute>} />
   <Route path="/company/projects/:id" element={<CompanyRoute><ProjectDetails /></CompanyRoute>} />
+  <Route path="/company/projects/:id/edit" element={<CompanyRoute><EditProject /></CompanyRoute>} />
         
         {/* Phase 4.2: Student Project Browsing & Applications Routes */}
         <Route path="/browse-projects" element={<BrowseProjects />} />
@@ -125,18 +127,18 @@ function App() {
   <Route path="/company/applications" element={<CompanyRoute><CompanyApplications /></CompanyRoute>} />
   <Route path="/company/applications/:applicationId" element={<CompanyRoute><ApplicationDetails /></CompanyRoute>} />
 
-        {/* Workspace (Phase 5.1) */}
-        <Route path="/workspace/projects/:projectId" element={<ProjectWorkspace />} />
+        {/* Workspace (Phase 5.1) - Protected for both student and company */}
+        <Route path="/workspace/projects/:projectId" element={<RoleRoute allowedRoles={['student', 'company']}><ProjectWorkspace /></RoleRoute>} />
         {/* Sub-Phase 2: Work Submission & Review */}
-        <Route path="/workspace/projects/:projectId/submit" element={<SubmitWork />} />
-        <Route path="/workspace/projects/:projectId/review" element={<ReviewWork />} />
+        <Route path="/workspace/projects/:projectId/submit" element={<RoleRoute allowedRoles={['student']}><SubmitWork /></RoleRoute>} />
+        <Route path="/workspace/projects/:projectId/review" element={<RoleRoute allowedRoles={['company']}><ReviewWork /></RoleRoute>} />
 
         {/* Phase 5.3: Payment */}
         <Route path="/payment/:projectId" element={<CompanyRoute><PaymentPage /></CompanyRoute>} />
         <Route path="/workspace/projects/:projectId/payment" element={<CompanyRoute><PaymentPage /></CompanyRoute>} />
 
-        {/* Rating */}
-        <Route path="/workspace/projects/:projectId/rate" element={<RateProject />} />
+        {/* Rating - Protected for both roles */}
+        <Route path="/workspace/projects/:projectId/rate" element={<RoleRoute allowedRoles={['student', 'company']}><RateProject /></RoleRoute>} />
 
         {/* Phase 5.4.8: New Payment & Rating Pages */}
         <Route path="/student/payments" element={<StudentRoute><StudentPaymentPage /></StudentRoute>} />
@@ -155,7 +157,17 @@ function App() {
         <Route path="*" element={<NotFound />} />
 
       </Routes>
-    <ToastContainer position="top-right" autoClose={3500} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <ToastContainer 
+        position="top-right" 
+        autoClose={3500} 
+        hideProgressBar={false} 
+        newestOnTop={false} 
+        closeOnClick 
+        rtl={false} 
+        pauseOnFocusLoss 
+        draggable 
+        pauseOnHover 
+      />
     </Router>
   );
 }

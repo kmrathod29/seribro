@@ -277,11 +277,16 @@ const SOCKET_CORS_ORIGINS = process.env.SOCKET_CORS_ORIGIN
 // Create HTTP server and attach Socket.io
 const httpServer = http.createServer(app);
 
-// Initialize Socket.io with CORS configuration
+console.log('[Socket.io] CORS origins:', SOCKET_CORS_ORIGINS);
+console.log('[Socket.io] Port:', SOCKET_PORT);
+
+// Initialize Socket.io with CORS configuration and optimized settings
 initializeSocketIO(httpServer, SOCKET_CORS_ORIGINS);
 
 httpServer.listen(SOCKET_PORT, () => {
     console.log(`🚀 Server running on port ${SOCKET_PORT}`);
     console.log(`📡 Socket.io ready for real-time connections`);
     console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`✅ WebSocket transport: enabled`);
+    console.log(`✅ Polling transport: enabled (fallback)`);
 });

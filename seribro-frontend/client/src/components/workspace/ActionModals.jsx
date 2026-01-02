@@ -30,9 +30,12 @@ export const ApproveModal = ({ isOpen, onClose, onConfirm, loading }) => {
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
-      <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl max-w-md w-full">
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-200">Approve Work</h3>
+      <div className="bg-gray-900 border border-green-600/50 rounded-lg shadow-xl max-w-md w-full">
+        <div className="flex items-center justify-between p-6 border-b border-green-600/30 bg-green-600/10">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">✅</span>
+            <h3 className="text-lg font-bold text-green-400">Approve Work</h3>
+          </div>
           <button
             onClick={onClose}
             disabled={loading}
@@ -43,8 +46,14 @@ export const ApproveModal = ({ isOpen, onClose, onConfirm, loading }) => {
         </div>
 
         <div className="p-6 space-y-4">
+          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+            <p className="text-sm text-green-300 font-medium">
+              ✓ This action will approve the submission and initiate the payment release process.
+            </p>
+          </div>
+
           <p className="text-gray-300">
-            Are you sure you want to approve this submission?
+            Are you sure you want to approve this submission? This action will move the project to "Completed" status.
           </p>
 
           <div>
@@ -55,7 +64,7 @@ export const ApproveModal = ({ isOpen, onClose, onConfirm, loading }) => {
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               placeholder="Add optional feedback for the student..."
-              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-400"
+              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-green-400"
               rows={4}
               disabled={loading}
             />
@@ -73,9 +82,16 @@ export const ApproveModal = ({ isOpen, onClose, onConfirm, loading }) => {
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-semibold"
+            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors font-bold flex items-center justify-center gap-2"
           >
-            {loading ? 'Processing...' : 'Approve'}
+            {loading ? (
+              <>
+                <span className="inline-block animate-spin">⏳</span>
+                Processing...
+              </>
+            ) : (
+              <>✅ Approve</>
+            )}
           </button>
         </div>
       </div>
@@ -111,9 +127,12 @@ export const RevisionModal = ({ isOpen, onClose, onConfirm, loading }) => {
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
-      <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl max-w-md w-full">
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-200">Request Revision</h3>
+      <div className="bg-gray-900 border border-yellow-600/50 rounded-lg shadow-xl max-w-md w-full">
+        <div className="flex items-center justify-between p-6 border-b border-yellow-600/30 bg-yellow-600/10">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">🔄</span>
+            <h3 className="text-lg font-bold text-yellow-400">Request Revision</h3>
+          </div>
           <button
             onClick={onClose}
             disabled={loading}
@@ -124,6 +143,12 @@ export const RevisionModal = ({ isOpen, onClose, onConfirm, loading }) => {
         </div>
 
         <div className="p-6 space-y-4">
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+            <p className="text-sm text-yellow-300 font-medium">
+              ⚠️ The student will have <strong>remaining revisions</strong> to address your feedback. Provide clear, actionable instructions.
+            </p>
+          </div>
+
           <p className="text-gray-300">
             Provide detailed feedback on what needs to be revised.
           </p>
@@ -135,8 +160,8 @@ export const RevisionModal = ({ isOpen, onClose, onConfirm, loading }) => {
             <textarea
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
-              placeholder="Describe what needs to be revised..."
-              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-400"
+              placeholder="Describe what needs to be revised and why. Be as specific as possible..."
+              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-yellow-400"
               rows={4}
               disabled={loading}
             />
@@ -157,9 +182,16 @@ export const RevisionModal = ({ isOpen, onClose, onConfirm, loading }) => {
           <button
             onClick={handleConfirm}
             disabled={loading || !isValid}
-            className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 transition-colors font-semibold"
+            className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 transition-colors font-bold flex items-center justify-center gap-2"
           >
-            {loading ? 'Processing...' : 'Request Revision'}
+            {loading ? (
+              <>
+                <span className="inline-block animate-spin">⏳</span>
+                Processing...
+              </>
+            ) : (
+              <>🔄 Request Revision</>
+            )}
           </button>
         </div>
       </div>
@@ -195,11 +227,11 @@ export const RejectModal = ({ isOpen, onClose, onConfirm, loading }) => {
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
-      <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl max-w-md w-full">
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+      <div className="bg-gray-900 border border-red-600/50 rounded-lg shadow-xl max-w-md w-full">
+        <div className="flex items-center justify-between p-6 border-b border-red-600/30 bg-red-600/10">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="w-6 h-6 text-red-400" />
-            <h3 className="text-lg font-semibold text-gray-200">Reject Work</h3>
+            <span className="text-3xl">❌</span>
+            <h3 className="text-lg font-bold text-red-400">Reject Work</h3>
           </div>
           <button
             onClick={onClose}
@@ -211,14 +243,14 @@ export const RejectModal = ({ isOpen, onClose, onConfirm, loading }) => {
         </div>
 
         <div className="p-6 space-y-4">
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-            <p className="text-sm text-red-300">
-              ⚠️ Rejecting this work may trigger a dispute. Provide a clear, detailed reason.
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+            <p className="text-sm text-red-300 font-medium">
+              ⚠️ <strong>Warning:</strong> Rejecting this submission will mark the project as disputed and cannot be easily undone. Provide a clear, detailed reason.
             </p>
           </div>
 
           <p className="text-gray-300">
-            Provide a detailed reason for rejecting this submission.
+            Provide a detailed reason for rejecting this submission. This will be visible to the student.
           </p>
 
           <div>
@@ -228,8 +260,8 @@ export const RejectModal = ({ isOpen, onClose, onConfirm, loading }) => {
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Explain why this submission is rejected..."
-              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-400"
+              placeholder="Explain why this submission is rejected and what was expected..."
+              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:outline-none focus:border-red-400"
               rows={4}
               disabled={loading}
             />
@@ -250,9 +282,16 @@ export const RejectModal = ({ isOpen, onClose, onConfirm, loading }) => {
           <button
             onClick={handleConfirm}
             disabled={loading || !isValid}
-            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-semibold"
+            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-bold flex items-center justify-center gap-2"
           >
-            {loading ? 'Processing...' : 'Reject'}
+            {loading ? (
+              <>
+                <span className="inline-block animate-spin">⏳</span>
+                Processing...
+              </>
+            ) : (
+              <>❌ Reject</>
+            )}
           </button>
         </div>
       </div>

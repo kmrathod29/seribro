@@ -468,9 +468,9 @@ ProjectSchema.methods.approveWork = async function (reviewerId, feedback = '') {
     currentSub.reviewedBy = reviewerId;
     currentSub.companyFeedback = feedback;
 
-    this.status = 'approved';
+    this.status = 'completed';
     this.reviewedAt = new Date();
-    this.approvedAt = new Date();
+    this.completedAt = new Date();
 
     await this.save();
     return { submission: currentSub, project: this };

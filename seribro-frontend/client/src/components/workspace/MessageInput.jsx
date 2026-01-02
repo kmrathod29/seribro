@@ -94,16 +94,24 @@ const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
       return;
     }
     setError('');
-    const res = await onSend({ text: text.trim(), files });
-    // Expect caller to return { success: boolean, message?: string }
-    if (res?.success) {
-      setText('');
-      setFiles([]);
-      if (fileRef.current) fileRef.current.value = '';
-    } else {
-      setError(res?.message || 'Failed to send message');
+    
+    try {
+      const res = await onSend({ text: text.trim(), files });
+      // Expect caller to return { success: boolean, message?: string }
+      if (res?.success) {
+        setText('');
+        setFiles([]);
+        if (fileRef.current) fileRef.current.value = '';
+        return res;
+      } else {
+        setError(res?.message || 'Failed to send message');
+        return res;
+      }
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError('Failed to send message. Please try again.');
+      return { success: false, message: err.message };
     }
-    return res;
   };
 
   const charColor = text.length >= 1900 ? 'text-red-400' : text.length >= 1800 ? 'text-orange-400' : 'text-gray-400';

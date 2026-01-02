@@ -3,7 +3,7 @@
 
 import axiosInstance from './api';
 
-const BASE_URL = 'http://localhost:7000/api/workspace';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/workspace` : 'http://localhost:7000/api/workspace';
 
 const formatError = (error) => {
     const status = error?.response?.status || 0;
