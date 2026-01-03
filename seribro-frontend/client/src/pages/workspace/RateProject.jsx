@@ -7,7 +7,7 @@ import ratingApi from '../../apis/ratingApi';
 import { toast } from 'react-toastify';
 import workspaceApi from '../../apis/workspaceApi';
 import StarRating from '../../components/ratings/StarRating';
-import { AlertCircle, Clock, CheckCircle2, ChevronLeft, ChevronDown, ChevronUp, Loader } from 'lucide-react';
+import { AlertCircle, Clock, CheckCircle2, ChevronLeft, ChevronDown, ChevronUp, Loader2 as Loader } from 'lucide-react';
 
 const RateProject = () => {
   const { projectId } = useParams();

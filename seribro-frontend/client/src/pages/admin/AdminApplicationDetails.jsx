@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useParams, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import {
   ArrowLeft, Mail, Phone, MapPin, BookOpen, Code, FileText, Award, Github, ExternalLink
 } from 'lucide-react';

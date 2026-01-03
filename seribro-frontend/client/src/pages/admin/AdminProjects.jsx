@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import { 
   Search, Filter, ChevronLeft, ChevronRight, Eye, Calendar, Briefcase 
 } from 'lucide-react';

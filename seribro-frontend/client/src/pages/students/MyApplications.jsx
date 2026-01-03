@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader, AlertCircle, FileText, Clock, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { Loader2 as Loader, AlertCircle, FileText, Clock, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import ApplicationStats from '../../components/studentComponent/ApplicationStats';

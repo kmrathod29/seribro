@@ -22,6 +22,21 @@ const MessageBoard = ({
   const atBottomRef = useRef(true);
   const prevIdsRef = useRef(new Set());
 
+  // Error-safe wrapper for onSend to prevent white screen errors
+  const handleSendWrapper = async (data) => {
+    try {
+      const result = await onSend(data);
+      if (!result?.success) {
+        console.error('Send failed:', result?.message);
+      }
+      return result;
+    } catch (error) {
+      console.error('Error in handleSendWrapper:', error);
+      toast.error('Failed to send message. Please try again.');
+      return { success: false, message: error.message };
+    }
+  };
+
   useEffect(() => {
     // Track scroll position
     const el = listRef.current;
@@ -37,25 +52,15 @@ const MessageBoard = ({
   }, []);
 
   useEffect(() => {
-    // Determine if there are new messages since last render
-    const prevIds = prevIdsRef.current;
-    const currentIds = new Set(messages.map((m) => m._id));
-    const newMsgs = messages.filter((m) => !prevIds.has(m._id));
-
-    if (newMsgs.length > 0) {
-      if (atBottomRef.current) {
-        // Auto-scroll to bottom
+    // Auto-scroll to bottom when messages change
+    if (listRef.current && messages.length > 0) {
+      // Use requestAnimationFrame to ensure DOM is updated before scrolling
+      requestAnimationFrame(() => {
         if (listRef.current) {
           listRef.current.scrollTop = listRef.current.scrollHeight;
         }
-      } else {
-        // Show subtle badge and toast
-        setShowNewBadge(true);
-        toast.info('New messages', { autoClose: 2000 });
-      }
+      });
     }
-
-    prevIdsRef.current = currentIds;
   }, [messages]);
 
   const scrollToBottom = () => {
@@ -106,7 +111,7 @@ const MessageBoard = ({
       )}
 
       <MessageInput 
-        onSend={onSend} 
+        onSend={handleSendWrapper} 
         disabled={sending}
         onTypingStart={onTypingStart}
         onTypingStop={onTypingStop}

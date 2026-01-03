@@ -8,7 +8,6 @@ const CompanyProfile = require('../models/companyProfile');
 const StudentProfile = require('../models/StudentProfile');
 const User = require('../models/User');
 const { uploadToCloudinary } = require('../utils/students/uploadToCloudinary');
-const sendEmail = require('../utils/sendEmail');
 const { sendNotification } = require('../utils/notifications/sendNotification');
 const { validateWorkspaceAccess } = require('../utils/workspace/validateWorkspaceAccess');
 const { emitNewMessage } = require('../utils/socket/socketManager');
@@ -100,6 +99,7 @@ exports.getWorkspaceOverview = async (req, res) => {
             student: studentProfile
                 ? {
                     _id: studentProfile._id,
+                    user: studentProfile.user,
                     name: studentProfile.basicInfo?.fullName || '',
                     email: studentProfile.basicInfo?.email || '',
                     college: studentProfile.basicInfo?.collegeName || '',
@@ -115,6 +115,7 @@ exports.getWorkspaceOverview = async (req, res) => {
             company: companyProfile
                 ? {
                     _id: companyProfile._id,
+                    user: companyProfile.user,
                     companyName: companyProfile.companyName,
                     industryType: companyProfile.industryType || '',
                     about: companyProfile.about || '',
@@ -216,43 +217,20 @@ exports.sendMessage = async (req, res) => {
             recipientRole = 'student';
         }
 
-        // Send in-app notification
+        // Send in-app notification (non-blocking, wrapped in try-catch)
         if (recipientUserId && recipientRole) {
-            await sendNotification(
-                recipientUserId,
-                recipientRole,
-                `New message in project "${project.title}"`,
-                'workspace_message',
-                'project',
-                project._id
-            );
-        }
-
-        // Optional email notification - send only if recipient appears inactive (> 30 minutes)
-        if (recipientUserId) {
-            const recipientUser = await User.findById(recipientUserId);
-            let shouldSendEmail = true; // default to best-effort if no activity info exists
-
-            // Check recipient's most recent message in this project
-            const lastRecipientMsg = await Message.findOne({ project: project._id, sender: recipientUserId }).sort({ createdAt: -1 }).lean();
-            const lastActiveAt = lastRecipientMsg?.createdAt || project.lastActivity || null;
-
-            if (lastActiveAt) {
-                const minutesInactive = (Date.now() - new Date(lastActiveAt).getTime()) / (1000 * 60);
-                // Only send if inactive for at least 30 minutes
-                shouldSendEmail = minutesInactive >= 30;
-            }
-
-            if (recipientUser?.email && shouldSendEmail) {
-                try {
-                    await sendEmail({
-                        email: recipientUser.email,
-                        subject: `New message in ${project.title}`,
-                        message: `<p>You have a new message in the project workspace: <strong>${project.title}</strong>.</p><p>${senderName}: ${message.trim().slice(0, 180)}...</p>`,
-                    });
-                } catch (emailErr) {
-                    console.warn('Email notification failed (non-blocking):', emailErr.message || emailErr);
-                }
+            try {
+                await sendNotification(
+                    recipientUserId,
+                    recipientRole,
+                    `New message in project "${project.title}"`,
+                    'workspace_message',
+                    'project',
+                    project._id
+                );
+            } catch (notificationErr) {
+                // Log error but don't block message sending
+                console.warn('[Notification] Failed to create notification (non-blocking):', notificationErr.message || notificationErr);
             }
         }
 

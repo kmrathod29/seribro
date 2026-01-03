@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminAPI from '../../apis/adminApi';
-import toast, { Toaster } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import AdminLayout from '../../components/AdminLayout';
 import { ArrowLeft, CheckCircle, XCircle, FileText, Award, Briefcase, Mail, GraduationCap } from 'lucide-react';
 
@@ -80,7 +80,6 @@ export default function StudentReview() {
 
   return (
     <AdminLayout>
-      <Toaster />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

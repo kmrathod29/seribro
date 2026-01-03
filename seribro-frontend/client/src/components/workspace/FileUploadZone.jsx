@@ -2,7 +2,8 @@
 // Sub-Phase 5.4.2: Reusable Drag-Drop File Upload Component
 
 import React, { useState, useRef } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
+import { getMessage } from '../../utils/toastUtils';
 import {
   FileText,
   FileImage,
@@ -145,7 +146,7 @@ const FileUploadZone = ({
 
     // Show errors
     if (errors.length > 0) {
-      errors.forEach((error) => toast.error(error));
+      errors.forEach((error) => toast.error(getMessage(error, 'File upload error')));
     }
 
     return validFiles;

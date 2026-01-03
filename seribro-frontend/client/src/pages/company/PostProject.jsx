@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader, AlertCircle } from 'lucide-react';
+import { Loader2 as Loader, AlertCircle } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import ProjectForm from '../../components/companyComponent/ProjectForm';

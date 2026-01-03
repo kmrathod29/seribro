@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertCircle, CheckCircle, Loader, ArrowRight } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2 as Loader, ArrowRight } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import CompanyProfileCompletionBar from '../../components/companyComponent/ProfileCompletionBar';

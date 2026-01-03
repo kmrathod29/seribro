@@ -2,14 +2,14 @@
 // Complete Admin Verification Panel with tabs, lists, modals - Phase 3
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast, { Toaster } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import {
   Users,
   Building2,
   CheckCircle,
   XCircle,
   AlertCircle,
-  Loader,
+  Loader2 as Loader,
   Eye,
   RefreshCw,
   Clock,
@@ -206,7 +206,6 @@ export default function AdminVerification() {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
       <div className="flex-1 px-6 py-8">
-      <Toaster />
 
       {/* Header */}
       <div className="mb-8">

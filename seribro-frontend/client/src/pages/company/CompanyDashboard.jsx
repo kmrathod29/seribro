@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Loader, CheckCircle, Clock, Edit2, TrendingUp, RefreshCw, DollarSign, ChevronRight } from 'lucide-react';
+import { AlertCircle, Loader2 as Loader, CheckCircle, Clock, Edit2, TrendingUp, RefreshCw, DollarSign, ChevronRight } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { fetchCompanyDashboard, formatApiError, initializeCompanyProfile } from '../../apis/companyProfileApi';

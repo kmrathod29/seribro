@@ -2,7 +2,7 @@
 // Payment Verification and Razorpay Integration Page
 
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Loader, DollarSign } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2 as Loader, DollarSign } from 'lucide-react';
 import { verifyPayment } from '@/apis/paymentApi';
 import { toast } from 'react-toastify';
 import Navbar from '@/components/Navbar';

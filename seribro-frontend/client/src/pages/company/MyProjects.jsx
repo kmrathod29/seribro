@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Loader, AlertCircle, Search, Trash2 } from 'lucide-react';
+import { Plus, Loader2 as Loader, AlertCircle, Search, Trash2 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import ProjectCard from '../../components/companyComponent/ProjectCard';

@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { ArrowRight, CheckCircle, Clock, AlertCircle, DollarSign } from 'lucide-react';
-import Navbar from '@/components/Navbar';
+import Navbar from '../components/Navbar';
 
 const PaymentWorkflowPage = () => {
   const [activeStep, setActiveStep] = useState(0);

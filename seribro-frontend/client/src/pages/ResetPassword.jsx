@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Lock, Eye, EyeOff, ArrowRight, Home } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import API from '../apis/api.js'; // Assuming API is configured in a file like this
-import { toast } from 'react-hot-toast'; // Assuming react-hot-toast is used for notifications
+import { toast } from 'react-toastify';
+import { getMessage } from '../utils/toastUtils';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -77,7 +78,7 @@ const ResetPassword = () => {
       console.log('✅ Reset Password Response Status:', response.status);
       console.log('✅ Reset Password Response Data:', response.data);
 
-      toast.success(response.data.message);
+      toast.success(getMessage(response, 'Password reset successful'));
       
       // Hinglish: Success hone par /login par redirect karna
       setTimeout(() => {
@@ -92,7 +93,7 @@ const ResetPassword = () => {
 
       const errorMessage = err.response?.data?.message || 'Password reset failed. Invalid or expired token.';
       setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error(getMessage(err, 'Password reset failed. Invalid or expired token.'));
 
     } finally {
       setIsLoading(false);

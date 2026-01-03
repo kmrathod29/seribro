@@ -3,7 +3,8 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
+import { getMessage } from '../../utils/toastUtils';
 import FileUploadZone from '../../components/workspace/FileUploadZone';
 import { getCurrentSubmission, submitWork } from '../../apis/workSubmissionApi';
 import { ArrowLeft, CheckCircle, AlertCircle, X } from 'lucide-react';
@@ -43,8 +44,8 @@ const SubmitWork = () => {
         setLoading(true);
         const res = await getCurrentSubmission(projectId);
         if (!res.success) {
-          setError(res.message || 'Could not fetch submission status');
-          toast.error(res.message || 'Failed to load submission status');
+          setError(res?.message || 'Could not fetch submission status');
+          toast.error(getMessage(res, 'Failed to load submission status'));
         } else {
           setCurrentSubmission(res.data);
         }
@@ -154,8 +155,8 @@ const SubmitWork = () => {
       });
 
       if (!res.success) {
-        toast.error(res.message || 'Submission failed');
-        setError(res.message || 'Submission failed');
+        toast.error(getMessage(res, 'Submission failed'));
+        setError(res?.message || 'Submission failed');
       } else {
         toast.success('Work submitted successfully!');
         setSuccessModalOpen(true);
@@ -166,7 +167,7 @@ const SubmitWork = () => {
       }
     } catch (err) {
       console.error('Submission error:', err);
-      toast.error(err.message || 'Error submitting work');
+      toast.error(getMessage(err, 'Error submitting work'));
       setError(err.message || 'Error submitting work');
     } finally {
       setSubmitting(false);

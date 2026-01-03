@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 import ImageModal from '../../components/workspace/ImageModal';
 import PDFViewer from '../../components/workspace/PDFViewer';
 import {
@@ -488,7 +488,8 @@ const ReviewWork = () => {
                 {/* Action Buttons */}
                 {userRole === 'company' &&
                   (currentSubmission.status === 'submitted' ||
-                    currentSubmission.status === 'under-review') && (
+                    currentSubmission.status === 'under-review' ||
+                    currentSubmission.status === 'approved') && (
                     <div className="border-t border-gray-700 pt-6">
                       <h3 className="text-lg font-semibold text-gray-200 mb-4">
                         Review Actions

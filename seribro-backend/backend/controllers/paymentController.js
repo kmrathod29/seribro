@@ -60,7 +60,18 @@ exports.createOrder = async (req, res) => {
 
     await project.linkPayment(paymentDoc._id, amount);
 
-    return sendResponse(res, 200, true, 'Order created', { orderId: order.id, amount, currency: order.currency || 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, projectId: project._id, projectTitle: project.title });
+    // Return order details - amount is in rupees (for display), order already has amount in paise
+    // Frontend should NOT multiply this amount again when using order_id
+    return sendResponse(res, 200, true, 'Order created', { 
+      orderId: order.id, 
+      amount, // Amount in rupees (for display only)
+      currency: order.currency || 'INR', 
+      keyId: process.env.RAZORPAY_KEY_ID || null, 
+      projectId: project._id, 
+      projectTitle: project.title,
+      // Include order amount in paise for verification (order already has this)
+      orderAmount: order.amount // Amount in paise as stored in Razorpay order
+    });
   } catch (error) {
     console.error('createOrder error:', error);
     return sendResponse(res, 500, false, 'Failed to create order');
@@ -285,15 +296,17 @@ exports.releasePayment = async (req, res) => {
       await project.save();
     }
 
-    // Update student's earnings (add)
+    // Update student's earnings - use netAmount (amount after platform fee deduction)
     const studentProfile = await StudentProfile.findById(payment.student);
     if (studentProfile) {
-      await studentProfile.updateEarnings(payment.amount, 'add');
-      await sendNotification(studentProfile.user, 'student', `Payment of ₹${payment.amount} released for project ${project ? project.title : ''}`, 'payment_released', 'project', project?._id);
+      const netAmount = payment.netAmount || (payment.amount - (payment.platformFee || 0));
+      await studentProfile.updateEarnings(netAmount, 'released');
+      
+      await sendNotification(studentProfile.user, 'student', `Payment of ₹${netAmount} released for project ${project ? project.title : ''}`, 'payment_released', 'project', project?._id);
       try {
         const studentUser = await User.findById(studentProfile.user);
         if (studentUser && studentUser.email && process.env.EMAIL_NOTIFY_ON_PAYMENT !== 'false') {
-          await sendEmail({ email: studentUser.email, subject: 'Payment released', message: `<p>Payment of ₹${payment.amount} has been released to you for project <strong>${project ? project.title : ''}</strong>.</p>` });
+          await sendEmail({ email: studentUser.email, subject: 'Payment released', message: `<p>Payment of ₹${netAmount} has been released to you for project <strong>${project ? project.title : ''}</strong>.</p>` });
         }
       } catch (e) { console.warn('Email send failed for releasePayment:', e.message); }
     }

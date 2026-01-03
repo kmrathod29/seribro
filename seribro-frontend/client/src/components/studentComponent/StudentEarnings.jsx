@@ -16,6 +16,7 @@ import {
   Award,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { getMessage } from '../../utils/toastUtils';
 import { getStudentEarnings, getPaymentDetails } from '@/apis/paymentApi';
 import PaymentDetailsModal from './PaymentDetailsModal';
 import EarningsChart from './EarningsChart';
@@ -38,7 +39,7 @@ const StudentEarnings = () => {
         if (response.success) {
           setData(response.data);
         } else {
-          toast.error(response.message || 'Failed to fetch earnings');
+          toast.error(getMessage(response, 'Failed to fetch earnings'));
         }
       } catch (error) {
         console.error('Error fetching earnings:', error);
@@ -61,7 +62,7 @@ const StudentEarnings = () => {
         setSelectedPayment(response.data);
         setShowModal(true);
       } else {
-        toast.error(response.message || 'Failed to fetch payment details');
+        toast.error(getMessage(response, 'Failed to fetch payment details'));
       }
     } catch (error) {
       console.error('Error fetching payment details:', error);

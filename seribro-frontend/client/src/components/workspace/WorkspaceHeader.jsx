@@ -28,7 +28,7 @@ const WorkspaceHeader = ({ project, daysRemaining, onlineUsers = new Set(), curr
     } else {
       // Current user is company, show student
       otherUserId = student.user;
-      otherUserName = student.fname;
+      otherUserName = student.name || student.fname || 'Student';
     }
   }
 

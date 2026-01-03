@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Star, Send, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
-import Navbar from '@/components/Navbar';
+import Navbar from '../components/Navbar';
 
 const RatingPage = () => {
   const [rating, setRating] = useState(0);

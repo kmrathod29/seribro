@@ -93,17 +93,31 @@ const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
       setError('Add a message or attachment');
       return;
     }
+    
     setError('');
-    const res = await onSend({ text: text.trim(), files });
-    // Expect caller to return { success: boolean, message?: string }
-    if (res?.success) {
-      setText('');
-      setFiles([]);
-      if (fileRef.current) fileRef.current.value = '';
-    } else {
-      setError(res?.message || 'Failed to send message');
+    
+    try {
+      const result = await onSend({ text: text.trim(), files });
+      
+      if (result?.success) {
+        // Clear inputs on success
+        setText('');
+        setFiles([]);
+        setError('');
+        if (fileRef.current) fileRef.current.value = '';
+        return result;
+      } else {
+        // Show error from parent
+        const errorMsg = result?.message || 'Failed to send message';
+        setError(errorMsg);
+        return result;
+      }
+    } catch (err) {
+      console.error('Error in MessageInput.handleSend:', err);
+      const errorMsg = 'Failed to send message. Please try again.';
+      setError(errorMsg);
+      return { success: false, message: errorMsg };
     }
-    return res;
   };
 
   const charColor = text.length >= 1900 ? 'text-red-400' : text.length >= 1800 ? 'text-orange-400' : 'text-gray-400';

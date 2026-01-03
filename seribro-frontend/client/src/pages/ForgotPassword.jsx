@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { Mail, ArrowRight, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import API from '../apis/api.js';// Assuming API is configured in a file like this
-import { toast } from 'react-hot-toast'; // Assuming react-hot-toast is used for notifications
+import { toast } from 'react-toastify';
+import { getMessage } from '../utils/toastUtils';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -41,8 +42,8 @@ const ForgotPassword = () => {
       console.log('✅ Forgot Password Response Status:', response.status);
       console.log('✅ Forgot Password Response Data:', response.data);
 
-      setMessage(response.data.message);
-      toast.success(response.data.message);
+      setMessage(response?.data?.message || '');
+      toast.success(getMessage(response, 'Reset link sent'));
       setEmail(''); // Clear email field on success
 
     } catch (err) {
@@ -53,7 +54,7 @@ const ForgotPassword = () => {
 
       const errorMessage = err.response?.data?.message || 'Failed to send reset link. Please try again.';
       setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error(getMessage(err, 'Failed to send reset link. Please try again.'));
 
     } finally {
       setIsLoading(false);

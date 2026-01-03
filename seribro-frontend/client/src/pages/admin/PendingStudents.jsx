@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import AdminAPI from '../../apis/adminApi';
 import { Link, useNavigate } from 'react-router-dom';
-import toast, { Toaster } from 'react-hot-toast';
-import { Users, CheckCircle, XCircle, AlertCircle, Loader } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { Users, CheckCircle, XCircle, AlertCircle, Loader2 as Loader } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 
 export default function PendingStudents() {
@@ -68,7 +68,6 @@ export default function PendingStudents() {
 
   return (
     <AdminLayout>
-      <Toaster />
       <div className="space-y-6">
         {/* Header */}
         <div>

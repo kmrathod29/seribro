@@ -1,10 +1,12 @@
 // src/pages/workspace/ProjectWorkspace.jsx
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { getMessage } from '../../utils/toastUtils';
 import { io } from 'socket.io-client';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import WorkspaceHeader from '../../components/workspace/WorkspaceHeader';
 import WorkspaceStatusFlow from '../../components/workspace/WorkspaceStatusFlow';
 import MessageBoard from '../../components/workspace/MessageBoard';
@@ -17,13 +19,14 @@ import {
   sendMessage,
   markMessagesAsRead,
 } from '../../apis/workspaceApi';
-import { Loader, AlertCircle } from 'lucide-react';
+import { Loader2 as Loader, AlertCircle } from 'lucide-react';
 
 const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:7000';
 
 const ProjectWorkspace = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [workspace, setWorkspace] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -33,39 +36,122 @@ const ProjectWorkspace = () => {
   const [sending, setSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState(new Map()); // userId -> { senderName, senderRole, timestamp }
   const [onlineUsers, setOnlineUsers] = useState(new Set()); // Set of online userIds
+  const lastLocationRef = useRef(null); // Track last location to detect returns
   const pollingRef = useRef(null);
   const socketRef = useRef(null);
   const typingTimeoutRef = useRef(new Map()); // userId -> timeoutId
+  const currentUserIdRef = useRef(null); // Track current user ID for Socket.io handlers
 
-  // Initialize Socket.io connection
+  // Update currentUserId ref when workspace changes
   useEffect(() => {
-    if (!projectId) return;
+    currentUserIdRef.current = workspace?.currentUserId;
+  }, [workspace?.currentUserId]);
+
+  // Initialize Socket.io connection - only after we have projectId and workspace data
+  // Socket persists across re-renders and only disconnects on unmount
+  useEffect(() => {
+    // Don't connect until we have both projectId and userId
+    if (!projectId || !currentUserIdRef.current) {
+      console.log('[Socket.io] Waiting for projectId and userId...');
+      return;
+    }
+
+    // If socket already exists and is connected, ensure we're joined
+    if (socketRef.current && socketRef.current.connected) {
+      console.log('[Socket.io] Socket already connected, ensuring workspace join...');
+      socketRef.current.emit('join_workspace', {
+        projectId,
+        userId: currentUserIdRef.current,
+      });
+      console.log('[Socket.io] Re-joined workspace:', projectId);
+      return;
+    }
+
+    // If socket exists but not connected, wait for reconnection
+    if (socketRef.current) {
+      console.log('[Socket.io] Socket exists, waiting for reconnection...');
+      return;
+    }
 
     try {
+      console.log('[Socket.io] Creating socket connection for projectId:', projectId, 'userId:', currentUserIdRef.current);
       socketRef.current = io(SOCKET_URL, {
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         reconnectionAttempts: 5,
+        transports: ['websocket', 'polling'],
+        withCredentials: true,
       });
 
       socketRef.current.on('connect', () => {
         console.log('[Socket.io] Connected:', socketRef.current.id);
-
-        // Emit join_workspace event
-        if (workspace?.currentUserId) {
+        const userId = currentUserIdRef.current;
+        if (userId && projectId) {
           socketRef.current.emit('join_workspace', {
             projectId,
-            userId: workspace.currentUserId,
+            userId,
           });
+          console.log('[Socket.io] Emitted join_workspace:', { projectId, userId });
         }
+      });
+
+      socketRef.current.on('connect_error', (error) => {
+        console.error('[Socket.io] Connection error:', error);
+      });
+
+      socketRef.current.on('reconnect_attempt', (attemptNumber) => {
+        console.log('[Socket.io] Attempting to reconnect, attempt:', attemptNumber);
+      });
+
+      socketRef.current.on('reconnect', (attemptNumber) => {
+        console.log('[Socket.io] Reconnected after', attemptNumber, 'attempts');
+        console.log('[Socket.io] Reconnected, rejoining room');
+        // Re-join workspace after reconnection
+        const userId = currentUserIdRef.current;
+        if (userId && projectId) {
+          socketRef.current.emit('join_workspace', {
+            projectId,
+            userId: userId,
+          });
+          console.log('[Socket.io] Rejoined workspace for projectId:', projectId);
+        }
+      });
+
+      socketRef.current.on('reconnect_error', (error) => {
+        console.error('[Socket.io] Reconnection error:', error);
+      });
+
+      socketRef.current.on('reconnect_failed', () => {
+        console.error('[Socket.io] Reconnection failed after max attempts');
       });
 
       socketRef.current.on('new_message', (messageData) => {
         console.log('[Socket.io] Received new_message:', messageData);
-        // Only add if not optimistic (already in UI)
-        if (!messageData.optimistic) {
-          mergeMessages([messageData]);
+        
+        // Check if message is from current user
+        const isFromCurrentUser = messageData.sender?.toString() === currentUserIdRef.current?.toString();
+        
+        if (isFromCurrentUser) {
+          console.log('[Socket.io] Ignoring message from current user (already in state via optimistic)');
+          return;
+        }
+
+        // Add message from other users immediately (not optimistic)
+        if (messageData && messageData._id) {
+          setMessages((prev) => {
+            // Check if message already exists
+            if (prev.some((m) => m._id === messageData._id)) {
+              console.log('[Socket.io] Message already exists, skipping duplicate');
+              return prev;
+            }
+            // Add new message
+            const updated = [...prev, messageData];
+            // Sort by createdAt
+            return updated.sort(
+              (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            );
+          });
         }
       });
 
@@ -119,9 +205,21 @@ const ProjectWorkspace = () => {
         });
       });
 
-      socketRef.current.on('disconnect', () => {
-        console.log('[Socket.io] Disconnected - will fallback to polling');
+      socketRef.current.on('disconnect', (reason) => {
+        console.log('[Socket.io] Socket disconnected:', reason);
         setOnlineUsers(new Set()); // Clear online users on disconnect
+        
+        // Log disconnect reason for debugging
+        if (reason === 'io server disconnect') {
+          // Server forcefully disconnected, reconnect manually
+          console.warn('[Socket.io] Server forcefully disconnected, will reconnect');
+        } else if (reason === 'io client disconnect') {
+          // Client manually disconnected (normal on cleanup)
+          console.log('[Socket.io] Client manually disconnected (normal cleanup)');
+        } else {
+          // Network error or other issue, automatic reconnection should handle it
+          console.log('[Socket.io] Disconnected due to:', reason, '- automatic reconnection will attempt');
+        }
       });
 
       socketRef.current.on('error', (error) => {
@@ -129,8 +227,17 @@ const ProjectWorkspace = () => {
       });
 
       return () => {
+        // Cleanup function - only runs when component unmounts
+        // This is the ONLY place where socket should disconnect
+        console.log('[Socket.io] Cleanup: Component unmounting, disconnecting socket');
         if (socketRef.current) {
+          // Remove all event listeners to prevent memory leaks
           socketRef.current.off('connect');
+          socketRef.current.off('connect_error');
+          socketRef.current.off('reconnect');
+          socketRef.current.off('reconnect_attempt');
+          socketRef.current.off('reconnect_error');
+          socketRef.current.off('reconnect_failed');
           socketRef.current.off('new_message');
           socketRef.current.off('typing_start');
           socketRef.current.off('typing_stop');
@@ -138,7 +245,10 @@ const ProjectWorkspace = () => {
           socketRef.current.off('user_offline');
           socketRef.current.off('disconnect');
           socketRef.current.off('error');
+          
+          // Disconnect the socket - this only happens on component unmount
           socketRef.current.disconnect();
+          socketRef.current = null;
         }
 
         // Clear typing timeouts
@@ -148,17 +258,40 @@ const ProjectWorkspace = () => {
     } catch (err) {
       console.warn('[Socket.io] Failed to initialize:', err.message);
     }
-  }, [projectId]);
+    // Dependencies: projectId and workspace?.currentUserId to ensure socket is created when we have both
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, workspace?.currentUserId]);
 
-  // Update Socket.io join_workspace when workspace loads
+  // Verify workspace join - retries to ensure we're joined
   useEffect(() => {
-    if (socketRef.current && socketRef.current.connected && workspace?.currentUserId && projectId) {
+    if (!socketRef.current || !projectId || !workspace?.currentUserId) {
+      return;
+    }
+
+    // Check connection status and rejoin if needed
+    if (socketRef.current.connected) {
+      console.log('[Socket.io] Socket connected, emitting join_workspace...');
       socketRef.current.emit('join_workspace', {
         projectId,
         userId: workspace.currentUserId,
       });
+    } else {
+      console.log('[Socket.io] Socket not connected yet, will join on connect');
     }
-  }, [workspace?.currentUserId, projectId]);
+
+    // Also set a timeout to retry join after 2 seconds
+    const joinRetryTimeout = setTimeout(() => {
+      if (socketRef.current && socketRef.current.connected) {
+        console.log('[Socket.io] Retry: Emitting join_workspace...');
+        socketRef.current.emit('join_workspace', {
+          projectId,
+          userId: workspace.currentUserId,
+        });
+      }
+    }, 2000);
+
+    return () => clearTimeout(joinRetryTimeout);
+  }, [projectId, workspace?.currentUserId]);
 
   // Merge incoming messages with existing ones using functional state update to avoid stale deps
   const mergeMessages = useCallback((incoming) => {
@@ -184,9 +317,18 @@ const ProjectWorkspace = () => {
     setError('');
     const res = await getWorkspaceOverview(projectId);
     if (res.success) {
+      // Properly update state using setWorkspace - this triggers re-render
       setWorkspace(res.data);
       mergeMessages(res.data.recentMessages || []);
       await markMessagesAsRead(projectId);
+      
+      // Debug: Log updated state to verify it's correct
+      console.log('Workspace state updated:', {
+        projectStatus: res.data?.project?.status,
+        projectId: res.data?.project?._id,
+        workStarted: res.data?.project?.workStarted,
+        startedAt: res.data?.project?.startedAt,
+      });
     } else {
       setError(res.message || 'Failed to load workspace');
     }
@@ -220,50 +362,128 @@ const ProjectWorkspace = () => {
     };
   }, [projectId, loadWorkspace, loadMessages]);
 
+  // Force reload when returning from ReviewWork page (same URL, different location state)
+  // This ensures project status is updated after approval
+  useEffect(() => {
+    if (lastLocationRef.current && lastLocationRef.current.pathname === location.pathname) {
+      // Same path, but we're back here (possibly from ReviewWork)
+      // Force reload the workspace to get updated status
+      console.log('Reloading workspace after potential status change...');
+      loadWorkspace();
+    }
+    lastLocationRef.current = location;
+  }, [location, loadWorkspace]);
+
+  // Handle sending messages with proper error handling and state management
   const handleSend = async ({ text, files }) => {
-    setSending(true);
-
-    // Emit typing_stop when sending
-    if (socketRef.current && socketRef.current.connected && workspace?.currentUserId) {
-      socketRef.current.emit('typing_stop', {
-        projectId,
-        userId: workspace.currentUserId,
-      });
-    }
-
-    // Create optimistic message
     const tempId = `temp-${Date.now()}`;
-    const currentUserId = workspace?.currentUserId;
-    const userRole = (workspace?.student && workspace.student._id?.toString() === currentUserId?.toString()) ? 'student' : 'company';
-    const optimistic = {
-      _id: tempId,
-      message: text,
-      sender: currentUserId,
-      senderName: 'You',
-      senderRole: userRole,
-      createdAt: new Date().toISOString(),
-      optimistic: true,
-    };
+    let optimisticAdded = false;
 
-    // Append optimistic message
-    setMessages((prev) => [...prev, optimistic]);
+    try {
+      setSending(true);
+      setError(''); // Clear any previous errors
 
-    const res = await sendMessage(projectId, { text, files });
+      // Create optimistic message FIRST
+      const currentUserId = workspace?.currentUserId;
+      const userRole = (workspace?.student && workspace.student._id?.toString() === currentUserId?.toString()) ? 'student' : 'company';
+      const optimistic = {
+        _id: tempId,
+        message: text,
+        sender: currentUserId,
+        senderName: workspace?.student?.name || workspace?.company?.companyName || 'You',
+        senderRole: userRole,
+        createdAt: new Date().toISOString(),
+        optimistic: true,
+        attachments: [],
+      };
 
-    if (res.success) {
-      // Replace optimistic message with server message
-      setMessages((prev) => prev.map((m) => (m._id === tempId ? res.data.message : m)));
-      toast.success('Message sent');
-    } else {
+      // Append optimistic message to UI immediately
+      setMessages((prev) => [...prev, optimistic]);
+      optimisticAdded = true;
+
+      // Emit typing_stop when sending (non-blocking)
+      try {
+        if (socketRef.current && socketRef.current.connected && workspace?.currentUserId) {
+          socketRef.current.emit('typing_stop', {
+            projectId,
+            userId: workspace.currentUserId,
+          });
+        }
+      } catch (socketErr) {
+        console.warn('[Socket.io] Error emitting typing_stop:', socketErr.message);
+      }
+
+      // Send message with timeout protection
+      const sendPromise = sendMessage(projectId, { text, files });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Message send timeout')), 30000)
+      );
+
+      let res;
+      try {
+        res = await Promise.race([sendPromise, timeoutPromise]);
+      } catch (timeoutErr) {
+        console.error('Send message error:', timeoutErr);
+        throw new Error(timeoutErr.message === 'Message send timeout' 
+          ? 'Sending is taking too long. Please check your connection.' 
+          : 'Failed to send message');
+      }
+
+      if (res?.success && res?.data?.message) {
+        // Replace optimistic with server message
+        const serverMessage = res.data.message;
+        setMessages((prev) => {
+          const map = new Map();
+          prev.forEach((m) => {
+            if (m._id !== tempId && m && m._id) {
+              map.set(m._id, m);
+            }
+          });
+          if (serverMessage && serverMessage._id) {
+            map.set(serverMessage._id, serverMessage);
+          }
+          const merged = Array.from(map.values()).sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          return merged;
+        });
+        
+        toast.success('Message sent ✓');
+        
+        // Mark as read (non-blocking)
+        try {
+          await Promise.race([
+            markMessagesAsRead(projectId),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+          ]);
+        } catch (readErr) {
+          console.warn('Error marking as read:', readErr.message);
+        }
+        
+        return { success: true };
+      } else {
+        // Remove optimistic message on failure
+        setMessages((prev) => prev.filter((m) => m._id !== tempId));
+        const errorMsg = res?.message || 'Failed to send message';
+        toast.error(getMessage(res, 'Failed to send message'));
+        setError(errorMsg);
+        return { success: false, message: errorMsg };
+      }
+    } catch (err) {
+      console.error('Message send error:', err);
+      
       // Remove optimistic message
-      setMessages((prev) => prev.filter((m) => m._id !== tempId));
-      toast.error(res.message || 'Failed to send message');
-      setError(res.message || 'Failed to send message');
+      if (optimisticAdded) {
+        setMessages((prev) => prev.filter((m) => m._id !== tempId));
+      }
+      
+      const errorMsg = err.message || 'Failed to send message. Please try again.';
+      toast.error(getMessage(err, 'Failed to send message. Please try again.'));
+      setError(errorMsg);
+      return { success: false, message: errorMsg };
+    } finally {
+      setSending(false);
     }
-
-    setSending(false);
-    await markMessagesAsRead(projectId);
-    return res;
   };
 
   const handleLoadMore = async () => {
@@ -279,7 +499,7 @@ const ProjectWorkspace = () => {
     socketRef.current.emit('typing_start', {
       projectId,
       userId: workspace.currentUserId,
-      senderName: workspace?.student?.fname || workspace?.company?.companyName || 'User',
+      senderName: workspace?.student?.name || workspace?.student?.fname || workspace?.company?.companyName || 'User',
       senderRole: workspace?.workspace?.role || 'student',
     });
   }, [projectId, workspace?.currentUserId, workspace?.student, workspace?.company, workspace?.workspace?.role]);
@@ -293,6 +513,11 @@ const ProjectWorkspace = () => {
     });
   }, [projectId, workspace?.currentUserId]);
 
+  // Extract project, student, company early so renderActionButtons can access them
+  const project = workspace?.project;
+  const student = workspace?.student;
+  const company = workspace?.company;
+
   // Reusable action buttons renderer (used in header area and sticky footer)
   const renderActionButtons = () => {
     return (
@@ -303,53 +528,56 @@ const ProjectWorkspace = () => {
               try {
                 const confirmStart = window.confirm('Start work on this project? This will change the project status to In Progress.');
                 if (!confirmStart) return;
-                const previous = project.status;
-                setWorkspace((prev) => ({ ...prev, project: { ...prev.project, status: 'in-progress' } }));
+                
+                // Make the API call
                 const startRes = await import('../../apis/workSubmissionApi').then((m) => m.startWork(project._id));
+                
                 if (startRes.success) {
-                  toast.success('Work started successfully');
+                  toast.success('✅ Work started successfully! Status updated to In Progress.');
+                  
+                  // Reload workspace data to get updated status - this will trigger re-render
                   await loadWorkspace();
+                  
+                  // Debug: Verify state was updated
+                  console.log('Work started - checking updated workspace state...');
+                  // Note: workspace state might not be updated immediately due to async nature
+                  // The loadWorkspace function will call setWorkspace which triggers re-render
                 } else {
-                  setWorkspace((prev) => ({ ...prev, project: { ...prev.project, status: previous } }));
-                  toast.error(startRes.message || 'Failed to start work');
+                  toast.error(getMessage(startRes, 'Failed to start work'));
+                  setError(startRes.message || 'Failed to start work');
                 }
               } catch (err) {
+                console.error('Error starting work:', err);
                 toast.error('Server error while starting work');
-                await loadWorkspace();
+                setError('Failed to start work: ' + err.message);
               }
             }}
-            className="px-4 py-2 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 transition-colors"
+            className="px-4 py-2 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Start Work
           </button>
         )}
 
-        {workspace?.workspace?.role === 'company' && project?.paymentStatus === 'pending' && project?.status === 'assigned' && (
-          <button onClick={() => navigate(`/payment/${project._id}`)} className="px-4 py-2 bg-amber-400 text-navy rounded-md font-semibold hover:bg-amber-500 transition-colors">Pay Now</button>
+        {workspace?.workspace?.role === 'company' && project?.paymentStatus !== 'paid' && project?.paymentStatus !== 'released' && (project?.status === 'assigned' || project?.status === 'in-progress' || project?.status === 'submitted' || project?.status === 'under-review' || project?.status === 'completed') && (
+          <button onClick={() => navigate(`/payment/${project._id}`)} className="px-4 py-2 bg-amber-400 text-navy rounded-md font-semibold hover:bg-amber-500 transition-colors">💰 Pay Now</button>
         )}
 
         {workspace?.workspace?.role === 'student' && (project?.status === 'in-progress' || project?.status === 'revision-requested' || project?.status === 'revision_requested') && (
-          <button onClick={() => navigate(`/workspace/projects/${project._id}/submit`)} className="px-4 py-2 bg-blue-500 text-white rounded-md font-semibold hover:bg-blue-600 transition-colors">Submit Work</button>
+          <button onClick={() => navigate(`/workspace/projects/${project._id}/submit`)} className="px-4 py-2 bg-blue-500 text-white rounded-md font-semibold hover:bg-blue-600 transition-colors">📤 Submit Work</button>
         )}
 
         {workspace?.workspace?.role === 'company' && project?.status === 'under-review' && (
-          <button onClick={() => navigate(`/workspace/projects/${project._id}/review`)} className="px-4 py-2 bg-blue-500 text-white rounded-md font-semibold hover:bg-blue-600 transition-colors">Review Submission</button>
+          <button onClick={() => navigate(`/workspace/projects/${project._id}/review`)} className="px-4 py-2 bg-blue-500 text-white rounded-md font-semibold hover:bg-blue-600 transition-colors">👁️ Review Submission</button>
         )}
 
         {project?.status === 'completed' && !project?.ratingCompleted && (
-          <button onClick={() => navigate(`/workspace/projects/${project._id}/rate`)} className="px-4 py-2 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 transition-colors">Rate {workspace?.workspace?.role === 'student' ? 'Company' : 'Student'}</button>
+          <button onClick={() => navigate(`/workspace/projects/${project._id}/rate`)} className="px-4 py-2 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 transition-colors">⭐ Rate {workspace?.workspace?.role === 'student' ? 'Company' : 'Student'}</button>
         )}
 
         {/* Payment & Earnings Navigation */}
         {workspace?.workspace?.role === 'student' && (
           <button onClick={() => navigate(`/student/payments`)} className="px-4 py-2 bg-emerald-500 text-white rounded-md font-semibold hover:bg-emerald-600 transition-colors flex items-center gap-2">
             💰 My Earnings
-          </button>
-        )}
-
-        {workspace?.workspace?.role === 'student' && project?.status === 'completed' && (
-          <button onClick={() => navigate(`/workspace/projects/${project._id}/rating`)} className="px-4 py-2 bg-purple-500 text-white rounded-md font-semibold hover:bg-purple-600 transition-colors flex items-center gap-2">
-            ⭐ Rate Project
           </button>
         )}
       </>
@@ -378,10 +606,6 @@ const ProjectWorkspace = () => {
       </div>
     );
   }
-
-  const project = workspace?.project;
-  const student = workspace?.student;
-  const company = workspace?.company;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-navy via-navy-light to-navy-dark flex flex-col">
@@ -418,10 +642,14 @@ const ProjectWorkspace = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-white font-semibold">Project completed</div>
-                    <div className="text-sm text-gray-300">Please rate your counterparty to help future users.</div>
+                    <div className="text-sm text-gray-300">
+                      Please rate {workspace?.workspace?.role === 'student' ? 'the company' : 'the student'} to help future users.
+                    </div>
                   </div>
                   <div>
-                    <button onClick={() => navigate(`/workspace/projects/${project._id}/rate`)} className="px-3 py-2 bg-amber-400 text-navy rounded font-semibold">Rate Project</button>
+                    <button onClick={() => navigate(`/workspace/projects/${project._id}/rate`)} className="px-3 py-2 bg-amber-400 text-navy rounded font-semibold">
+                      ⭐ Rate {workspace?.workspace?.role === 'student' ? 'Company' : 'Student'}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -443,8 +671,8 @@ const ProjectWorkspace = () => {
           </div>
 
           <div className="space-y-6">
-            <AssignedStudentCard student={student} />
-            <CompanyInfoCard company={company} />
+            {student && <AssignedStudentCard student={student} />}
+            {company && <CompanyInfoCard company={company} />}
           </div>
         </div>
       </div>
@@ -462,5 +690,14 @@ const ProjectWorkspace = () => {
   );
 };
 
-export default ProjectWorkspace;
+// Wrap with error boundary to prevent white screen crashes
+const ProjectWorkspaceWithErrorBoundary = () => {
+  return (
+    <ErrorBoundary>
+      <ProjectWorkspace />
+    </ErrorBoundary>
+  );
+};
+
+export default ProjectWorkspaceWithErrorBoundary;
 

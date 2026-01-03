@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import AdminAPI from '../../apis/adminApi';
 import { Link } from 'react-router-dom';
-import toast, { Toaster } from 'react-hot-toast';
-import { Building2, CheckCircle, XCircle, AlertCircle, Loader } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { Building2, CheckCircle, XCircle, AlertCircle, Loader2 as Loader } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 
 export default function PendingCompanies() {
@@ -67,7 +67,6 @@ export default function PendingCompanies() {
 
   return (
     <AdminLayout>
-      <Toaster />
       <div className="space-y-6">
         {/* Header */}
         <div>

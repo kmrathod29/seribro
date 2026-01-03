@@ -2,14 +2,14 @@
 // Student Earnings and Payment History Page
 
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, Loader, TrendingUp, DollarSign, CheckCircle, Clock } from 'lucide-react';
+import { AlertCircle, Loader2 as Loader, TrendingUp, DollarSign, CheckCircle, Clock } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import RatingDisplay from '../../components/RatingDisplay';
 import RatingsModal from '../../components/RatingsModal';
 import paymentApi from '../../apis/paymentApi';
 import { getStudentRatings } from '../../apis/studentEarningsApi';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
 
 const StudentEarnings = () => {
     const [earnings, setEarnings] = useState(null);

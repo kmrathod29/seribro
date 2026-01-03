@@ -4,7 +4,7 @@ import Footer from "../components/Footer";
 import { Award, Users, Target, Zap, Heart, TrendingUp, Shield, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const about = () => {
+const About = () => {
   return (
     <>
       <div className='min-h-screen bg-slate-900 '>
@@ -225,4 +225,4 @@ const about = () => {
   )
 }
 
-export default about;
+export default About;

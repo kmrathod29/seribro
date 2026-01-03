@@ -3,7 +3,8 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import paymentApi from '../../apis/paymentApi';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
+import { getMessage } from '../../utils/toastUtils';
 import { 
   Search, 
   Filter, 
@@ -79,11 +80,11 @@ const AdminPaymentReleases = () => {
         setSelectedPaymentIds(new Set());
         setSelectAll(false);
       } else {
-        toast.error(response.message || 'Failed to load payments');
+        toast.error(getMessage(response, 'Failed to load payments'));
       }
     } catch (error) {
       console.error('Error loading payments:', error);
-      toast.error(error.message || 'Failed to load payment releases');
+      toast.error(getMessage(error, 'Failed to load payment releases'));
     } finally {
       setLoading(false);
     }
@@ -197,11 +198,11 @@ const AdminPaymentReleases = () => {
           total: prev.total - 1
         }));
       } else {
-        toast.error(response.message || 'Failed to release payment');
+        toast.error(getMessage(response, 'Failed to release payment'));
       }
     } catch (error) {
       console.error('Error releasing payment:', error);
-      toast.error(error.message || 'Failed to release payment');
+      toast.error(getMessage(error, 'Failed to release payment'));
     } finally {
       setReleasing(null);
     }

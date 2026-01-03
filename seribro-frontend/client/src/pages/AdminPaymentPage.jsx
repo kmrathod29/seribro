@@ -6,6 +6,7 @@ import { Search, RefreshCw, DollarSign, Clock, AlertCircle } from 'lucide-react'
 import PaymentReleaseCard from '@/components/admin/PaymentReleaseCard';
 import { getPendingReleases, releasePayment } from '@/apis/paymentApi';
 import { toast } from 'react-toastify';
+import { getMessage } from '../utils/toastUtils';
 import Navbar from '@/components/Navbar';
 
 const AdminPaymentPage = () => {
@@ -32,7 +33,7 @@ const AdminPaymentPage = () => {
           current: currentPage
         });
       } else {
-        toast.error(res.message || 'Failed to load payments');
+        toast.error(getMessage(res, 'Failed to load payments'));
       }
     } catch (error) {
       toast.error('Error loading payments');
@@ -56,7 +57,7 @@ const AdminPaymentPage = () => {
         toast.success('Payment released successfully');
         setPayments(payments.filter(p => p._id !== payment._id));
       } else {
-        toast.error(res.message || 'Failed to release payment');
+        toast.error(getMessage(res, 'Failed to release payment'));
       }
     } catch (error) {
       toast.error('Error releasing payment');

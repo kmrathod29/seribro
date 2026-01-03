@@ -19,7 +19,10 @@ exports.rateStudent = async (req, res) => {
     const companyProfile = await CompanyProfile.findOne({ user: req.user._id });
     if (!companyProfile || companyProfile._id.toString() !== project.companyId?.toString()) return sendResponse(res, false, 'Not authorized', null, 403);
 
-    if (!['completed','approved','released'].includes(project.status) && project.status !== 'completed') return sendResponse(res, false, 'Project not in completed state', null, 400);
+    // Allow rating only when project status is 'completed'
+    if (project.status !== 'completed') {
+      return sendResponse(res, false, 'Project must be completed before rating. Current status: ' + project.status, null, 400);
+    }
 
     let ratingDoc = await Rating.findOne({ project: project._id });
     if (!ratingDoc) ratingDoc = await Rating.create({ project: project._id });
@@ -75,7 +78,10 @@ exports.rateCompany = async (req, res) => {
     const studentProfile = await StudentProfile.findOne({ user: req.user._id });
     if (!studentProfile || studentProfile._id.toString() !== (project.assignedStudent || project.selectedStudentId)?.toString()) return sendResponse(res, false, 'Not authorized', null, 403);
 
-    if (!['completed','approved','released'].includes(project.status) && project.status !== 'completed') return sendResponse(res, false, 'Project not in completed state', null, 400);
+    // Allow rating only when project status is 'completed'
+    if (project.status !== 'completed') {
+      return sendResponse(res, false, 'Project must be completed before rating. Current status: ' + project.status, null, 400);
+    }
 
     let ratingDoc = await Rating.findOne({ project: project._id });
     if (!ratingDoc) ratingDoc = await Rating.create({ project: project._id });

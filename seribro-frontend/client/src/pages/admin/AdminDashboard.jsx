@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import AdminAPI from '../../apis/adminApi';
 import { Link, useNavigate } from 'react-router-dom';
-import toast, { Toaster } from 'react-hot-toast';
+import { toast } from 'react-toastify';
+import { getMessage } from '../../utils/toastUtils';
 import { Bell, X, CheckCircle, AlertCircle, TrendingUp, Users, Building2, Clock, ChevronRight, DollarSign } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import {
@@ -78,7 +79,7 @@ export default function AdminDashboard() {
       toast.success('Notification marked as read');
     } catch (err) {
       const apiError = formatApiError(err);
-      toast.error(apiError.message);
+      toast.error(getMessage(apiError, 'Failed to mark notification as read'));
     }
   };
 
@@ -140,7 +141,6 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <Toaster />
       <div className="space-y-8">
         {/* Header Section */}
         <div className="flex items-center justify-between">
