@@ -308,7 +308,7 @@ const PaymentPage = () => {
             <div>
               <p className="text-blue-300 font-semibold">Test Mode Active</p>
               <p className="text-blue-200 text-sm mt-1">
-                Use test card: <span className="font-mono">4111 1111 1111 1111</span>
+                Use test card: <span className="font-mono">5267 3181 8797 5449</span>
               </p>
               <p className="text-blue-200 text-sm">
                 CVV: Any 3 digits | Expiry: Any future date

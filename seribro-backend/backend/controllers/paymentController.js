@@ -108,7 +108,7 @@ exports.verifyPayment = async (req, res) => {
       try { await sendEmail({ email: companyUser.email, subject: 'Payment successful', message: `<p>Payment of ₹${payment.amount} received for project ${project ? project.title : ''}</p>` }); } catch (e) { console.warn('Email send failed for verifyPayment:', e.message); }
     }
 
-    return sendResponse(res, true, 'Payment verified successfully', { payment, project });
+    return sendResponse(res, 200, true, 'Payment verified successfully', { payment, project });
   } catch (error) {
     console.error('verifyPayment error:', error);
     return sendResponse(res, 500, false, 'Failed to verify payment');
