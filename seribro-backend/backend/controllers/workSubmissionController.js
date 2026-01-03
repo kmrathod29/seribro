@@ -188,11 +188,15 @@ exports.approveWork = async (req, res) => {
     const access = await validateWorkspaceAccess(project, req.user);
     if (!access.hasAccess || access.role !== 'company') return sendResponse(res, 403, false, access.error || 'Access denied');
 
+<<<<<<< HEAD
     // Only allow approval when status is 'under-review' (work is submitted and waiting for review)
     // The approveWork method will change status to 'completed' and set completedAt timestamp
     if (project.status !== 'under-review') {
       return sendResponse(res, 400, false, 'No submission under review. Project status must be "under-review" to approve.');
     }
+=======
+    if (project.status !== 'under-review' && project.status !== 'approved') return sendResponse(res, 400, false, 'No submission under review');
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
 
     // Approve work - this sets status to 'completed' and completedAt timestamp atomically
     // The approveWork method internally calls save(), so the status change is persisted
@@ -205,6 +209,7 @@ exports.approveWork = async (req, res) => {
       return sendResponse(res, 500, false, 'Error verifying project status after approval');
     }
 
+<<<<<<< HEAD
     // Update lastActivity
     await refreshedProject.updateLastActivity();
 
@@ -213,21 +218,40 @@ exports.approveWork = async (req, res) => {
     const studentProfile = await StudentProfile.findById(submission.submittedBy);
     const companyProfile = await CompanyProfile.findOne({ user: refreshedProject.company }) || 
                            await CompanyProfile.findOne({ company: refreshedProject.companyId });
+=======
+    // ========== PHASE 2: Auto-create Payment Record ==========
+    // Get student and company profiles for payment creation
+    const studentProfile = await StudentProfile.findById(submission.submittedBy);
+    const companyProfile = await CompanyProfile.findOne({ user: updated.company }) || 
+                           await CompanyProfile.findOne({ company: updated.companyId });
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
 
     if (studentProfile && companyProfile) {
       try {
         // Check if payment already exists
+<<<<<<< HEAD
         let payment = await Payment.findById(refreshedProject.payment);
         
         if (!payment) {
           // Auto-create Payment record after work approval
           const paymentAmount = refreshedProject.paymentAmount || refreshedProject.budgetMax || refreshedProject.budgetMin || 0;
+=======
+        let payment = await Payment.findById(updated.payment);
+        
+        if (!payment) {
+          // Auto-create Payment record after work approval
+          const paymentAmount = updated.paymentAmount || updated.budgetMax || updated.budgetMin || 0;
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
           const platformPercent = Number(process.env.PLATFORM_FEE_PERCENTAGE || 7);
           const platformFee = Math.round((paymentAmount * platformPercent) / 100);
           const netAmount = paymentAmount - platformFee;
 
           payment = await Payment.create({
+<<<<<<< HEAD
             project: refreshedProject._id,
+=======
+            project: updated._id,
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
             company: companyProfile._id,
             student: studentProfile._id,
             amount: paymentAmount,
@@ -241,8 +265,13 @@ exports.approveWork = async (req, res) => {
           await payment.addTransactionHistory('ready_for_release', req.user._id, 'Auto-created after work approval');
 
           // Link payment to project
+<<<<<<< HEAD
           await refreshedProject.linkPayment(payment._id, paymentAmount);
           await refreshedProject.markPaymentReadyForRelease();
+=======
+          await updated.linkPayment(payment._id, paymentAmount);
+          await updated.markPaymentReadyForRelease();
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
 
           // Update student earnings - add to pending
           studentProfile.earnings = studentProfile.earnings || { totalEarned: 0, pendingPayments: 0, completedProjects: 0 };
@@ -251,11 +280,16 @@ exports.approveWork = async (req, res) => {
         } else if (payment.status === 'captured') {
           // If payment exists but not released, mark as ready
           await payment.markReadyForRelease(req.user._id, 'Marked ready after company approval');
+<<<<<<< HEAD
           await refreshedProject.markPaymentReadyForRelease();
+=======
+          await updated.markPaymentReadyForRelease();
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
         }
       } catch (err) {
         console.error('Payment auto-creation error:', err);
         // Non-fatal: continue even if payment creation fails
+<<<<<<< HEAD
         await sendAdminNotification(`⚠️ Payment creation failed for project ${refreshedProject.title}: ${err.message}`, 'payment-error', 'project', refreshedProject._id);
       }
     }
@@ -267,12 +301,26 @@ exports.approveWork = async (req, res) => {
         const studentUser = await User.findById(studentProfile.user);
         if (studentUser && studentUser.email && process.env.EMAIL_NOTIFY_ON_REVIEW !== 'false') {
           await sendEmail({ email: studentUser.email, subject: 'Work approved - Project completed', message: `<p>Your submission for project <strong>${refreshedProject.title}</strong> has been approved! The project is now completed. You can now rate the company.</p>` });
+=======
+        await sendAdminNotification(`⚠️ Payment creation failed for project ${updated.title}: ${err.message}`, 'payment-error', 'project', updated._id);
+      }
+    }
+
+    // Notify student and admin
+    if (studentProfile) {
+      await sendNotification(studentProfile.user, 'student', `Your submission for project ${updated.title} has been approved! Payment is pending admin release.`, 'work-approved', 'project', updated._id);
+      try {
+        const studentUser = await User.findById(studentProfile.user);
+        if (studentUser && studentUser.email && process.env.EMAIL_NOTIFY_ON_REVIEW !== 'false') {
+          await sendEmail({ email: studentUser.email, subject: 'Work approved - Payment pending', message: `<p>Your submission for project <strong>${updated.title}</strong> has been approved! Your payment is now pending admin release.</p>` });
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
         }
       } catch (e) {
         console.warn('Email send failed for approveWork:', e.message);
       }
     }
 
+<<<<<<< HEAD
     // Notify company that work is approved and they can now rate the student
     if (companyProfile && companyProfile.user) {
       const companyUser = await User.findById(companyProfile.user);
@@ -296,6 +344,12 @@ exports.approveWork = async (req, res) => {
       }, 
       submission 
     });
+=======
+    // Admin notification for payment release
+    await sendAdminNotification(`✅ Payment ready for release: ${updated.title}`, 'payment-release', 'project', updated._id);
+
+    return sendResponse(res, 200, true, 'Work approved successfully. Payment created and ready for release.', { project: { _id: updated._id, status: updated.status, approvedAt: updated.approvedAt }, submission });
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
   } catch (error) {
     console.error('❌ approveWork error:', error);
     return sendResponse(res, 500, false, 'Server error while approving work', null, error.message);

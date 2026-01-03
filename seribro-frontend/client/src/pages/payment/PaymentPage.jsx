@@ -39,14 +39,18 @@ const PaymentPage = () => {
     loadRazorpayScript();
   }, [projectId]);
 
-  // Load Razorpay script
+  // Load Razorpay script (only if not already loaded in index.html)
   const loadRazorpayScript = () => {
+<<<<<<< HEAD
     // Check if already loaded
+=======
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
     if (window.Razorpay) {
       console.log('Razorpay script already loaded');
       return;
     }
 
+<<<<<<< HEAD
     // Check if script tag already exists to prevent duplicate loading
     const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
     if (existingScript) {
@@ -60,6 +64,12 @@ const PaymentPage = () => {
       }, 100);
       // Timeout after 5 seconds
       setTimeout(() => clearInterval(checkInterval), 5000);
+=======
+    // Check if script is already in DOM (from index.html)
+    const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
+    if (existingScript) {
+      console.log('Razorpay script found in DOM, waiting for load...');
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
       return;
     }
 
@@ -182,6 +192,7 @@ const PaymentPage = () => {
         return;
       }
 
+<<<<<<< HEAD
       // Razorpay options
       // CRITICAL FIX: When using order_id, DO NOT include amount/currency in options
       // The Razorpay order already contains the amount (in paise) and currency (INR)
@@ -194,6 +205,37 @@ const PaymentPage = () => {
         name: 'Seribro',
         description: `Payment for ${project.title}`,
         order_id: orderData.orderId || orderData.id, // Order contains amount in paise and currency
+=======
+      // Get the Razorpay key and validate it's a test key
+      const finalKey = razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID;
+      if (!finalKey) {
+        toast.error('Razorpay key not configured');
+        setPaymentProcessing(false);
+        return;
+      }
+
+      // Validate test key in test mode
+      if (isTestMode && !finalKey.startsWith('rzp_test_')) {
+        console.warn('Warning: Test mode detected but key does not start with rzp_test_');
+      }
+
+      // Razorpay options - CRITICAL FIX for "International cards not supported" error
+      const options = {
+        key: finalKey,
+        amount: amount * 100, // Convert to paise (Razorpay requires amount in paise)
+        currency: orderData.currency || 'INR', // Must be INR for domestic cards
+        name: 'Seribro',
+        description: `Payment for ${project.title}`,
+        order_id: orderData.orderId || orderData.id,
+        // CRITICAL FIX: Explicitly restrict payment methods to domestic cards only
+        // This prevents Razorpay from treating the transaction as international
+        method: {
+          card: true,      // Allow card payments (domestic cards only)
+          netbanking: false,  // Disable netbanking in test mode
+          upi: false,      // Disable UPI in test mode
+          wallet: false,   // Disable wallet in test mode
+        },
+>>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
         prefill: {
           name: companyProfile?.companyName || '',
           email: companyProfile?.email || '',
