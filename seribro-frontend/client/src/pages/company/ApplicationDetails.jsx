@@ -2,10 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-<<<<<<< HEAD
 import { getMessage } from '../../utils/toastUtils';
-=======
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
 import { getApplicationDetails, approveStudentForProject, rejectApplication, shortlistApplication } from '../../apis/companyApplicationApi';
 
 const ApplicationDetails = () => {
@@ -52,12 +49,8 @@ const ApplicationDetails = () => {
         setError(response.message || 'Failed to approve application');
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.message || err.message || 'Failed to approve application';
-<<<<<<< HEAD
-      toast.error(getMessage(err, 'Failed to approve application'));
-=======
+      const errorMsg = getMessage(err, 'Failed to approve application');
       toast.error(errorMsg);
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
       setError(errorMsg);
       console.error('Approve error:', err);
     } finally {
@@ -78,11 +71,7 @@ const ApplicationDetails = () => {
         toast.error(response.message || 'Failed to shortlist');
       }
     } catch (err) {
-<<<<<<< HEAD
       toast.error(getMessage(err, 'Failed to shortlist'));
-=======
-      toast.error(err.message || 'Failed to shortlist');
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
     } finally {
       setActionLoading(false);
     }
@@ -111,12 +100,9 @@ const ApplicationDetails = () => {
         setRejectError(response.message || 'Failed to reject application');
       }
     } catch (err) {
-<<<<<<< HEAD
-      toast.error(getMessage(err, 'Failed to reject'));
-=======
-      toast.error(err.message || 'Failed to reject');
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
-      setRejectError(err.message || 'Failed to reject application');
+      const errMsg = getMessage(err, 'Failed to reject');
+      toast.error(errMsg);
+      setRejectError(errMsg);
     } finally {
       setActionLoading(false);
     }

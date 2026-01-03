@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { getMessage } from '../../utils/toastUtils';
 import { io } from 'socket.io-client';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
@@ -51,6 +50,9 @@ const ProjectWorkspace = () => {
   // Socket persists across re-renders and only disconnects on unmount
   useEffect(() => {
     if (!projectId) return;
+
+    // Capture a stable reference to typing timeouts to avoid stale-ref issues in cleanup
+    const capturedTypingTimeouts = typingTimeoutRef.current;
 
     // If socket already exists and is connected, don't recreate it
     if (socketRef.current && socketRef.current.connected) {
@@ -249,9 +251,11 @@ const ProjectWorkspace = () => {
           socketRef.current = null;
         }
 
-        // Clear typing timeouts
-        typingTimeoutRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
-        typingTimeoutRef.current.clear();
+        // Clear typing timeouts safely using captured reference
+        if (capturedTypingTimeouts) {
+          capturedTypingTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+          capturedTypingTimeouts.clear();
+        }
       };
     } catch (err) {
       console.warn('[Socket.io] Failed to initialize:', err.message);
@@ -289,10 +293,7 @@ const ProjectWorkspace = () => {
     });
   }, []);
 
-  // Append messages (alias)
-  const appendMessages = (incoming) => {
-    mergeMessages(incoming);
-  };
+
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);

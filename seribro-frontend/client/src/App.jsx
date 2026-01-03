@@ -59,11 +59,7 @@ import PaymentWorkflowPage from './pages/PaymentWorkflowPage';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-<<<<<<< HEAD
 import RoleRoute, { AdminRoute, StudentRoute, CompanyRoute } from './components/Shared/RoleRoutes';
-=======
-import { AdminRoute, StudentRoute, CompanyRoute, default as RoleRoute } from './components/Shared/RoleRoutes';
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
 
 function App() {
   return (
@@ -165,35 +161,18 @@ function App() {
         <Route path="*" element={<NotFound />} />
 
       </Routes>
-<<<<<<< HEAD
-
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-    </Router>
-
-=======
       <ToastContainer 
         position="top-right" 
         autoClose={3500} 
         hideProgressBar={false} 
         newestOnTop={false} 
         closeOnClick 
-        rtl={false} 
         pauseOnFocusLoss 
         draggable 
         pauseOnHover 
       />
       </Router>
     </ErrorBoundary>
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
   );
 }
 

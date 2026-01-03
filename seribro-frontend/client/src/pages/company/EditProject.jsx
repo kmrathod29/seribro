@@ -7,11 +7,7 @@ import { toast } from 'react-toastify';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { getProjectDetails, updateProject, formatApiError } from '../../apis/companyProjectApi';
-<<<<<<< HEAD
-import { ArrowLeft, Loader2 as Loader, AlertCircle } from 'lucide-react';
-=======
 import { ArrowLeft, Loader, AlertCircle } from 'lucide-react';
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
 
 const EditProject = () => {
     const { id } = useParams();

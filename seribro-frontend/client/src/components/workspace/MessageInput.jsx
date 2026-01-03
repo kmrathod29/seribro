@@ -97,28 +97,6 @@ const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
     setError('');
     
     try {
-<<<<<<< HEAD
-      const result = await onSend({ text: text.trim(), files });
-      
-      if (result?.success) {
-        // Clear inputs on success
-        setText('');
-        setFiles([]);
-        setError('');
-        if (fileRef.current) fileRef.current.value = '';
-        return result;
-      } else {
-        // Show error from parent
-        const errorMsg = result?.message || 'Failed to send message';
-        setError(errorMsg);
-        return result;
-      }
-    } catch (err) {
-      console.error('Error in MessageInput.handleSend:', err);
-      const errorMsg = 'Failed to send message. Please try again.';
-      setError(errorMsg);
-      return { success: false, message: errorMsg };
-=======
       const res = await onSend({ text: text.trim(), files });
       // Expect caller to return { success: boolean, message?: string }
       if (res?.success) {
@@ -134,7 +112,6 @@ const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
       console.error('Error sending message:', err);
       setError('Failed to send message. Please try again.');
       return { success: false, message: err.message };
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
     }
   };
 

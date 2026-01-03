@@ -2,7 +2,7 @@
 // Payment Page with Full Razorpay Integration - Phase 5.4.9
 // Test URL: http://localhost:5173/workspace/projects/[projectId]/payment
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import paymentApi from '../../apis/paymentApi';
@@ -37,39 +37,27 @@ const PaymentPage = () => {
   useEffect(() => {
     loadProjectData();
     loadRazorpayScript();
-  }, [projectId]);
+  }, [projectId, loadProjectData, loadRazorpayScript]);
 
   // Load Razorpay script (only if not already loaded in index.html)
-  const loadRazorpayScript = () => {
-<<<<<<< HEAD
-    // Check if already loaded
-=======
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
+  const loadRazorpayScript = useCallback(() => {
     if (window.Razorpay) {
       console.log('Razorpay script already loaded');
       return;
     }
 
-<<<<<<< HEAD
-    // Check if script tag already exists to prevent duplicate loading
-    const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    // Check if a Razorpay script tag already exists to prevent duplicate loading
+    const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
     if (existingScript) {
-      console.log('Razorpay script tag already exists');
-      // Wait for script to load if it's still loading
+      console.log('Razorpay script tag already exists; waiting for it to load if necessary');
+      // Wait up to 5s for the script to initialize
       const checkInterval = setInterval(() => {
         if (window.Razorpay) {
           clearInterval(checkInterval);
           console.log('Razorpay script loaded');
         }
       }, 100);
-      // Timeout after 5 seconds
       setTimeout(() => clearInterval(checkInterval), 5000);
-=======
-    // Check if script is already in DOM (from index.html)
-    const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
-    if (existingScript) {
-      console.log('Razorpay script found in DOM, waiting for load...');
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
       return;
     }
 
@@ -84,10 +72,10 @@ const PaymentPage = () => {
       toast.error('Payment service unavailable. Please refresh the page.');
     };
     document.head.appendChild(script);
-  };
+  }, []);
 
   // Load project and company data
-  const loadProjectData = async () => {
+  const loadProjectData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -117,10 +105,10 @@ const PaymentPage = () => {
       setError(err.message || 'An error occurred while loading project details');
       setLoading(false);
     }
-  };
+  }, [projectId, createPaymentOrder]);
 
   // Create payment order
-  const createPaymentOrder = async (proj) => {
+  const createPaymentOrder = useCallback(async (proj) => {
     try {
       setOrderLoading(true);
       
@@ -166,7 +154,7 @@ const PaymentPage = () => {
       setError(err.message || 'Failed to create payment order');
       setOrderLoading(false);
     }
-  };
+  }, [projectId]);
 
   // Handle payment
   const handlePayment = async () => {
@@ -192,21 +180,7 @@ const PaymentPage = () => {
         return;
       }
 
-<<<<<<< HEAD
-      // Razorpay options
-      // CRITICAL FIX: When using order_id, DO NOT include amount/currency in options
-      // The Razorpay order already contains the amount (in paise) and currency (INR)
-      // Including amount/currency again causes a mismatch that Razorpay interprets as
-      // an international payment attempt, triggering "International cards are not supported"
-      const options = {
-        key: razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID,
-        // REMOVED: amount and currency - order_id already contains these
-        // Including them causes "International cards are not supported" error
-        name: 'Seribro',
-        description: `Payment for ${project.title}`,
-        order_id: orderData.orderId || orderData.id, // Order contains amount in paise and currency
-=======
-      // Get the Razorpay key and validate it's a test key
+      // Resolve Razorpay key
       const finalKey = razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID;
       if (!finalKey) {
         toast.error('Razorpay key not configured');
@@ -214,28 +188,16 @@ const PaymentPage = () => {
         return;
       }
 
-      // Validate test key in test mode
       if (isTestMode && !finalKey.startsWith('rzp_test_')) {
         console.warn('Warning: Test mode detected but key does not start with rzp_test_');
       }
 
-      // Razorpay options - CRITICAL FIX for "International cards not supported" error
+      // Base options (prefer server-provided order_id when present)
       const options = {
         key: finalKey,
-        amount: amount * 100, // Convert to paise (Razorpay requires amount in paise)
-        currency: orderData.currency || 'INR', // Must be INR for domestic cards
         name: 'Seribro',
         description: `Payment for ${project.title}`,
         order_id: orderData.orderId || orderData.id,
-        // CRITICAL FIX: Explicitly restrict payment methods to domestic cards only
-        // This prevents Razorpay from treating the transaction as international
-        method: {
-          card: true,      // Allow card payments (domestic cards only)
-          netbanking: false,  // Disable netbanking in test mode
-          upi: false,      // Disable UPI in test mode
-          wallet: false,   // Disable wallet in test mode
-        },
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
         prefill: {
           name: companyProfile?.companyName || '',
           email: companyProfile?.email || '',
@@ -253,6 +215,12 @@ const PaymentPage = () => {
           await handlePaymentSuccess(response);
         },
       };
+
+      // If server did not create an order_id, include amount & currency explicitly
+      if (!options.order_id) {
+        options.amount = amount * 100; // paise
+        options.currency = orderData?.currency || 'INR';
+      }
 
       // Open Razorpay checkout
       const rzp = new window.Razorpay(options);

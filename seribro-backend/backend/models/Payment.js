@@ -9,14 +9,9 @@ const TransactionSchema = new Schema({
 });
 
 const PaymentSchema = new Schema({
-<<<<<<< HEAD
   // Razorpay fields - sparse indices allow multiple null values
-  razorpayOrderId: { type: String, sparse: true },
-  razorpayPaymentId: { type: String, sparse: true },
-=======
   razorpayOrderId: { type: String, unique: true, index: true, sparse: true },
   razorpayPaymentId: { type: String, unique: true, index: true, sparse: true },
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
   razorpaySignature: String,
 
   project: { type: Schema.Types.ObjectId, ref: 'Project', required: true, index: true },

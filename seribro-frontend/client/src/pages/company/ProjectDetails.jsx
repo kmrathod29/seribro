@@ -3,11 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-<<<<<<< HEAD
-import { Loader2 as Loader, AlertCircle, ArrowLeft, Edit2, Trash2 } from 'lucide-react';
-=======
 import { Loader, AlertCircle, ArrowLeft, Edit2, Trash2 } from 'lucide-react';
->>>>>>> c60feea9278ac643f4ee64b68ef91a22103c1bed
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { getProjectDetails, deleteProject, formatApiError } from '../../apis/companyProjectApi';
