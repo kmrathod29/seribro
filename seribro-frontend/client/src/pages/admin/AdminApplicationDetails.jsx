@@ -4,7 +4,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import {
   ArrowLeft, Mail, Phone, MapPin, BookOpen, Code, FileText, Award, Github, ExternalLink
 } from 'lucide-react';
@@ -46,12 +45,12 @@ const AdminApplicationDetails = () => {
         setCompany(response.data.company);
         setStudent(response.data.studentProfile);
       } else {
-        toast.error('Failed to load application details');
+        alert('Failed to load application details');
       }
     } catch (err) {
       console.error('Error loading application:', err);
       setError(err.response?.data?.message || 'Error loading application');
-      toast.error(err.response?.data?.message || 'Error loading application');
+      alert(String(err?.response?.data?.message || 'Error loading application'));
     } finally {
       setLoading(false);
     }

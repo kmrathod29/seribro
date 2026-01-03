@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { getProjectDetails, updateProject, formatApiError } from '../../apis/companyProjectApi';
@@ -150,7 +149,7 @@ const EditProject = () => {
         e.preventDefault();
         
         if (!validateForm()) {
-            toast.error('Please fix the errors in the form');
+            alert('Please fix the errors in the form');
             return;
         }
         
@@ -168,16 +167,18 @@ const EditProject = () => {
             });
 
             if (response.success) {
-                toast.success('Project updated successfully!');
+                alert('Project updated successfully!');
                 navigate(`/company/projects/${id}`);
             } else {
-                toast.error(response.message || 'Failed to update project');
-                setError(response.message || 'Update failed');
+                const errorMsg = String(response?.message || 'Failed to update project');
+                alert(errorMsg);
+                setError(errorMsg);
             }
         } catch (err) {
             const apiError = formatApiError(err);
-            toast.error(apiError.message || 'Error updating project');
-            setError(apiError.message);
+            const errorMsg = String(apiError?.message || 'Error updating project');
+            alert(errorMsg);
+            setError(errorMsg);
         } finally {
             setSubmitting(false);
         }

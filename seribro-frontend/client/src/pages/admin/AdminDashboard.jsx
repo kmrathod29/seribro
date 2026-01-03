@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AdminAPI from '../../apis/adminApi';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { getMessage } from '../../utils/toastUtils';
 import { Bell, X, CheckCircle, AlertCircle, TrendingUp, Users, Building2, Clock, ChevronRight, DollarSign } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import {
@@ -28,7 +26,7 @@ export default function AdminDashboard() {
         setData(res.data.data);
       } catch (err) {
         setError(err.response?.data?.message || err.message);
-        toast.error(err.response?.data?.message || 'Dashboard load nahi ho paya');
+        alert(String(err?.response?.data?.message || 'Dashboard load nahi ho paya'));
       } finally {
         setLoading(false);
       }
@@ -76,10 +74,10 @@ export default function AdminDashboard() {
           notif.id === notificationId ? { ...notif, isRead: true } : notif
         )
       );
-      toast.success('Notification marked as read');
+      alert('Notification marked as read');
     } catch (err) {
       const apiError = formatApiError(err);
-      toast.error(getMessage(apiError, 'Failed to mark notification as read'));
+      alert(String(apiError?.message || 'Failed to mark notification as read'));
     }
   };
 

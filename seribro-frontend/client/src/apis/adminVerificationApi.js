@@ -159,8 +159,8 @@ export const rejectCompany = async (companyId, reason) => {
 /**
  * Hinglish: API error ko formatted message ke sath throw karna
  */
-export const formatApiError = (error) => {
-  const message = error?.response?.data?.message || error?.message || 'An error occurred';
+export const formatApiError = (error, fallback = 'An error occurred') => {
+  const message = String(error?.response?.data?.message || error?.message || fallback);
   return new Error(message);
 };
 

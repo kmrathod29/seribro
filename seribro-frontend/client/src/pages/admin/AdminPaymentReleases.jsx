@@ -3,8 +3,6 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import paymentApi from '../../apis/paymentApi';
-import { toast } from 'react-toastify';
-import { getMessage } from '../../utils/toastUtils';
 import { 
   Search, 
   Filter, 
@@ -80,11 +78,11 @@ const AdminPaymentReleases = () => {
         setSelectedPaymentIds(new Set());
         setSelectAll(false);
       } else {
-        toast.error(getMessage(response, 'Failed to load payments'));
+        alert(String(response?.message || 'Failed to load payments'));
       }
     } catch (error) {
       console.error('Error loading payments:', error);
-      toast.error(getMessage(error, 'Failed to load payment releases'));
+      alert(String(error?.message || 'Failed to load payment releases'));
     } finally {
       setLoading(false);
     }
@@ -189,7 +187,7 @@ const AdminPaymentReleases = () => {
       const response = await paymentApi.releasePayment(paymentId, releaseData);
 
       if (response.success) {
-        toast.success('Payment released successfully!');
+        alert('Payment released successfully!');
         handleCloseReleaseModal();
         // Remove the released payment from the list
         setPayments(prev => prev.filter(p => p._id !== paymentId));
@@ -198,11 +196,11 @@ const AdminPaymentReleases = () => {
           total: prev.total - 1
         }));
       } else {
-        toast.error(getMessage(response, 'Failed to release payment'));
+        alert(String(response?.message || 'Failed to release payment'));
       }
     } catch (error) {
       console.error('Error releasing payment:', error);
-      toast.error(getMessage(error, 'Failed to release payment'));
+      alert(String(error?.message || 'Failed to release payment'));
     } finally {
       setReleasing(null);
     }
@@ -213,7 +211,7 @@ const AdminPaymentReleases = () => {
    */
   const handleBulkReleaseClick = () => {
     if (selectedPaymentIds.size === 0) {
-      toast.error('Please select at least one payment');
+      alert('Please select at least one payment');
       return;
     }
     setBulkReleaseModal({
@@ -247,7 +245,7 @@ const AdminPaymentReleases = () => {
         const released = response.data?.released || selectedPaymentIds.size;
         const failed = response.data?.failed || 0;
         
-        toast.success(`Released ${released} payments${failed > 0 ? `, ${failed} failed` : ''}!`);
+        alert(`Released ${released} payments${failed > 0 ? `, ${failed} failed` : ''}!`);
         handleCloseBulkReleaseModal();
         
         // Remove released payments from the list
@@ -259,11 +257,11 @@ const AdminPaymentReleases = () => {
         setSelectedPaymentIds(new Set());
         setSelectAll(false);
       } else {
-        toast.error(response.message || 'Failed to release payments');
+        alert(String(response?.message || 'Failed to release payments'));
       }
     } catch (error) {
       console.error('Error releasing payments:', error);
-      toast.error(error.message || 'Failed to release payments');
+      alert(String(error?.message || 'Failed to release payments'));
     } finally {
       setReleasing(null);
     }

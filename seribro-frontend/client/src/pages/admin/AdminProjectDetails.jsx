@@ -4,7 +4,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { 
   ArrowLeft, Calendar, DollarSign, Briefcase, Users, Eye, ExternalLink, Clock, CheckCircle, X, Zap
 } from 'lucide-react';
@@ -58,12 +57,12 @@ const AdminProjectDetails = () => {
         setCompany(response.data.company);
         setAppStats(response.data.applicationStats);
       } else {
-        toast.error('Failed to load project details');
+        alert('Failed to load project details');
       }
     } catch (err) {
       console.error('Error loading project:', err);
       setError(err.response?.data?.message || 'Error loading project');
-      toast.error(err.response?.data?.message || 'Error loading project');
+      alert(String(err?.response?.data?.message || 'Error loading project'));
     } finally {
       setLoading(false);
     }
@@ -82,7 +81,7 @@ const AdminProjectDetails = () => {
       }
     } catch (err) {
       console.error('Error loading applications:', err);
-      toast.error('Error loading applications');
+      alert('Error loading applications');
     } finally {
       setAppLoading(false);
     }

@@ -10,16 +10,16 @@ const APPLICATIONS_URL = 'http://localhost:7000/api/student/projects/application
 /**
  * Hinglish: Error ko user-friendly format mein convert karo
  */
-export const formatApiError = (error) => {
+export const formatApiError = (error, fallback = 'Something went wrong') => {
     if (error.response && error.response.data) {
         return {
-            message: error.response.data.message || 'Something went wrong',
+            message: String(error.response.data.message || fallback),
             requiresCompletion: error.response.data.requiresCompletion || false,
             data: error.response.data.data || null,
         };
     }
     return {
-        message: error.message || 'Network error occurred',
+        message: String(error?.message || fallback),
         requiresCompletion: false,
         data: null,
     };

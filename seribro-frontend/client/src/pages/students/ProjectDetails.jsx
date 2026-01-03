@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2 as Loader, AlertCircle, MapPin, Briefcase, Clock, DollarSign, CheckCircle, X } from 'lucide-react';
+import { Loader, AlertCircle, MapPin, Briefcase, Clock, DollarSign, CheckCircle, X } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import ProfileIncompleteModal from "../../components/studentComponent/ProfileIncompleteModal";

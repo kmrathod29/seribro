@@ -9,7 +9,6 @@ import Footer from '../../components/Footer';
 import { getProjectDetails, deleteProject, formatApiError } from '../../apis/companyProjectApi';
 import { getProjectApplications, shortlistApplication, approveStudentForProject, rejectApplication } from '../../apis/companyApplicationApi';
 import ApplicationCard from '../../components/companyComponent/ApplicationCard';
-import { toast } from 'react-toastify';
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -62,10 +61,11 @@ const ProjectDetails = () => {
             if (res.success) {
                 setApplications(res.data.applications);
             } else {
-                toast.error(res.message || 'Failed to load applications');
+                alert(String(res?.message || 'Failed to load applications'));
             }
         } catch (err) {
-            toast.error(formatApiError(err).message || 'Error loading applications');
+            const errorMsg = formatApiError(err);
+            alert(String(errorMsg?.message || 'Error loading applications'));
         } finally {
             setApplicationsLoading(false);
         }
@@ -76,13 +76,14 @@ const ProjectDetails = () => {
         try {
             const res = await shortlistApplication(applicationId);
             if (res.success) {
-                toast.success('Application shortlisted!');
+                alert('Application shortlisted!');
                 await fetchApplications();
             } else {
-                toast.error(res.message || 'Could not shortlist');
+                alert(String(res?.message || 'Could not shortlist'));
             }
         } catch (err) {
-            toast.error(formatApiError(err).message || 'Error shortlisting');
+            const errorMsg = formatApiError(err);
+            alert(String(errorMsg?.message || 'Error shortlisting'));
         } finally {
             setApplicationActionId(null);
         }
@@ -94,14 +95,15 @@ const ProjectDetails = () => {
             if (!window.confirm('Accept this application? This will assign the project.')) return;
             const res = await approveStudentForProject(applicationId);
             if (res.success) {
-                toast.success('Student approved and project assigned!');
+                alert('Student approved and project assigned!');
                 await fetchApplications();
                 await loadProject();
             } else {
-                toast.error(res.message || 'Could not approve');
+                alert(String(res?.message || 'Could not approve'));
             }
         } catch (err) {
-            toast.error(formatApiError(err).message || 'Error approving');
+            const errorMsg = formatApiError(err);
+            alert(String(errorMsg?.message || 'Error approving'));
         } finally {
             setApplicationActionId(null);
         }
@@ -115,23 +117,24 @@ const ProjectDetails = () => {
 
     const handleReject = async () => {
         if (!rejectReason || rejectReason.length < 10) {
-            toast.error('Reason must be at least 10 characters.');
+            alert('Reason must be at least 10 characters.');
             return;
         }
         setApplicationActionId(rejectTargetId);
         try {
             const res = await rejectApplication(rejectTargetId, rejectReason);
             if (res.success) {
-                toast.success('Application rejected.');
+                alert('Application rejected.');
                 setShowRejectModal(false);
                 setRejectTargetId(null);
                 setRejectReason('');
                 await fetchApplications();
             } else {
-                toast.error(res.message || 'Could not reject');
+                alert(String(res?.message || 'Could not reject'));
             }
         } catch (err) {
-            toast.error(formatApiError(err).message || 'Error rejecting');
+            const errorMsg = formatApiError(err);
+            alert(String(errorMsg?.message || 'Error rejecting'));
         } finally {
             setApplicationActionId(null);
             setShowRejectModal(false);
@@ -146,14 +149,14 @@ const ProjectDetails = () => {
         try {
             const response = await deleteProject(id);
             if (response.success) {
-                toast.success('Project deleted successfully');
+                alert('Project deleted successfully');
                 navigate('/company/projects');
             } else {
-                toast.error(response.message || 'Failed to delete project');
+                alert(String(response?.message || 'Failed to delete project'));
             }
         } catch (err) {
             const apiError = formatApiError(err);
-            toast.error(apiError.message || 'Error deleting project');
+            alert(String(apiError?.message || 'Error deleting project'));
         } finally {
             setDeleting(false);
             setDeleteConfirm(false);

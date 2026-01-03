@@ -5,7 +5,6 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import PaymentSummary from '@/components/payment/PaymentSummary';
 import { getStudentEarnings } from '@/apis/paymentApi';
-import { toast } from 'react-toastify';
 import Navbar from '@/components/Navbar';
 
 const StudentPaymentPage = () => {
@@ -27,10 +26,10 @@ const StudentPaymentPage = () => {
         setEarnings(res.data);
         setTransactions(res.data.transactions || []);
       } else {
-        toast.error(res.message || 'Failed to load earnings');
+        alert(String(res?.message || 'Failed to load earnings'));
       }
     } catch (error) {
-      toast.error('Error loading earnings');
+      alert('Error loading earnings');
       console.error(error);
     } finally {
       setLoading(false);

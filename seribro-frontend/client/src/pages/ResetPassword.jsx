@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { Lock, Eye, EyeOff, ArrowRight, Home } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import API from '../apis/api.js'; // Assuming API is configured in a file like this
-import { toast } from 'react-toastify';
-import { getMessage } from '../utils/toastUtils';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -25,7 +23,7 @@ const ResetPassword = () => {
     if (!urlToken) {
       const errorMsg = 'Error: Password reset token is missing (Hinglish: Password reset token nahi mila)';
       setError(errorMsg);
-      toast.error(errorMsg);
+      alert(errorMsg);
     }
     setToken(urlToken);
   }, [searchParams]);
@@ -44,7 +42,7 @@ const ResetPassword = () => {
     if (!token) {
       const errorMsg = 'Missing reset token. Please use the link from your email. (Hinglish: Reset token gayab hai. Kripya email se link istemal karein.)';
       setError(errorMsg);
-      toast.error(errorMsg);
+      alert(errorMsg);
       setIsLoading(false);
       return;
     }
@@ -53,7 +51,7 @@ const ResetPassword = () => {
     if (!formData.password || !formData.confirmPassword) {
       const errorMsg = 'Please fill in both password fields (Hinglish: Kripya dono password fields bharein)';
       setError(errorMsg);
-      toast.error(errorMsg);
+      alert(errorMsg);
       setIsLoading(false);
       return;
     }
@@ -62,7 +60,7 @@ const ResetPassword = () => {
     if (formData.password !== formData.confirmPassword) {
       const errorMsg = 'Passwords do not match (Hinglish: Password match nahi ho rahe hain)';
       setError(errorMsg);
-      toast.error(errorMsg);
+      alert(errorMsg);
       setIsLoading(false);
       return;
     }
@@ -78,7 +76,7 @@ const ResetPassword = () => {
       console.log('✅ Reset Password Response Status:', response.status);
       console.log('✅ Reset Password Response Data:', response.data);
 
-      toast.success(getMessage(response, 'Password reset successful'));
+      alert(String(response?.data?.message || 'Password reset successful'));
       
       // Hinglish: Success hone par /login par redirect karna
       setTimeout(() => {
@@ -93,7 +91,7 @@ const ResetPassword = () => {
 
       const errorMessage = err.response?.data?.message || 'Password reset failed. Invalid or expired token.';
       setError(errorMessage);
-      toast.error(getMessage(err, 'Password reset failed. Invalid or expired token.'));
+      alert(errorMessage);
 
     } finally {
       setIsLoading(false);

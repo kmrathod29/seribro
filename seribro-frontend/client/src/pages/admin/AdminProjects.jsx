@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { 
   Search, Filter, ChevronLeft, ChevronRight, Eye, Calendar, Briefcase 
 } from 'lucide-react';
@@ -58,11 +57,11 @@ const AdminProjects = () => {
       if (response.success) {
         setStats(response.data);
       } else {
-        toast.error('Failed to load project stats');
+        alert('Failed to load project stats');
       }
     } catch (err) {
       console.error('Error loading stats:', err);
-      toast.error(err.response?.data?.message || 'Error loading stats');
+      alert(String(err?.response?.data?.message || 'Error loading stats'));
     } finally {
       setStatsLoading(false);
     }
@@ -83,12 +82,12 @@ const AdminProjects = () => {
         setProjects(response.data.projects);
         setPagination(response.data.pagination);
       } else {
-        toast.error('Failed to load projects');
+        alert('Failed to load projects');
       }
     } catch (err) {
       console.error('Error loading projects:', err);
       setError(err.response?.data?.message || 'Error loading projects');
-      toast.error(err.response?.data?.message || 'Error loading projects');
+      alert(String(err?.response?.data?.message || 'Error loading projects'));
     } finally {
       setLoading(false);
     }

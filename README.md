@@ -3,7 +3,6 @@
 SeriBro is a full-stack web application built with a Node.js backend and a modern frontend.
 
 ---
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 ## 📁 Project Structure
 

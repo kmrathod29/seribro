@@ -93,7 +93,6 @@ const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
       setError('Add a message or attachment');
       return;
     }
-    
     setError('');
     
     try {

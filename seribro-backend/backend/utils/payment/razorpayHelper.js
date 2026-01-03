@@ -19,26 +19,12 @@ const initRazorpay = () => {
 
 const createRazorpayOrder = async (amount, projectId, studentId) => {
   const rz = initRazorpay();
-  
-  // Ensure amount is a number and convert to paise
-  const amountInPaise = Math.round(Number(amount || 0) * 100);
-  
-  // Validate amount (minimum 1 rupee = 100 paise)
-  if (amountInPaise < 100) {
-    throw new Error('Amount must be at least ₹1');
-  }
-  
   const options = {
-    amount: amountInPaise, // Amount in paise (smallest currency unit)
-    currency: 'INR', // Indian Rupees - required for domestic cards
+    amount: Math.round((amount || 0) * 100), // paise
+    currency: 'INR',
     receipt: `project_${projectId}`,
-    notes: { 
-      projectId: projectId.toString(), 
-      studentId: studentId ? studentId.toString() : 'unassigned'
-    }
+    notes: { projectId: projectId.toString(), studentId: studentId.toString() }
   };
-  
-  // Create order with explicit INR currency to ensure domestic card support
   return rz.orders.create(options);
 };
 

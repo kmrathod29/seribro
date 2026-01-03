@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminAPI from '../../apis/adminApi';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { Users, CheckCircle, XCircle, AlertCircle, Loader2 as Loader } from 'lucide-react';
+import { Users, CheckCircle, XCircle, AlertCircle, Loader } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 
 export default function PendingStudents() {
@@ -17,7 +16,7 @@ export default function PendingStudents() {
       const res = await AdminAPI.get('/students/pending');
       setList(res.data.data || []);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Pending students load nahi huye');
+      alert(String(err?.response?.data?.message || 'Pending students load nahi huye'));
     } finally {
       setLoading(false);
     }
@@ -30,10 +29,10 @@ export default function PendingStudents() {
     try {
       setActionId(id);
       await AdminAPI.post(`/student/${id}/approve`);
-      toast.success('Student approved ✔️');
+      alert('Student approved ✔️');
       await load();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Approve fail ho gaya');
+      alert(err.response?.data?.message || 'Approve fail ho gaya');
     } finally {
       setActionId('');
     }
@@ -41,14 +40,14 @@ export default function PendingStudents() {
 
   const reject = async (id) => {
     const reason = window.prompt('Reject reason likho (required):');
-    if (!reason) { toast.error('Reason required hai'); return; }
+    if (!reason) { alert('Reason required hai'); return; }
     try {
       setActionId(id);
       await AdminAPI.post(`/student/${id}/reject`, { reason });
-      toast.success('Student rejected ❌');
+      alert('Student rejected ❌');
       await load();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Reject fail ho gaya');
+      alert(err.response?.data?.message || 'Reject fail ho gaya');
     } finally {
       setActionId('');
     }

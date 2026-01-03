@@ -4,10 +4,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ratingApi from '../../apis/ratingApi';
-import { toast } from 'react-toastify';
 import workspaceApi from '../../apis/workspaceApi';
 import StarRating from '../../components/ratings/StarRating';
-import { AlertCircle, Clock, CheckCircle2, ChevronLeft, ChevronDown, ChevronUp, Loader2 as Loader } from 'lucide-react';
+import { AlertCircle, Clock, CheckCircle2, ChevronLeft, ChevronDown, ChevronUp, Loader } from 'lucide-react';
 
 const RateProject = () => {
   const { projectId } = useParams();
@@ -87,11 +86,11 @@ const RateProject = () => {
             }
           }
         } else {
-          toast.error(res.message || 'Failed to load project');
+          alert(String(res?.message || 'Failed to load project'));
         }
       } catch (error) {
         console.error('Error loading project:', error);
-        toast.error('Error loading project data');
+        alert('Error loading project data');
       } finally {
         setLoading(false);
       }
@@ -123,17 +122,17 @@ const RateProject = () => {
     e.preventDefault();
 
     if (!guidelinesAccepted) {
-      toast.error('Please accept the guidelines before submitting');
+      alert('Please accept the guidelines before submitting');
       return;
     }
 
     if (rating === 0) {
-      toast.error('Please select a rating');
+      alert('Please select a rating');
       return;
     }
 
     if (review.trim().length < 10) {
-      toast.error('Review must be at least 10 characters');
+      alert('Review must be at least 10 characters');
       return;
     }
 
@@ -146,25 +145,25 @@ const RateProject = () => {
       } else if (userRole === 'student') {
         res = await ratingApi.rateCompany(projectId, { rating, review });
       } else {
-        toast.error('Unauthorized to rate');
+        alert('Unauthorized to rate');
         setIsSubmitting(false);
         return;
       }
 
       if (res.success) {
         setSuccessRedirect(true);
-        toast.success('Rating submitted successfully! Redirecting...');
+        alert('Rating submitted successfully! Redirecting...');
 
         // Redirect after 2 seconds
         setTimeout(() => {
           navigate(`/workspace/projects/${projectId}`, { replace: true });
         }, 2000);
       } else {
-        toast.error(res.message || 'Failed to submit rating');
+        alert(String(res?.message || 'Failed to submit rating'));
       }
     } catch (error) {
       console.error('Error submitting rating:', error);
-      toast.error('Error submitting rating');
+      alert('Error submitting rating');
     } finally {
       setIsSubmitting(false);
     }

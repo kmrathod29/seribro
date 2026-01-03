@@ -4,7 +4,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import {
   Search, Filter, ChevronLeft, ChevronRight, Eye, User, Briefcase, Clock
 } from 'lucide-react';
@@ -64,7 +63,7 @@ const AdminApplications = () => {
       }
     } catch (err) {
       console.error('Error loading stats:', err);
-      toast.error('Error loading stats');
+      alert('Error loading stats');
     } finally {
       setStatsLoading(false);
     }
@@ -88,7 +87,7 @@ const AdminApplications = () => {
     } catch (err) {
       console.error('Error loading applications:', err);
       setError(err.response?.data?.message || 'Error loading applications');
-      toast.error(err.response?.data?.message || 'Error loading applications');
+      alert(String(err?.response?.data?.message || 'Error loading applications'));
     } finally {
       setLoading(false);
     }

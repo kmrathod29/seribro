@@ -60,18 +60,7 @@ exports.createOrder = async (req, res) => {
 
     await project.linkPayment(paymentDoc._id, amount);
 
-    // Return order details - amount is in rupees (for display), order already has amount in paise
-    // Frontend should NOT multiply this amount again when using order_id
-    return sendResponse(res, 200, true, 'Order created', { 
-      orderId: order.id, 
-      amount, // Amount in rupees (for display only)
-      currency: order.currency || 'INR', 
-      keyId: process.env.RAZORPAY_KEY_ID || null, 
-      projectId: project._id, 
-      projectTitle: project.title,
-      // Include order amount in paise for verification (order already has this)
-      orderAmount: order.amount // Amount in paise as stored in Razorpay order
-    });
+    return sendResponse(res, 200, true, 'Order created', { orderId: order.id, amount, currency: order.currency || 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, projectId: project._id, projectTitle: project.title });
   } catch (error) {
     console.error('createOrder error:', error);
     return sendResponse(res, 500, false, 'Failed to create order');

@@ -73,16 +73,16 @@ export const markNotificationAsRead = async (notificationId) => {
  * @param {Error} error - Error object
  * @returns Formatted error object
  */
-export const formatApiError = (error) => {
+export const formatApiError = (error, fallback = 'An error occurred') => {
   if (error.response?.data) {
     return {
-      message: error.response.data.message || 'An error occurred',
+      message: String(error.response.data.message || fallback),
       data: error.response.data.data,
       status: error.response.status,
     };
   }
   return {
-    message: error.message || 'Network error',
+    message: String(error?.message || fallback),
     status: 500,
   };
 };

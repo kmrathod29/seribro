@@ -2,14 +2,13 @@
 // Complete Admin Verification Panel with tabs, lists, modals - Phase 3
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import {
   Users,
   Building2,
   CheckCircle,
   XCircle,
   AlertCircle,
-  Loader2 as Loader,
+  Loader,
   Eye,
   RefreshCw,
   Clock,
@@ -62,7 +61,7 @@ export default function AdminVerification() {
       await Promise.all([loadStudents(), loadCompanies()]);
     } catch (error) {
       console.error('Load error:', error);
-      toast.error('Failed to load data');
+      alert('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -74,7 +73,7 @@ export default function AdminVerification() {
       setStudentsList(res.data || []);
     } catch (error) {
       console.error('Load students error:', error);
-      toast.error(error.message || 'Failed to load pending students');
+      alert(String(error?.message || 'Failed to load pending students'));
     }
   };
 
@@ -84,7 +83,7 @@ export default function AdminVerification() {
       setCompaniesList(res.data || []);
     } catch (error) {
       console.error('Load companies error:', error);
-      toast.error(error.message || 'Failed to load pending companies');
+      alert(String(error?.message || 'Failed to load pending companies'));
     }
   };
 
@@ -101,7 +100,7 @@ export default function AdminVerification() {
       setPreviewOpen(true);
     } catch (error) {
       console.error('Preview error:', error);
-      toast.error(error.message || 'Failed to load profile');
+      alert(String(error?.message || 'Failed to load profile'));
     } finally {
       setPreviewLoading(false);
     }
@@ -135,7 +134,7 @@ export default function AdminVerification() {
         await approveCompany(modalProfileId);
       }
 
-      toast.success(`${modalProfileType.capitalize()} approved successfully! ✅`);
+      alert(`${modalProfileType.capitalize()} approved successfully! ✅`);
       setModalOpen(false);
       
       // Reload appropriate list
@@ -146,7 +145,7 @@ export default function AdminVerification() {
       }
     } catch (error) {
       console.error('Approve error:', error);
-      toast.error(error.message || 'Failed to approve');
+      alert(String(error?.message || 'Failed to approve'));
     } finally {
       setActionLoading(false);
       setActionId(null);
@@ -155,7 +154,7 @@ export default function AdminVerification() {
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
-      toast.error('Please provide a rejection reason');
+      alert('Please provide a rejection reason');
       return;
     }
 
@@ -169,7 +168,7 @@ export default function AdminVerification() {
         await rejectCompany(modalProfileId, rejectionReason);
       }
 
-      toast.success(`${modalProfileType.capitalize()} rejected. Notification sent! ❌`);
+      alert(`${modalProfileType.capitalize()} rejected. Notification sent! ❌`);
       setModalOpen(false);
       setRejectionReason('');
 
@@ -181,7 +180,7 @@ export default function AdminVerification() {
       }
     } catch (error) {
       console.error('Reject error:', error);
-      toast.error(error.message || 'Failed to reject');
+      alert(String(error?.message || 'Failed to reject'));
     } finally {
       setActionLoading(false);
       setActionId(null);

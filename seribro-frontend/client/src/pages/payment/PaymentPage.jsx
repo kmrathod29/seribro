@@ -2,9 +2,8 @@
 // Payment Page with Full Razorpay Integration - Phase 5.4.9
 // Test URL: http://localhost:5173/workspace/projects/[projectId]/payment
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import paymentApi from '../../apis/paymentApi';
 import workspaceApi from '../../apis/workspaceApi';
 import PaymentSummary from '../../components/payment/PaymentSummary';
@@ -37,29 +36,11 @@ const PaymentPage = () => {
   useEffect(() => {
     loadProjectData();
     loadRazorpayScript();
-  }, [projectId, loadProjectData, loadRazorpayScript]);
+  }, [projectId]);
 
-  // Load Razorpay script (only if not already loaded in index.html)
-  const loadRazorpayScript = useCallback(() => {
-    if (window.Razorpay) {
-      console.log('Razorpay script already loaded');
-      return;
-    }
-
-    // Check if a Razorpay script tag already exists to prevent duplicate loading
-    const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
-    if (existingScript) {
-      console.log('Razorpay script tag already exists; waiting for it to load if necessary');
-      // Wait up to 5s for the script to initialize
-      const checkInterval = setInterval(() => {
-        if (window.Razorpay) {
-          clearInterval(checkInterval);
-          console.log('Razorpay script loaded');
-        }
-      }, 100);
-      setTimeout(() => clearInterval(checkInterval), 5000);
-      return;
-    }
+  // Load Razorpay script
+  const loadRazorpayScript = () => {
+    if (window.Razorpay) return;
 
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -69,13 +50,13 @@ const PaymentPage = () => {
     };
     script.onerror = () => {
       console.error('Failed to load Razorpay script');
-      toast.error('Payment service unavailable. Please refresh the page.');
+      alert('Payment service unavailable');
     };
     document.head.appendChild(script);
-  }, []);
+  };
 
   // Load project and company data
-  const loadProjectData = useCallback(async () => {
+  const loadProjectData = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -105,10 +86,10 @@ const PaymentPage = () => {
       setError(err.message || 'An error occurred while loading project details');
       setLoading(false);
     }
-  }, [projectId, createPaymentOrder]);
+  };
 
   // Create payment order
-  const createPaymentOrder = useCallback(async (proj) => {
+  const createPaymentOrder = async (proj) => {
     try {
       setOrderLoading(true);
       
@@ -154,17 +135,17 @@ const PaymentPage = () => {
       setError(err.message || 'Failed to create payment order');
       setOrderLoading(false);
     }
-  }, [projectId]);
+  };
 
   // Handle payment
   const handlePayment = async () => {
     if (!project || !orderData) {
-      toast.error('Missing payment details');
+      alert('Missing payment details');
       return;
     }
 
     if (!window.Razorpay) {
-      toast.error('Payment service not loaded. Please refresh and try again.');
+      alert('Payment service not loaded. Please refresh and try again.');
       return;
     }
 
@@ -175,26 +156,16 @@ const PaymentPage = () => {
       const amount = orderData.amount || project.paymentAmount || project.budgetMax || project.budgetMin || 0;
       
       if (amount <= 0) {
-        toast.error('Invalid payment amount');
+        alert('Invalid payment amount');
         setPaymentProcessing(false);
         return;
       }
 
-      // Resolve Razorpay key
-      const finalKey = razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID;
-      if (!finalKey) {
-        toast.error('Razorpay key not configured');
-        setPaymentProcessing(false);
-        return;
-      }
-
-      if (isTestMode && !finalKey.startsWith('rzp_test_')) {
-        console.warn('Warning: Test mode detected but key does not start with rzp_test_');
-      }
-
-      // Base options (prefer server-provided order_id when present)
+      // Razorpay options
       const options = {
-        key: finalKey,
+        key: razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: amount * 100, // Convert to paise
+        currency: orderData.currency || 'INR',
         name: 'Seribro',
         description: `Payment for ${project.title}`,
         order_id: orderData.orderId || orderData.id,
@@ -208,19 +179,13 @@ const PaymentPage = () => {
         modal: {
           ondismiss: () => {
             setPaymentProcessing(false);
-            toast.info('Payment cancelled');
+            alert('Payment cancelled');
           },
         },
         handler: async (response) => {
           await handlePaymentSuccess(response);
         },
       };
-
-      // If server did not create an order_id, include amount & currency explicitly
-      if (!options.order_id) {
-        options.amount = amount * 100; // paise
-        options.currency = orderData?.currency || 'INR';
-      }
 
       // Open Razorpay checkout
       const rzp = new window.Razorpay(options);
@@ -230,7 +195,7 @@ const PaymentPage = () => {
       rzp.open();
     } catch (err) {
       console.error('Error initiating payment:', err);
-      toast.error('Failed to initiate payment');
+      alert('Failed to initiate payment');
       setPaymentProcessing(false);
     }
   };
@@ -251,7 +216,7 @@ const PaymentPage = () => {
 
       if (verifyRes.success) {
         setPaymentStatus('success');
-        toast.success('Payment successful! Redirecting...');
+        alert('Payment successful! Redirecting...');
 
         // Redirect to project page after 2 seconds
         setTimeout(() => {
@@ -263,7 +228,7 @@ const PaymentPage = () => {
           verifyRes.message ||
             'Payment verification failed. Payment may have been captured but not verified. Please contact support.'
         );
-        toast.error(
+        alert(
           'Payment verification failed. Please contact support with your transaction ID: ' +
             response.razorpay_payment_id
         );
@@ -272,7 +237,7 @@ const PaymentPage = () => {
       console.error('Error verifying payment:', err);
       setPaymentStatus('verification_failed');
       setError('An error occurred during payment verification');
-      toast.error('Payment verification error');
+      alert('Payment verification error');
     } finally {
       setPaymentProcessing(false);
     }
@@ -285,7 +250,7 @@ const PaymentPage = () => {
       error?.description ||
         'Payment failed. Please try again or use a different payment method.'
     );
-    toast.error(error?.description || 'Payment failed');
+    alert(String(error?.description || 'Payment failed'));
     setPaymentProcessing(false);
   };
 

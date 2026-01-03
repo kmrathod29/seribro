@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminAPI from '../../apis/adminApi';
 import { Link } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { Building2, CheckCircle, XCircle, AlertCircle, Loader2 as Loader } from 'lucide-react';
+import { Building2, CheckCircle, XCircle, AlertCircle, Loader } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 
 export default function PendingCompanies() {
@@ -16,7 +15,7 @@ export default function PendingCompanies() {
       const res = await AdminAPI.get('/companies/pending');
       setList(res.data.data || []);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Pending companies load nahi huye');
+      alert(String(err?.response?.data?.message || 'Pending companies load nahi huye'));
     } finally {
       setLoading(false);
     }
@@ -29,10 +28,10 @@ export default function PendingCompanies() {
     try {
       setActionId(id);
       await AdminAPI.post(`/company/${id}/approve`);
-      toast.success('Company approved ✔️');
+      alert('Company approved ✔️');
       await load();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Approve fail ho gaya');
+      alert(err.response?.data?.message || 'Approve fail ho gaya');
     } finally {
       setActionId('');
     }
@@ -40,14 +39,14 @@ export default function PendingCompanies() {
 
   const reject = async (id) => {
     const reason = window.prompt('Reject reason likho (required):');
-    if (!reason) { toast.error('Reason required hai'); return; }
+    if (!reason) { alert('Reason required hai'); return; }
     try {
       setActionId(id);
       await AdminAPI.post(`/company/${id}/reject`, { reason });
-      toast.success('Company rejected ❌');
+      alert('Company rejected ❌');
       await load();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Reject fail ho gaya');
+      alert(err.response?.data?.message || 'Reject fail ho gaya');
     } finally {
       setActionId('');
     }

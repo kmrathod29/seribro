@@ -13,7 +13,11 @@ const { validateWorkspaceAccess } = require('../utils/workspace/validateWorkspac
 const { emitNewMessage } = require('../utils/socket/socketManager');
 
 const sendResponse = (res, success, message, data = null, status = 200) => {
-    return res.status(status).json({ success, message, data });
+    return res.status(status).json({ 
+        success, 
+        message: String(message || 'Operation completed'), 
+        data 
+    });
 };
 
 const getProjectWithRelations = async (projectId) => {

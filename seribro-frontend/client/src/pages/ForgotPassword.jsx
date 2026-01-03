@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import { Mail, ArrowRight, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import API from '../apis/api.js';// Assuming API is configured in a file like this
-import { toast } from 'react-toastify';
-import { getMessage } from '../utils/toastUtils';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -29,7 +27,7 @@ const ForgotPassword = () => {
     if (!email) {
       const errorMsg = 'Please enter your email address (Hinglish: Kripya apna email address daalein)';
       setError(errorMsg);
-      toast.error(errorMsg);
+      alert(errorMsg);
       setIsLoading(false);
       return;
     }
@@ -42,8 +40,8 @@ const ForgotPassword = () => {
       console.log('✅ Forgot Password Response Status:', response.status);
       console.log('✅ Forgot Password Response Data:', response.data);
 
-      setMessage(response?.data?.message || '');
-      toast.success(getMessage(response, 'Reset link sent'));
+      setMessage(response.data.message);
+      alert(String(response?.data?.message || 'Password reset email sent'));
       setEmail(''); // Clear email field on success
 
     } catch (err) {
@@ -54,7 +52,7 @@ const ForgotPassword = () => {
 
       const errorMessage = err.response?.data?.message || 'Failed to send reset link. Please try again.';
       setError(errorMessage);
-      toast.error(getMessage(err, 'Failed to send reset link. Please try again.'));
+      alert(errorMessage);
 
     } finally {
       setIsLoading(false);

@@ -1,11 +1,9 @@
 // src/pages/workspace/ProjectWorkspace.jsx
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { io } from 'socket.io-client';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import ErrorBoundary from '../../components/ErrorBoundary';
 import WorkspaceHeader from '../../components/workspace/WorkspaceHeader';
 import WorkspaceStatusFlow from '../../components/workspace/WorkspaceStatusFlow';
 import MessageBoard from '../../components/workspace/MessageBoard';
@@ -50,9 +48,6 @@ const ProjectWorkspace = () => {
   // Socket persists across re-renders and only disconnects on unmount
   useEffect(() => {
     if (!projectId) return;
-
-    // Capture a stable reference to typing timeouts to avoid stale-ref issues in cleanup
-    const capturedTypingTimeouts = typingTimeoutRef.current;
 
     // If socket already exists and is connected, don't recreate it
     if (socketRef.current && socketRef.current.connected) {
@@ -251,11 +246,9 @@ const ProjectWorkspace = () => {
           socketRef.current = null;
         }
 
-        // Clear typing timeouts safely using captured reference
-        if (capturedTypingTimeouts) {
-          capturedTypingTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
-          capturedTypingTimeouts.clear();
-        }
+        // Clear typing timeouts
+        typingTimeoutRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+        typingTimeoutRef.current.clear();
       };
     } catch (err) {
       console.warn('[Socket.io] Failed to initialize:', err.message);
@@ -293,7 +286,10 @@ const ProjectWorkspace = () => {
     });
   }, []);
 
-
+  // Append messages (alias)
+  const appendMessages = (incoming) => {
+    mergeMessages(incoming);
+  };
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -427,7 +423,7 @@ const ProjectWorkspace = () => {
           );
           return merged;
         });
-        toast.success('Message sent');
+        alert('Message sent');
         
         // Mark as read with timeout protection
         try {
@@ -446,7 +442,7 @@ const ProjectWorkspace = () => {
         setMessages((prev) => prev.filter((m) => m._id !== tempId));
         optimisticAdded = false;
         const errorMsg = res.message || 'Failed to send message';
-        toast.error(errorMsg);
+        alert(errorMsg);
         setError(errorMsg);
         return { success: false, message: errorMsg };
       }
@@ -462,7 +458,7 @@ const ProjectWorkspace = () => {
         ? 'Message send is taking too long. Please check your connection and try again.'
         : 'Failed to send message. Please try again.';
       
-      toast.error(errorMsg);
+      alert(errorMsg);
       setError(errorMsg);
       return { success: false, message: err.message };
     } finally {
@@ -517,7 +513,7 @@ const ProjectWorkspace = () => {
                 const startRes = await import('../../apis/workSubmissionApi').then((m) => m.startWork(project._id));
                 
                 if (startRes.success) {
-                  toast.success('✅ Work started successfully! Status updated to In Progress.');
+                  alert('✅ Work started successfully! Status updated to In Progress.');
                   
                   // Reload workspace data to get updated status - this will trigger re-render
                   await loadWorkspace();
@@ -527,13 +523,14 @@ const ProjectWorkspace = () => {
                   // Note: workspace state might not be updated immediately due to async nature
                   // The loadWorkspace function will call setWorkspace which triggers re-render
                 } else {
-                  toast.error(startRes.message || 'Failed to start work');
-                  setError(startRes.message || 'Failed to start work');
+                  const errorMsg = String(startRes?.message || 'Failed to start work');
+                  alert(errorMsg);
+                  setError(errorMsg);
                 }
               } catch (err) {
                 console.error('Error starting work:', err);
-                toast.error('Server error while starting work');
-                setError('Failed to start work: ' + err.message);
+                alert('Server error while starting work');
+                setError('Failed to start work: ' + String(err?.message || 'Unknown error'));
               }
             }}
             className="px-4 py-2 bg-green-500 text-white rounded-md font-semibold hover:bg-green-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
@@ -562,6 +559,12 @@ const ProjectWorkspace = () => {
         {workspace?.workspace?.role === 'student' && (
           <button onClick={() => navigate(`/student/payments`)} className="px-4 py-2 bg-emerald-500 text-white rounded-md font-semibold hover:bg-emerald-600 transition-colors flex items-center gap-2">
             💰 My Earnings
+          </button>
+        )}
+
+        {workspace?.workspace?.role === 'student' && project?.status === 'completed' && (
+          <button onClick={() => navigate(`/workspace/projects/${project._id}/rating`)} className="px-4 py-2 bg-purple-500 text-white rounded-md font-semibold hover:bg-purple-600 transition-colors flex items-center gap-2">
+            ⭐ Rate Project
           </button>
         )}
       </>
@@ -626,14 +629,10 @@ const ProjectWorkspace = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-white font-semibold">Project completed</div>
-                    <div className="text-sm text-gray-300">
-                      Please rate {workspace?.workspace?.role === 'student' ? 'the company' : 'the student'} to help future users.
-                    </div>
+                    <div className="text-sm text-gray-300">Please rate your counterparty to help future users.</div>
                   </div>
                   <div>
-                    <button onClick={() => navigate(`/workspace/projects/${project._id}/rate`)} className="px-3 py-2 bg-amber-400 text-navy rounded font-semibold">
-                      ⭐ Rate {workspace?.workspace?.role === 'student' ? 'Company' : 'Student'}
-                    </button>
+                    <button onClick={() => navigate(`/workspace/projects/${project._id}/rate`)} className="px-3 py-2 bg-amber-400 text-navy rounded font-semibold">Rate Project</button>
                   </div>
                 </div>
               </div>
@@ -655,8 +654,8 @@ const ProjectWorkspace = () => {
           </div>
 
           <div className="space-y-6">
-            {student && <AssignedStudentCard student={student} />}
-            {company && <CompanyInfoCard company={company} />}
+            <AssignedStudentCard student={student} />
+            <CompanyInfoCard company={company} />
           </div>
         </div>
       </div>
@@ -674,14 +673,5 @@ const ProjectWorkspace = () => {
   );
 };
 
-// Wrap with error boundary to prevent white screen crashes
-const ProjectWorkspaceWithErrorBoundary = () => {
-  return (
-    <ErrorBoundary>
-      <ProjectWorkspace />
-    </ErrorBoundary>
-  );
-};
-
-export default ProjectWorkspaceWithErrorBoundary;
+export default ProjectWorkspace;
 

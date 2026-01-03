@@ -76,43 +76,19 @@ function RoleRoute({ children, allowedRoles = [] }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Safety check: ensure children is defined before rendering
-  if (!children) {
-    console.error('[RoleRoute] Children is undefined. This should not happen.');
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-400">Error: Component not found</p>
-        </div>
-      </div>
-    );
-  }
-
   return children;
 }
 
-export const AdminRoute = ({ children }) => {
-  if (!children) {
-    console.error('[AdminRoute] Children is undefined');
-    return null;
-  }
-  return <RoleRoute allowedRoles={["admin"]}>{children}</RoleRoute>;
-};
+export const AdminRoute = ({ children }) => (
+  <RoleRoute allowedRoles={["admin"]}>{children}</RoleRoute>
+);
 
-export const StudentRoute = ({ children }) => {
-  if (!children) {
-    console.error('[StudentRoute] Children is undefined');
-    return null;
-  }
-  return <RoleRoute allowedRoles={["student"]}>{children}</RoleRoute>;
-};
+export const StudentRoute = ({ children }) => (
+  <RoleRoute allowedRoles={["student"]}>{children}</RoleRoute>
+);
 
-export const CompanyRoute = ({ children }) => {
-  if (!children) {
-    console.error('[CompanyRoute] Children is undefined');
-    return null;
-  }
-  return <RoleRoute allowedRoles={["company"]}>{children}</RoleRoute>;
-};
+export const CompanyRoute = ({ children }) => (
+  <RoleRoute allowedRoles={["company"]}>{children}</RoleRoute>
+);
 
 export default RoleRoute;

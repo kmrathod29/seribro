@@ -3,8 +3,6 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { getMessage } from '../../utils/toastUtils';
 import FileUploadZone from '../../components/workspace/FileUploadZone';
 import { getCurrentSubmission, submitWork } from '../../apis/workSubmissionApi';
 import { ArrowLeft, CheckCircle, AlertCircle, X } from 'lucide-react';
@@ -44,14 +42,15 @@ const SubmitWork = () => {
         setLoading(true);
         const res = await getCurrentSubmission(projectId);
         if (!res.success) {
-          setError(res?.message || 'Could not fetch submission status');
-          toast.error(getMessage(res, 'Failed to load submission status'));
+          const errorMsg = String(res?.message || 'Could not fetch submission status');
+          setError(errorMsg);
+          alert(errorMsg);
         } else {
           setCurrentSubmission(res.data);
         }
       } catch (err) {
         setError('Error fetching submission');
-        toast.error('Error fetching submission');
+        alert('Error fetching submission');
       } finally {
         setLoading(false);
       }
@@ -67,7 +66,7 @@ const SubmitWork = () => {
 
   const handleRemoveFile = useCallback((index) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-    toast.success('File removed');
+    alert('File removed');
   }, []);
 
   // Links
@@ -100,7 +99,7 @@ const SubmitWork = () => {
     }
     const ok = validateUrl(url);
     setLinkErrors((p) => ({ ...p, [idx]: ok ? null : 'Invalid URL' }));
-    if (!ok) toast.error('Please enter a valid URL (include https://)');
+    if (!ok) alert('Please enter a valid URL (include https://)');
   };
 
   // Submit
@@ -109,17 +108,17 @@ const SubmitWork = () => {
 
     // Basic validation
     if (selectedFiles.length === 0 && !links.some((l) => l.url?.trim())) {
-      toast.error('Please add at least one file or external link');
+      alert('Please add at least one file or external link');
       return;
     }
     if (message.trim().length === 0) {
-      toast.error('Please add a message with your submission');
+      alert('Please add a message with your submission');
       return;
     }
 
     const isResubmission = currentSubmission?.status === 'revision-requested' || currentSubmission?.status === 'revision_requested';
     if (isResubmission && whatChanged.trim().length === 0) {
-      toast.error('Please explain what changed in this resubmission');
+      alert('Please explain what changed in this resubmission');
       return;
     }
 
@@ -127,7 +126,7 @@ const SubmitWork = () => {
     for (let i = 0; i < links.length; i++) {
       const url = links[i]?.url?.trim();
       if (url && !validateUrl(url)) {
-        toast.error(`Invalid URL: ${url}`);
+        alert(`Invalid URL: ${url}`);
         return;
       }
     }
@@ -155,10 +154,11 @@ const SubmitWork = () => {
       });
 
       if (!res.success) {
-        toast.error(getMessage(res, 'Submission failed'));
-        setError(res?.message || 'Submission failed');
+        const errorMsg = String(res?.message || 'Submission failed');
+        alert(errorMsg);
+        setError(errorMsg);
       } else {
-        toast.success('Work submitted successfully!');
+        alert('Work submitted successfully!');
         setSuccessModalOpen(true);
         setTimeout(() => {
           setSuccessModalOpen(false);
@@ -167,8 +167,9 @@ const SubmitWork = () => {
       }
     } catch (err) {
       console.error('Submission error:', err);
-      toast.error(getMessage(err, 'Error submitting work'));
-      setError(err.message || 'Error submitting work');
+      const errorMsg = String(err?.message || 'Error submitting work');
+      alert(errorMsg);
+      setError(errorMsg);
     } finally {
       setSubmitting(false);
       setUploadProgress(0);

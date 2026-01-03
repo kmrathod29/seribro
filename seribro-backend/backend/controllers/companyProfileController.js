@@ -9,7 +9,11 @@ const fs = require('fs'); // File system for temp file deletion
 
 // Utility function for consistent response
 const sendResponse = (res, success, message, data = null, status = 200) => {
-    return res.status(status).json({ success, message, data });
+    return res.status(status).json({ 
+        success, 
+        message: String(message || 'Operation completed'), 
+        data 
+    });
 };
 
 // Utility function to handle profile update and completion calculation

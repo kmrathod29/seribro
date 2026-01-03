@@ -188,46 +188,33 @@ exports.approveWork = async (req, res) => {
     const access = await validateWorkspaceAccess(project, req.user);
     if (!access.hasAccess || access.role !== 'company') return sendResponse(res, 403, false, access.error || 'Access denied');
 
-    // Only allow approval when status is 'under-review' (work is submitted and waiting for review)
-    // The approveWork method will change status to 'completed' and set completedAt timestamp
-    if (project.status !== 'under-review') {
-      return sendResponse(res, 400, false, 'No submission under review. Project status must be "under-review" to approve.');
-    }
+    if (project.status !== 'under-review' && project.status !== 'approved') return sendResponse(res, 400, false, 'No submission under review');
 
-    // Approve work - this sets status to 'completed' and completedAt timestamp atomically
-    // The approveWork method internally calls save(), so the status change is persisted
     const { submission, project: updated } = await project.approveWork(req.user._id, (feedback || '').toString().slice(0, 2000));
 
-    // Reload project to ensure we have the latest status (should be 'completed' now)
-    const refreshedProject = await Project.findById(projectId);
-    if (!refreshedProject) {
-      console.error('Project not found after approval - this should not happen');
-      return sendResponse(res, 500, false, 'Error verifying project status after approval');
-    }
-
     // Update lastActivity
-    await refreshedProject.updateLastActivity();
+    await updated.updateLastActivity();
 
     // ========== PHASE 2: Auto-create Payment Record ==========
     // Get student and company profiles for payment creation
     const studentProfile = await StudentProfile.findById(submission.submittedBy);
-    const companyProfile = await CompanyProfile.findOne({ user: refreshedProject.company }) || 
-                           await CompanyProfile.findOne({ company: refreshedProject.companyId });
+    const companyProfile = await CompanyProfile.findOne({ user: updated.company }) || 
+                           await CompanyProfile.findOne({ company: updated.companyId });
 
     if (studentProfile && companyProfile) {
       try {
         // Check if payment already exists
-        let payment = await Payment.findById(refreshedProject.payment);
+        let payment = await Payment.findById(updated.payment);
         
         if (!payment) {
           // Auto-create Payment record after work approval
-          const paymentAmount = refreshedProject.paymentAmount || refreshedProject.budgetMax || refreshedProject.budgetMin || 0;
+          const paymentAmount = updated.paymentAmount || updated.budgetMax || updated.budgetMin || 0;
           const platformPercent = Number(process.env.PLATFORM_FEE_PERCENTAGE || 7);
           const platformFee = Math.round((paymentAmount * platformPercent) / 100);
           const netAmount = paymentAmount - platformFee;
 
           payment = await Payment.create({
-            project: refreshedProject._id,
+            project: updated._id,
             company: companyProfile._id,
             student: studentProfile._id,
             amount: paymentAmount,
@@ -241,8 +228,8 @@ exports.approveWork = async (req, res) => {
           await payment.addTransactionHistory('ready_for_release', req.user._id, 'Auto-created after work approval');
 
           // Link payment to project
-          await refreshedProject.linkPayment(payment._id, paymentAmount);
-          await refreshedProject.markPaymentReadyForRelease();
+          await updated.linkPayment(payment._id, paymentAmount);
+          await updated.markPaymentReadyForRelease();
 
           // Update student earnings - add to pending
           studentProfile.earnings = studentProfile.earnings || { totalEarned: 0, pendingPayments: 0, completedProjects: 0 };
@@ -251,7 +238,7 @@ exports.approveWork = async (req, res) => {
         } else if (payment.status === 'captured') {
           // If payment exists but not released, mark as ready
           await payment.markReadyForRelease(req.user._id, 'Marked ready after company approval');
-          await refreshedProject.markPaymentReadyForRelease();
+          await updated.markPaymentReadyForRelease();
         }
       } catch (err) {
         console.error('Payment auto-creation error:', err);
@@ -273,30 +260,10 @@ exports.approveWork = async (req, res) => {
       }
     }
 
-    // Notify company that work is approved and they can now rate the student
-    if (companyProfile && companyProfile.user) {
-      const companyUser = await User.findById(companyProfile.user);
-      if (companyUser) {
-        await sendNotification(companyUser._id, 'company', `Work for project ${refreshedProject.title} has been approved! The project is now completed. You can now rate the student and make payment.`, 'work-approved', 'project', refreshedProject._id);
-      }
-    }
+    // Admin notification for payment release
+    await sendAdminNotification(`✅ Payment ready for release: ${updated.title}`, 'payment-release', 'project', updated._id);
 
-    // Admin notification for payment release (if payment system is used)
-    await sendAdminNotification(`✅ Work approved and project completed: ${refreshedProject.title}`, 'work-approved', 'project', refreshedProject._id);
-
-    // Reload project one more time to get final state including any payment updates
-    const finalProject = await Project.findById(projectId);
-
-    return sendResponse(res, 200, true, 'Work approved successfully. Project status changed to completed.', { 
-      project: { 
-        _id: finalProject._id, 
-        status: finalProject.status, // Should be 'completed'
-        completedAt: finalProject.completedAt, // Return completedAt timestamp
-        paymentStatus: finalProject.paymentStatus 
-      }, 
-      submission 
-    });
-
+    return sendResponse(res, 200, true, 'Work approved successfully. Payment created and ready for release.', { project: { _id: updated._id, status: updated.status, approvedAt: updated.approvedAt }, submission });
   } catch (error) {
     console.error('❌ approveWork error:', error);
     return sendResponse(res, 500, false, 'Server error while approving work', null, error.message);

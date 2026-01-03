@@ -3,8 +3,7 @@
 
 import React, { useState } from 'react';
 import { Star, Send, AlertCircle } from 'lucide-react';
-import { toast } from 'react-toastify';
-import Navbar from '../components/Navbar';
+import Navbar from '@/components/Navbar';
 
 const RatingPage = () => {
   const [rating, setRating] = useState(0);
@@ -15,7 +14,7 @@ const RatingPage = () => {
 
   const handleSubmitRating = async () => {
     if (!rating) {
-      toast.error('Please select a rating');
+      alert('Please select a rating');
       return;
     }
 
@@ -28,7 +27,7 @@ const RatingPage = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setSubmitted(true);
-      toast.success('Rating submitted successfully!');
+      alert('Rating submitted successfully!');
       
       // Reset form after 3 seconds
       setTimeout(() => {
@@ -37,7 +36,7 @@ const RatingPage = () => {
         setSubmitted(false);
       }, 3000);
     } catch (error) {
-      toast.error('Error submitting rating');
+      alert('Error submitting rating');
       console.error(error);
     } finally {
       setSubmitting(false);

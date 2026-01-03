@@ -108,13 +108,13 @@ export const assignProject = async (projectId, studentId) => {
 // ERROR FORMATTING
 // ============================================
 
-export const formatApiError = (error) => {
+export const formatApiError = (error, fallback = 'An error occurred') => {
     if (error.response) {
         // Server responded with error
         const { status, data } = error.response;
         return {
             status,
-            message: data?.message || 'An error occurred',
+            message: String(data?.message || fallback),
             errors: data?.errors || [],
         };
     } else if (error.request) {
@@ -127,7 +127,7 @@ export const formatApiError = (error) => {
         // Error setting up request
         return {
             status: 0,
-            message: error.message || 'An unknown error occurred',
+            message: String(error?.message || fallback),
         };
     }
 };

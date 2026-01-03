@@ -1,8 +1,6 @@
 // src/pages/company/ApplicationDetails.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { getMessage } from '../../utils/toastUtils';
 import { getApplicationDetails, approveStudentForProject, rejectApplication, shortlistApplication } from '../../apis/companyApplicationApi';
 
 const ApplicationDetails = () => {
@@ -35,7 +33,7 @@ const ApplicationDetails = () => {
       setActionLoading(true);
       const response = await approveStudentForProject(applicationId);
       if (response.success) {
-        toast.success('Student approved successfully! Payment process initiated.');
+        alert('Student approved successfully! Payment process initiated.');
         setShowApproveModal(false);
         // Get projectId from the response or data
         const projectId = response.data?.project?._id || data?.project?._id;
@@ -45,12 +43,13 @@ const ApplicationDetails = () => {
           setTimeout(() => navigate(-1), 1000);
         }
       } else {
-        toast.error(response.message || 'Failed to approve application');
-        setError(response.message || 'Failed to approve application');
+        const errorMsg = String(response?.message || 'Failed to approve application');
+        alert(errorMsg);
+        setError(errorMsg);
       }
     } catch (err) {
-      const errorMsg = getMessage(err, 'Failed to approve application');
-      toast.error(errorMsg);
+      const errorMsg = String(err?.response?.data?.message || err?.message || 'Failed to approve application');
+      alert(errorMsg);
       setError(errorMsg);
       console.error('Approve error:', err);
     } finally {
@@ -63,15 +62,15 @@ const ApplicationDetails = () => {
       setActionLoading(true);
       const response = await shortlistApplication(applicationId);
       if (response.success) {
-        toast.success('Application shortlisted successfully!');
+        alert('Application shortlisted successfully!');
         // Refresh the data
         const res = await getApplicationDetails(applicationId);
         if (res.success) setData(res.data);
       } else {
-        toast.error(response.message || 'Failed to shortlist');
+        alert(String(response?.message || 'Failed to shortlist'));
       }
     } catch (err) {
-      toast.error(getMessage(err, 'Failed to shortlist'));
+        alert(String(err?.message || 'Failed to shortlist'));
     } finally {
       setActionLoading(false);
     }
@@ -92,17 +91,18 @@ const ApplicationDetails = () => {
       setActionLoading(true);
       const response = await rejectApplication(applicationId, rejectReason);
       if (response.success) {
-        toast.success('Application rejected successfully');
+        alert('Application rejected successfully');
         setShowRejectModal(false);
         setTimeout(() => navigate(-1), 1000);
       } else {
-        toast.error(response.message || 'Failed to reject');
-        setRejectError(response.message || 'Failed to reject application');
+        const errorMsg = String(response?.message || 'Failed to reject');
+        alert(errorMsg);
+        setRejectError(errorMsg);
       }
     } catch (err) {
-      const errMsg = getMessage(err, 'Failed to reject');
-      toast.error(errMsg);
-      setRejectError(errMsg);
+      const errorMsg = String(err?.message || 'Failed to reject');
+      alert(errorMsg);
+      setRejectError(errorMsg);
     } finally {
       setActionLoading(false);
     }

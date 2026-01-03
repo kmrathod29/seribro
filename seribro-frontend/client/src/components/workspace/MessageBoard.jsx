@@ -1,6 +1,5 @@
 // src/components/workspace/MessageBoard.jsx
 import React, { useEffect, useRef, useState } from 'react';
-import { toast } from 'react-toastify';
 import MessageItem from './MessageItem';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
@@ -32,7 +31,7 @@ const MessageBoard = ({
       return result;
     } catch (error) {
       console.error('Error in handleSendWrapper:', error);
-      toast.error('Failed to send message. Please try again.');
+      alert('Failed to send message. Please try again.');
       return { success: false, message: error.message };
     }
   };
@@ -52,15 +51,25 @@ const MessageBoard = ({
   }, []);
 
   useEffect(() => {
-    // Auto-scroll to bottom when messages change
-    if (listRef.current && messages.length > 0) {
-      // Use requestAnimationFrame to ensure DOM is updated before scrolling
-      requestAnimationFrame(() => {
+    // Determine if there are new messages since last render
+    const prevIds = prevIdsRef.current;
+    const currentIds = new Set(messages.map((m) => m._id));
+    const newMsgs = messages.filter((m) => !prevIds.has(m._id));
+
+    if (newMsgs.length > 0) {
+      if (atBottomRef.current) {
+        // Auto-scroll to bottom
         if (listRef.current) {
           listRef.current.scrollTop = listRef.current.scrollHeight;
         }
-      });
+      } else {
+        // Show subtle badge and toast
+        setShowNewBadge(true);
+        // New messages notification removed (using alert instead)
+      }
     }
+
+    prevIdsRef.current = currentIds;
   }, [messages]);
 
   const scrollToBottom = () => {

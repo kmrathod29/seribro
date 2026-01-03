@@ -4,7 +4,7 @@
 const sendResponse = (res, statusCode, success, message, data = null, internalError = null) => {
     const response = {
         success,
-        message,
+        message: String(message || 'Operation completed'),
         timestamp: new Date().toISOString(),
     };
 

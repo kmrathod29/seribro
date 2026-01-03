@@ -9,7 +9,6 @@ const TransactionSchema = new Schema({
 });
 
 const PaymentSchema = new Schema({
-  // Razorpay fields - sparse indices allow multiple null values
   razorpayOrderId: { type: String, unique: true, index: true, sparse: true },
   razorpayPaymentId: { type: String, unique: true, index: true, sparse: true },
   razorpaySignature: String,
@@ -112,10 +111,5 @@ PaymentSchema.statics.getPlatformRevenue = async function () {
   ]);
   return (paid[0] && paid[0].totalPlatformFee) || 0;
 };
-
-// Explicit sparse unique indices - allows multiple null values but enforces uniqueness for non-null values
-// This is the correct way to handle unique constraints on optional fields
-PaymentSchema.index({ razorpayOrderId: 1 }, { unique: true, sparse: true });
-PaymentSchema.index({ razorpayPaymentId: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Payment', PaymentSchema);

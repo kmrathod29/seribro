@@ -2,9 +2,8 @@
 // Payment Verification and Razorpay Integration Page
 
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Loader2 as Loader, DollarSign } from 'lucide-react';
+import { CheckCircle, XCircle, Loader, DollarSign } from 'lucide-react';
 import { verifyPayment } from '@/apis/paymentApi';
-import { toast } from 'react-toastify';
 import Navbar from '@/components/Navbar';
 
 const PaymentVerificationPage = () => {
@@ -20,7 +19,7 @@ const PaymentVerificationPage = () => {
   // Simulate payment verification from Razorpay response
   const handleVerifyPayment = async () => {
     if (!formData.razorpayOrderId || !formData.razorpayPaymentId || !formData.razorpaySignature) {
-      toast.error('Please fill all payment details');
+      alert('Please fill all payment details');
       return;
     }
 
@@ -31,14 +30,14 @@ const PaymentVerificationPage = () => {
       if (res.success) {
         setVerified(true);
         setPaymentDetails(res.data);
-        toast.success('Payment verified successfully!');
+        alert('Payment verified successfully!');
       } else {
         setVerified(false);
-        toast.error(res.message || 'Payment verification failed');
+        alert(String(res?.message || 'Payment verification failed'));
       }
     } catch (error) {
       setVerified(false);
-      toast.error('Error verifying payment');
+      alert('Error verifying payment');
       console.error(error);
     } finally {
       setVerifying(false);

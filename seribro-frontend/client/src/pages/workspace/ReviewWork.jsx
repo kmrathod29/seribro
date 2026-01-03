@@ -3,7 +3,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import ImageModal from '../../components/workspace/ImageModal';
 import PDFViewer from '../../components/workspace/PDFViewer';
 import {
@@ -59,8 +58,9 @@ const ReviewWork = () => {
         setLoading(true);
         const res = await getSubmissionHistory(projectId);
         if (!res.success) {
-          setError(res.message || 'Failed to load submission history');
-          toast.error(res.message || 'Failed to load submission history');
+          const errorMsg = String(res?.message || 'Failed to load submission history');
+          setError(errorMsg);
+          alert(errorMsg);
         } else {
           setSubmissionHistory(res.data?.submissions || []);
           setProjectInfo(res.data?.project);
@@ -68,7 +68,7 @@ const ReviewWork = () => {
         }
       } catch (err) {
         setError('Error loading submissions');
-        toast.error('Error loading submissions');
+        alert('Error loading submissions');
         console.error('Fetch error:', err);
       } finally {
         setLoading(false);
@@ -130,9 +130,9 @@ const ReviewWork = () => {
     try {
       const res = await approveWork(projectId, feedback || null);
       if (!res.success) {
-        toast.error(res.message || 'Approval failed');
+        alert(String(res?.message || 'Approval failed'));
       } else {
-        toast.success('Work approved successfully!');
+        alert('Work approved successfully!');
         setApproveModalOpen(false);
         await refreshSubmissions();
         // Redirect after short delay
@@ -141,7 +141,7 @@ const ReviewWork = () => {
         }, 1500);
       }
     } catch (err) {
-      toast.error(err.message || 'Error approving work');
+      alert(String(err?.message || 'Error approving work'));
       console.error('Approve error:', err);
     } finally {
       setActionLoading(false);
@@ -153,7 +153,7 @@ const ReviewWork = () => {
     if (!selectedSubmissionId || !reason.trim()) return;
 
     if (reason.trim().length < 10) {
-      toast.error('Please provide feedback of at least 10 characters');
+      alert('Please provide feedback of at least 10 characters');
       return;
     }
 
@@ -162,14 +162,14 @@ const ReviewWork = () => {
     try {
       const res = await requestRevision(projectId, reason);
       if (!res.success) {
-        toast.error(res.message || 'Failed to request revision');
+        alert(String(res?.message || 'Failed to request revision'));
       } else {
-        toast.success('Revision requested! Student will be notified.');
+        alert('Revision requested! Student will be notified.');
         setRevisionModalOpen(false);
         await refreshSubmissions();
       }
     } catch (err) {
-      toast.error(err.message || 'Error requesting revision');
+      alert(String(err?.message || 'Error requesting revision'));
       console.error('Revision error:', err);
     } finally {
       setActionLoading(false);
@@ -181,7 +181,7 @@ const ReviewWork = () => {
     if (!selectedSubmissionId || !reason.trim()) return;
 
     if (reason.trim().length < 20) {
-      toast.error('Please provide a rejection reason of at least 20 characters');
+      alert('Please provide a rejection reason of at least 20 characters');
       return;
     }
 
@@ -198,14 +198,14 @@ const ReviewWork = () => {
     try {
       const res = await rejectWork(projectId, reason);
       if (!res.success) {
-        toast.error(res.message || 'Rejection failed');
+        alert(String(res?.message || 'Rejection failed'));
       } else {
-        toast.success('Work rejected. Dispute may be initiated.');
+        alert('Work rejected. Dispute may be initiated.');
         setRejectModalOpen(false);
         await refreshSubmissions();
       }
     } catch (err) {
-      toast.error(err.message || 'Error rejecting work');
+      alert(String(err?.message || 'Error rejecting work'));
       console.error('Reject error:', err);
     } finally {
       setActionLoading(false);

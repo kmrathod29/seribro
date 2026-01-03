@@ -2,8 +2,6 @@
 // Sub-Phase 5.4.2: Reusable Drag-Drop File Upload Component
 
 import React, { useState, useRef } from 'react';
-import { toast } from 'react-toastify';
-import { getMessage } from '../../utils/toastUtils';
 import {
   FileText,
   FileImage,
@@ -110,7 +108,7 @@ const FileUploadZone = ({
     // Check total count
     const totalFiles = selectedFiles.length + existingFiles.length + fileArray.length;
     if (totalFiles > maxFiles) {
-      toast.error(
+      alert(
         `Maximum ${maxFiles} files allowed. You already have ${selectedFiles.length + existingFiles.length} file(s).`
       );
       return [];
@@ -146,7 +144,7 @@ const FileUploadZone = ({
 
     // Show errors
     if (errors.length > 0) {
-      errors.forEach((error) => toast.error(getMessage(error, 'File upload error')));
+      errors.forEach((error) => alert(error));
     }
 
     return validFiles;
@@ -178,7 +176,7 @@ const FileUploadZone = ({
 
       setPreviews((prev) => [...prev, ...newPreviews]);
       onFilesSelected && onFilesSelected(validFiles);
-      toast.success(`${validFiles.length} file(s) added successfully`);
+      alert(`${validFiles.length} file(s) added successfully`);
     }
   };
 
@@ -226,7 +224,7 @@ const FileUploadZone = ({
       }
       return prev.filter((p) => p.id !== id);
     });
-    toast.success('File removed');
+    alert('File removed');
   };
 
   // Click to browse

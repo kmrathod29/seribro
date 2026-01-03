@@ -209,9 +209,9 @@ export const submitForVerification = async () => {
     }
 };
 
-export const formatApiError = (error) => {
+export const formatApiError = (error, fallback = 'An error occurred') => {
     return {
-        message: error.message || 'An error occurred',
-        status: error.response?.status,
+        message: String(error?.message || error?.response?.data?.message || fallback),
+        status: error?.response?.status,
     };
 };

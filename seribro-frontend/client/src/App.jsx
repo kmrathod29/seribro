@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import Login from './pages/Auth/Login';
 import Signup from './pages/Auth/Signup';
@@ -53,19 +52,14 @@ import AdminPaymentPage from './pages/AdminPaymentPage';
 import PaymentVerificationPage from './pages/PaymentVerificationPage';
 import RatingPage from './pages/RatingPage';
 import PaymentWorkflowPage from './pages/PaymentWorkflowPage';
-// Use SafeToastContainer wrapper to handle React 19 compatibility issues
 
-// import 'react-toastify/dist/ReactToastify.css';
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
-import RoleRoute, { AdminRoute, StudentRoute, CompanyRoute } from './components/Shared/RoleRoutes';
+import { AdminRoute, StudentRoute, CompanyRoute, default as RoleRoute } from './components/Shared/RoleRoutes';
 
 function App() {
   return (
-    <ErrorBoundary>
-      <Router>
-        <Routes>
+    <Router>
+      <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -161,18 +155,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
 
       </Routes>
-      <ToastContainer 
-        position="top-right" 
-        autoClose={3500} 
-        hideProgressBar={false} 
-        newestOnTop={false} 
-        closeOnClick 
-        pauseOnFocusLoss 
-        draggable 
-        pauseOnHover 
-      />
-      </Router>
-    </ErrorBoundary>
+    </Router>
   );
 }
 

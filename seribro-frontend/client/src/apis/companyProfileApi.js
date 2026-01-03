@@ -150,7 +150,7 @@ export const submitCompanyForVerification = async () => {
 
 // ======================== ERROR FORMATTER ========================
 
-export const formatApiError = (error) => {
+export const formatApiError = (error, fallback = 'An unexpected error occurred') => {
     if (error.statusCode === 404) {
         return {
             type: 'not_found',
@@ -160,7 +160,7 @@ export const formatApiError = (error) => {
     if (error.statusCode === 400) {
         return {
             type: 'validation',
-            message: error.message || 'Invalid data provided.',
+            message: String(error?.message || 'Invalid data provided.'),
         };
     }
     if (error.statusCode === 401) {
@@ -171,6 +171,6 @@ export const formatApiError = (error) => {
     }
     return {
         type: 'error',
-        message: error.message || 'An unexpected error occurred.',
+        message: String(error?.message || error?.response?.data?.message || fallback),
     };
 };

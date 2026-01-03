@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminAPI from '../../apis/adminApi';
-import { toast } from 'react-toastify';
 import AdminLayout from '../../components/AdminLayout';
 import { ArrowLeft, CheckCircle, XCircle, FileText, Building2, Globe, User, Mail, MapPin } from 'lucide-react';
 
@@ -18,7 +17,7 @@ export default function CompanyReview() {
       const res = await AdminAPI.get(`/company/${id}`);
       setData(res.data.data);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Details load nahi hue');
+      alert(String(err?.response?.data?.message || 'Details load nahi hue'));
     } finally { setLoading(false); }
   };
 
@@ -29,23 +28,23 @@ export default function CompanyReview() {
     try {
       setActionLoading(true);
       await AdminAPI.post(`/company/${id}/approve`);
-      toast.success('Company approved ✔️');
+      alert('Company approved ✔️');
       navigate('/admin/companies/pending');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Approve fail ho gaya');
+      alert(err.response?.data?.message || 'Approve fail ho gaya');
     } finally { setActionLoading(false); }
   };
 
   const reject = async () => {
     const reason = window.prompt('Reject reason likho (required):');
-    if (!reason) { toast.error('Reason required hai'); return; }
+    if (!reason) { alert('Reason required hai'); return; }
     try {
       setActionLoading(true);
       await AdminAPI.post(`/company/${id}/reject`, { reason });
-      toast.success('Company rejected ❌');
+      alert('Company rejected ❌');
       navigate('/admin/companies/pending');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Reject fail ho gaya');
+      alert(err.response?.data?.message || 'Reject fail ho gaya');
     } finally { setActionLoading(false); }
   };
 
