@@ -232,6 +232,10 @@ const ProjectSchema = new mongoose.Schema(
             default: null,
         },
         paymentAmount: { type: Number },
+        // Final price breakdown for project - SINGLE SOURCE OF TRUTH for payments
+        basePrice: { type: Number, default: null },
+        platformFee: { type: Number, default: 0 },
+        finalPrice: { type: Number, default: null },
         paymentCapturedAt: Date,
         paymentReleasedAt: Date,
 
@@ -301,6 +305,13 @@ const ProjectSchema = new mongoose.Schema(
         currentSelectionRound: {
             type: Number,
             default: 0,
+        },
+
+        // Selected application (store the application that was accepted)
+        selectedApplicationId: {
+            type: mongoose.Schema.ObjectId,
+            ref: 'Application',
+            default: null,
         },
 
         // Selection history
@@ -424,6 +435,9 @@ ProjectSchema.methods.linkPayment = async function (paymentId, amount) {
     await this.save();
     return this;
 };
+
+// NOTE: Price-locking helper removed. Final price (basePrice/platformFee/finalPrice) is computed
+// and stored directly when a company selects (accepts) a student's application.
 
 ProjectSchema.methods.markPaymentCaptured = async function () {
     this.paymentStatus = 'captured';

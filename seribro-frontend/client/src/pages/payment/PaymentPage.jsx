@@ -28,9 +28,17 @@ const PaymentPage = () => {
   const [orderLoading, setOrderLoading] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [info, setInfo] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [razorpayKey, setRazorpayKey] = useState(null);
   const [isTestMode, setIsTestMode] = useState(false);
+
+  // ===== PRICE DISPLAY (SOURCE OF TRUTH: server-provided order values) =====
+  // Do NOT recalculate fees on the client. Use values returned from backend order API (baseAmount, platformFee, totalAmount).
+  const baseAmount = orderData?.baseAmount ?? 0; // rupees
+  const platformFee = orderData?.platformFee ?? 0; // rupees
+  const totalAmount = orderData?.totalAmount ?? 0; // rupees
+
 
   // Load project and order data
   useEffect(() => {
@@ -78,7 +86,17 @@ const PaymentPage = () => {
       setProject(projectRes.data.project);
       setCompanyProfile(projectRes.data.company);
 
-      // Create order
+      // Determine if a student/application has been selected for payment
+      const hasSelectedApp = !!(projectRes.data.project && projectRes.data.project.selectedApplication && projectRes.data.project.selectedApplication.proposedPrice > 0);
+
+      if (!hasSelectedApp) {
+        // Don't create an order automatically; disable Pay and show instruction
+        setInfo('Student not selected yet');
+        setLoading(false);
+        return;
+      }
+
+      // Create order using server API
       await createPaymentOrder(projectRes.data.project);
       setLoading(false);
     } catch (err) {
@@ -92,7 +110,7 @@ const PaymentPage = () => {
   const createPaymentOrder = async (proj) => {
     try {
       setOrderLoading(true);
-      
+
       if (!proj || !proj._id) {
         setError('Project data is invalid');
         setOrderLoading(false);
@@ -116,18 +134,20 @@ const PaymentPage = () => {
         setOrderLoading(false);
         return;
       }
-      
+
+      // Accept server response as authoritative. We expect these fields:
+      // { orderId, amount (paise), totalAmount (rupees), baseAmount (rupees), platformFee (rupees), currency, keyId }
       setOrderData(orderInfo);
 
       // Check if Razorpay key is in test mode
-      if (orderInfo.keyId) {
-        setRazorpayKey(orderInfo.keyId);
-        setIsTestMode(orderInfo.keyId.startsWith('rzp_test'));
-      } else {
-        const envKey = import.meta.env.VITE_RAZORPAY_KEY_ID || '';
-        setRazorpayKey(envKey);
-        setIsTestMode(envKey.startsWith('rzp_test'));
-      }
+      const keyToUse = orderInfo.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+      setRazorpayKey(keyToUse);
+      setIsTestMode(keyToUse.startsWith('rzp_test'));
+
+      // Use server-provided payment breakdown and amount. Do NOT recalculate fees on the client.
+      // orderInfo.amount is returned in paise and will be used directly for Razorpay checkout.
+      // Populate display variables from server response (baseAmount/platformFee/totalAmount)
+      // No client-side mismatch assertion — we rely on server values to be authoritative.
 
       setOrderLoading(false);
     } catch (err) {
@@ -153,10 +173,10 @@ const PaymentPage = () => {
       setPaymentProcessing(true);
 
       // Get the amount from orderData or calculate from project
-      const amount = orderData.amount || project.paymentAmount || project.budgetMax || project.budgetMin || 0;
-      
-      if (amount <= 0) {
-        alert('Invalid payment amount');
+      // NOTE: Do NOT use orderData.amount or project budget/payout fields here. The single source of truth for payment base is project.finalPrice.
+
+      if (!orderData || !orderData.amount) {
+        alert('Invalid payment details from server');
         setPaymentProcessing(false);
         return;
       }
@@ -164,7 +184,7 @@ const PaymentPage = () => {
       // Razorpay options
       const options = {
         key: razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: amount * 100, // Convert to paise
+        amount: orderData.amount, // amount from server (in paise)
         currency: orderData.currency || 'INR',
         name: 'Seribro',
         description: `Payment for ${project.title}`,
@@ -226,11 +246,11 @@ const PaymentPage = () => {
         setPaymentStatus('verification_failed');
         setError(
           verifyRes.message ||
-            'Payment verification failed. Payment may have been captured but not verified. Please contact support.'
+          'Payment verification failed. Payment may have been captured but not verified. Please contact support.'
         );
         alert(
           'Payment verification failed. Please contact support with your transaction ID: ' +
-            response.razorpay_payment_id
+          response.razorpay_payment_id
         );
       }
     } catch (err) {
@@ -248,7 +268,7 @@ const PaymentPage = () => {
     setPaymentStatus('failed');
     setError(
       error?.description ||
-        'Payment failed. Please try again or use a different payment method.'
+      'Payment failed. Please try again or use a different payment method.'
     );
     alert(String(error?.description || 'Payment failed'));
     setPaymentProcessing(false);
@@ -317,6 +337,17 @@ const PaymentPage = () => {
           </div>
         )}
 
+        {/* Info: show if no student selected */}
+        {info && (
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6 flex gap-3">
+            <Zap size={24} className="text-blue-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-blue-300 font-semibold">Payment info</p>
+              <p className="text-blue-200 text-sm mt-1">{info}</p>
+            </div>
+          </div>
+        )}
+
         {/* Error State */}
         {error && (
           <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-6 flex gap-3">
@@ -376,16 +407,16 @@ const PaymentPage = () => {
                   </div>
 
                   <div className="bg-slate-900/50 p-4 rounded border border-slate-700">
-                    <p className="text-gray-400 text-sm mb-1">Budget Amount</p>
+                    <p className="text-gray-400 text-sm mb-1">Final Project Price</p>
                     <p className="text-white font-medium">
-                      ₹{(project.paymentAmount || project.budgetMax || project.budgetMin || 0).toLocaleString('en-IN')}
+                      ₹{(totalAmount || 0).toLocaleString('en-IN')}
                     </p>
                   </div>
 
                   <div className="bg-slate-900/50 p-4 rounded border border-slate-700">
                     <p className="text-gray-400 text-sm mb-1">Assigned Student</p>
                     <p className="text-white font-medium">
-                      {project.studentName || 'Not assigned'}
+                      {project.selectedStudentName || project.studentName || 'Not assigned'}
                     </p>
                   </div>
 
@@ -405,12 +436,13 @@ const PaymentPage = () => {
                   payment={{
                     projectName: project?.title || 'N/A',
                     studentName: project?.studentName || 'N/A',
-                    baseAmount: orderData.amount || project?.budget || 0,
-                    platformFeePercentage: 5,
                     status: 'pending',
                     timestamp: new Date(),
                     paymentId: orderData.orderId,
                   }}
+                  baseAmount={baseAmount}
+                  platformFee={platformFee}
+                  totalAmount={totalAmount}
                 />
               </div>
             )}
@@ -439,11 +471,10 @@ const PaymentPage = () => {
             <button
               onClick={handlePayment}
               disabled={paymentProcessing || !orderData || !!error}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-                paymentProcessing || !orderData || error
-                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 hover:shadow-lg hover:shadow-amber-500/50 active:scale-95'
-              }`}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${paymentProcessing || !orderData || error
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 hover:shadow-lg hover:shadow-amber-500/50 active:scale-95'
+                }`}
             >
               {paymentProcessing ? (
                 <>
@@ -453,14 +484,7 @@ const PaymentPage = () => {
               ) : (
                 <>
                   <Zap size={20} />
-                  Pay ₹
-                  {(
-                    orderData?.amount ||
-                    project?.paymentAmount ||
-                    project?.budgetMax ||
-                    project?.budgetMin ||
-                    0
-                  ).toLocaleString('en-IN')}
+                  Pay ₹{totalAmount.toLocaleString('en-IN')}
                 </>
               )}
             </button>

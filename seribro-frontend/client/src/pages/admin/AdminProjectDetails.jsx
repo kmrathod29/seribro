@@ -203,17 +203,30 @@ const AdminProjectDetails = () => {
             </div>
           </div>
 
-          {/* Skills */}
-          <div>
-            <p className="text-gray-400 text-sm mb-2">Required Skills</p>
-            <div className="flex flex-wrap gap-2">
-              {project.requiredSkills.map((skill, idx) => (
-                <span key={idx} className="px-3 py-1 bg-yellow-500/10 text-yellow-300 rounded-full text-sm">
-                  {skill}
-                </span>
-              ))}
+          {project.finalPrice && project.finalPrice > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-white mb-2">Final Price</h3>
+              <div className="bg-gray-900/50 p-4 rounded-lg">
+                <p className="text-gray-400 text-sm mb-1">Final Price</p>
+                <p className="text-yellow-300 font-semibold">₹{(project.finalPrice || 0).toLocaleString('en-IN')}</p>
+                <p className="text-xs text-gray-400 mt-1">Base: ₹{(project.basePrice || 0).toLocaleString('en-IN')} • Fee: ₹{(project.platformFee || 0).toLocaleString('en-IN')}</p>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Required Skills */}
+          {project.requiredSkills && project.requiredSkills.length > 0 && (
+            <div className="mb-6">
+              <p className="text-gray-400 text-sm mb-2">Required Skills</p>
+              <div className="flex flex-wrap gap-2">
+                {project.requiredSkills.map((skill, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-yellow-500/10 text-yellow-300 rounded-full text-sm">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Closed Info (if applicable) */}
           {project.status === 'closed' && project.closedAt && (
@@ -221,9 +234,9 @@ const AdminProjectDetails = () => {
               <p className="text-gray-400">
                 <span className="font-semibold">Closed:</span> {new Date(project.closedAt).toLocaleString()}
               </p>
-              <p className="text-gray-400">
-                <span className="font-semibold">Reason:</span> {project.closedReason}
-              </p>
+              {project.closedReason && (
+                <p className="text-gray-400 mt-2"><span className="font-semibold">Reason:</span> {project.closedReason}</p>
+              )}
             </div>
           )}
         </div>
@@ -262,7 +275,7 @@ const AdminProjectDetails = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {applications.map((app, idx) => (
+                  {applications.map((app) => (
                     <tr key={app._id} className="border-b border-gray-700 hover:bg-gray-900/50 transition-colors">
                       <td className="px-6 py-4">
                         <p className="font-medium">

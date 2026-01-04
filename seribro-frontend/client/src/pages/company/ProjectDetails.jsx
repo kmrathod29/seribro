@@ -247,6 +247,13 @@ const ProjectDetails = () => {
                             <p className="text-gray-400 text-sm mb-1">Budget</p>
                             <p className="text-white font-semibold">{formatBudget(project.budgetMin)} - {formatBudget(project.budgetMax)}</p>
                         </div>
+                        {project.finalPrice && project.finalPrice > 0 && (
+                          <div className="bg-white/10 rounded-lg p-4">
+                            <p className="text-gray-400 text-sm mb-1">Final Price</p>
+                            <p className="text-white font-semibold">₹{(project.finalPrice || 0).toLocaleString('en-IN')}</p>
+                            <p className="text-xs text-gray-400 mt-1">Base: ₹{(project.basePrice || 0).toLocaleString('en-IN')} • Fee: ₹{(project.platformFee || 0).toLocaleString('en-IN')}</p>
+                          </div>
+                        )}
                         <div className="bg-white/10 rounded-lg p-4">
                             <p className="text-gray-400 text-sm mb-1">Duration</p>
                             <p className="text-white font-semibold">{project.projectDuration}</p>

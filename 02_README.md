@@ -90,6 +90,7 @@ If Git shows a non-fast-forward error:
 git pull origin main --rebase
 git push origin main
 
+git reset --hard origin/main
 
 🚫 Ignored & Sensitive Files
 For security and performance reasons, the following files are not included in the repository:

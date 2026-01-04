@@ -374,6 +374,9 @@ const Signup = () => {
           {/* Company Form */}
           {userType === 'company' && (
             <div className="space-y-5">
+            <label className="block text-sm font-semibold text-red-400 mb-2">
+                  Note: This account is for businesses, startups,  and individuals who want to post a project or get work done. If you’re looking to build a website, app, or any digital project, you can sign up here.
+                </label>
               <div>
                 <label className="block text-sm font-semibold text-navy mb-2">
                   Contact Person Name <span className="text-red-500">*</span>

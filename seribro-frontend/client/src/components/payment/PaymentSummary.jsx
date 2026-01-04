@@ -2,7 +2,7 @@
 // Payment breakdown summary component - Phase 5.4.8
 
 import React from 'react';
-import { DollarSign, Receipt, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { IndianRupee, Receipt, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 /**
  * PaymentSummary Component
@@ -17,20 +17,22 @@ import { DollarSign, Receipt, CheckCircle, Clock, AlertCircle } from 'lucide-rea
  * @param {Date} payment.timestamp - Payment timestamp
  * @param {string} payment.paymentId - Payment transaction ID (optional)
  */
-const PaymentSummary = ({ payment = {} }) => {
-  const {
-    projectName = 'N/A',
-    studentName = 'N/A',
-    baseAmount = 0,
-    platformFeePercentage = 5,
-    status = 'pending',
-    timestamp = new Date(),
-    paymentId = ''
-  } = payment;
+const PaymentSummary = ({ payment = {}, baseAmount: propBaseAmount, platformFee: propPlatformFee, totalAmount: propTotalAmount, platformFeePercentage: propPlatformFeePercentage }) => {
+  const paymentObj = payment || {};
+  const projectName = paymentObj.projectName || 'N/A';
+  const studentName = paymentObj.studentName || 'N/A';
 
-  // Calculate fees
-  const platformFee = baseAmount * (platformFeePercentage / 100);
-  const totalAmount = baseAmount + platformFee;
+  // Prefer direct props if provided, otherwise fall back to payment object
+  const baseAmount = Number(propBaseAmount ?? paymentObj.baseAmount ?? 0);
+  // Platform fee percentage (explicit prop or from payment object, default 5)
+  const platformFeePercentage = Number(propPlatformFeePercentage ?? paymentObj.platformFeePercentage ?? 5);
+  // Prefer explicit platformFee if provided; otherwise compute from percentage
+  const platformFee = Number(propPlatformFee ?? paymentObj.platformFee ?? Math.round((baseAmount * platformFeePercentage) / 100));
+  const totalAmount = Number(propTotalAmount ?? paymentObj.totalAmount ?? (baseAmount + platformFee));
+
+  const status = paymentObj.status || 'pending';
+  const timestamp = paymentObj.timestamp || new Date();
+  const paymentId = paymentObj.paymentId || '';
 
   // Format currency with Indian locale
   const formatCurrency = (amount) => `₹${parseInt(amount).toLocaleString('en-IN')}`;
@@ -60,7 +62,7 @@ const PaymentSummary = ({ payment = {} }) => {
         bg: 'bg-blue-500/20',
         text: 'text-blue-300',
         border: 'border-blue-500/30',
-        icon: DollarSign
+        icon: IndianRupee
       },
       released: {
         bg: 'bg-green-500/20',
@@ -104,7 +106,7 @@ const PaymentSummary = ({ payment = {} }) => {
         {/* Base Amount */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-gray-500" />
+            <IndianRupee className="w-4 h-4 text-gray-500" />
             <span className="text-sm text-gray-400">Base Amount</span>
           </div>
           <span className="text-sm font-semibold text-white">{formatCurrency(baseAmount)}</span>

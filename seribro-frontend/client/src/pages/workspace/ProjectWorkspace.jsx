@@ -538,8 +538,19 @@ const ProjectWorkspace = () => {
           </button>
         )}
 
-        {workspace?.workspace?.role === 'company' && project?.paymentStatus !== 'paid' && project?.paymentStatus !== 'released' && (project?.status === 'assigned' || project?.status === 'in-progress' || project?.status === 'submitted' || project?.status === 'completed') && (
-          <button onClick={() => navigate(`/payment/${project._id}`)} className="px-4 py-2 bg-amber-400 text-navy rounded-md font-semibold hover:bg-amber-500 transition-colors">💰 Pay Now</button>
+        {workspace?.workspace?.role === 'company' && (project?.status === 'assigned' || project?.status === 'in-progress' || project?.status === 'submitted' || project?.status === 'completed') && (
+          // Show Pay Now only when there is NO payment record on the project (company hasn't paid/initiated payment)
+          !project?.payment ? (
+            <button onClick={() => navigate(`/payment/${project._id}`)} className="px-4 py-2 bg-amber-400 text-navy rounded-md font-semibold hover:bg-amber-500 transition-colors">💰 Pay Now</button>
+          ) : (
+            // Payment exists: inform company of current state and hide pay action
+            <div className="px-4 py-2 rounded-md bg-white/5 border border-white/10 text-gray-300 text-sm">
+              {project?.paymentStatus === 'pending' && 'Payment initiated — awaiting confirmation'}
+              {project?.paymentStatus === 'captured' && 'Payment received — waiting for admin approval'}
+              {project?.paymentStatus === 'ready_for_release' && 'Waiting for admin release'}
+              {project?.paymentStatus === 'released' && 'Payment released'}
+            </div>
+          )
         )}
 
         {workspace?.workspace?.role === 'student' && (project?.status === 'in-progress' || project?.status === 'revision-requested' || project?.status === 'revision_requested') && (

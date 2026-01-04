@@ -21,15 +21,30 @@ exports.createOrder = async (req, res) => {
     const companyProfile = await CompanyProfile.findOne({ user: req.user._id });
     if (!companyProfile || companyProfile._id.toString() !== project.companyId?.toString()) return sendResponse(res, 403, false, 'You do not own this project');
 
-    const amount = project.budgetMax || project.budgetMin || 0;
-    const platformPercent = Number(process.env.PLATFORM_FEE_PERCENTAGE || 7);
-    const platformFee = Math.round((amount * platformPercent) / 100);
-    const netAmount = amount - platformFee;
+    // New behavior: derive payment amounts dynamically from the selected application's proposedPrice
+    // Ensure a student/application is selected for this project
+    if (!project.selectedApplicationId) {
+      return sendResponse(res, 400, false, 'No student/application selected for this project');
+    }
 
-    // Attempt to create Razorpay order
+    // Fetch application to get the proposed price
+    const Application = require('../models/Application');
+    const application = await Application.findById(project.selectedApplicationId);
+    if (!application) {
+      return sendResponse(res, 400, false, 'Selected application not found');
+    }
+
+    const proposedPrice = Number(application.proposedPrice || 0);
+    const platformPercent = Number(process.env.PLATFORM_FEE_PERCENTAGE || 5);
+    const platformFee = Math.round((proposedPrice * platformPercent) / 100);
+    const totalAmount = Number(proposedPrice) + platformFee;
+    const baseAmount = proposedPrice;
+    const netAmount = Math.max(0, baseAmount - platformFee);
+
+    // Attempt to create Razorpay order using the total amount
     let order;
     try {
-      order = await createRazorpayOrder(amount, project._id, studentId || project.assignedStudent);
+      order = await createRazorpayOrder(totalAmount, project._id, application.studentId || project.assignedStudent);
     } catch (err) {
       console.warn('Razorpay order creation failed:', err.message);
       // Create payment record in DB (pending) so admin can inspect
@@ -37,30 +52,31 @@ exports.createOrder = async (req, res) => {
         razorpayOrderId: null,
         project: project._id,
         company: companyProfile._id,
-        student: studentId || project.assignedStudent,
-        amount,
+        student: application.studentId || project.assignedStudent,
+        amount: baseAmount,
         platformFee,
         netAmount,
         status: 'pending',
       });
-      await project.linkPayment(payment._id, amount);
-      return sendResponse(res, 200, true, 'Payment record created, but Razorpay is not configured. Complete configuration to generate an order.', { orderId: null, amount, currency: 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, payment });
+      await project.linkPayment(payment._id, baseAmount);
+      // NOTE: When Razorpay isn't configured, return amount in paise to keep client logic consistent (amount == paise)
+      return sendResponse(res, 200, true, 'Payment record created, but Razorpay is not configured. Complete configuration to generate an order.', { orderId: null, amount: Math.round(totalAmount * 100), totalAmount, baseAmount, platformFee, currency: 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, payment });
     }
 
     const paymentDoc = await Payment.create({
       razorpayOrderId: order.id,
       project: project._id,
       company: companyProfile._id,
-      student: studentId || project.assignedStudent,
-      amount,
+      student: application.studentId || project.assignedStudent,
+      amount: baseAmount,
       platformFee,
       netAmount,
       status: 'pending'
     });
 
-    await project.linkPayment(paymentDoc._id, amount);
+    await project.linkPayment(paymentDoc._id, baseAmount);
 
-    return sendResponse(res, 200, true, 'Order created', { orderId: order.id, amount, currency: order.currency || 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, projectId: project._id, projectTitle: project.title });
+    return sendResponse(res, 200, true, 'Order created', { orderId: order.id, amount: order.amount, totalAmount, baseAmount, platformFee, currency: order.currency || 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, projectId: project._id, projectTitle: project.title });
   } catch (error) {
     console.error('createOrder error:', error);
     return sendResponse(res, 500, false, 'Failed to create order');
@@ -414,7 +430,8 @@ exports.getStudentEarnings = async (req, res) => {
     if (!student) return sendResponse(res, 404, false, 'Student profile not found');
 
     // Fetch recent payments (limit 10) with populated details
-    const recentPayments = await Payment.find({ student: student._id })
+    // Important: only include payments that have been released to the student
+    const recentPayments = await Payment.find({ student: student._id, status: 'released' })
       .populate({
         path: 'project',
         select: 'title description category budgetMax budgetMin'
@@ -423,7 +440,7 @@ exports.getStudentEarnings = async (req, res) => {
         path: 'company',
         select: 'companyName companyLogo'
       })
-      .sort({ createdAt: -1 })
+      .sort({ releasedAt: -1 })
       .limit(10)
       .lean();
 

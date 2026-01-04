@@ -13,6 +13,13 @@ const ProjectOverviewCard = ({ project }) => {
       <div className="text-sm text-gray-300">
         Budget: ₹{project?.budgetMin?.toLocaleString('en-IN')} - ₹{project?.budgetMax?.toLocaleString('en-IN')}
       </div>
+      {project?.finalPrice ? (
+        <div className="text-sm text-gray-300 mt-1">
+          <span className="text-gray-400 text-sm mr-2">Final Price:</span>
+          <span className="text-white font-semibold">₹{(project?.finalPrice || 0).toLocaleString('en-IN')}</span>
+          <div className="text-xs text-gray-400">Base: ₹{(project?.basePrice || 0).toLocaleString('en-IN')} • Fee: ₹{(project?.platformFee || 0).toLocaleString('en-IN')}</div>
+        </div>
+      ) : null}
       <div className="text-sm text-gray-300">Deadline: {project?.deadline ? new Date(project.deadline).toLocaleDateString() : 'N/A'}</div>
     </div>
   );

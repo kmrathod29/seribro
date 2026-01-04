@@ -36,17 +36,11 @@ const NotificationSchema = new mongoose.Schema({
       'application_submitted', 'application_received', 'application_shortlisted',
       'application_accepted', 'application_rejected', 'project_assigned',
       // Phase 5: Workspace messaging
-      'workspace_message'
-    ],
-    required: true
-  },
-  
-  // Hinglish: Kya notification read ho gayi hai?
-  isRead: {
-    type: Boolean,
-    default: false,
-    index: true
-  },
+      'workspace_message',
+      // Phase 5: Payments
+      'payment_required', 'payment_received', 'payment_release_pending', 'payment_released', 'payment_failed'
+    ], 
+    },
   
   // Hinglish: Related profile type - student ya company ya project
   relatedProfileType: {

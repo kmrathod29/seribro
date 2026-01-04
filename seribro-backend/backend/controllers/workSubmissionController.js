@@ -207,11 +207,18 @@ exports.approveWork = async (req, res) => {
         let payment = await Payment.findById(updated.payment);
         
         if (!payment) {
-          // Auto-create Payment record after work approval
-          const paymentAmount = updated.paymentAmount || updated.budgetMax || updated.budgetMin || 0;
-          const platformPercent = Number(process.env.PLATFORM_FEE_PERCENTAGE || 7);
-          const platformFee = Math.round((paymentAmount * platformPercent) / 100);
-          const netAmount = paymentAmount - platformFee;
+          // Auto-create Payment record AFTER work approval - derive amounts from the selected application
+          if (!updated.selectedApplicationId) {
+            throw new Error('Cannot auto-create payment: no selected application');
+          }
+
+          const Application = require('../models/Application');
+          const app = await Application.findById(updated.selectedApplicationId);
+          if (!app) throw new Error('Selected application not found');
+
+          const paymentAmount = Number(app.proposedPrice || 0);
+          const platformFee = Math.round((paymentAmount * Number(process.env.PLATFORM_FEE_PERCENTAGE || 5)) / 100);
+          const netAmount = Math.max(0, paymentAmount - platformFee);
 
           payment = await Payment.create({
             project: updated._id,

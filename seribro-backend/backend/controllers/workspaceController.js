@@ -24,6 +24,7 @@ const getProjectWithRelations = async (projectId) => {
     return Project.findById(projectId)
         .populate('assignedStudent', 'basicInfo documents resume skills user')
         .populate('selectedStudentId', 'basicInfo documents resume skills user')
+        .populate('selectedApplicationId', 'proposedPrice studentId')
         .populate('companyId', 'companyName industryType about logoUrl user');
 };
 
@@ -99,6 +100,13 @@ exports.getWorkspaceOverview = async (req, res) => {
                 ratingCompleted: project.ratingCompleted || false,
                 createdAt: project.createdAt,
                 assignedAt: project.updatedAt,
+                // Include selected application details for dynamic pricing on the client
+                selectedApplication: project.selectedApplicationId ? {
+                    _id: project.selectedApplicationId._id,
+                    proposedPrice: project.selectedApplicationId.proposedPrice || 0,
+                    studentId: project.selectedApplicationId.studentId || null,
+                } : null,
+                selectedStudentName: studentProfile ? (studentProfile.basicInfo?.fullName || studentProfile.name || '') : '',
             },
             student: studentProfile
                 ? {
