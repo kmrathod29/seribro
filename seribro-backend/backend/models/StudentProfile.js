@@ -302,9 +302,10 @@ const StudentProfileSchema = new mongoose.Schema({
             validate: {
                 validator: function(url) {
                     if (!url) return true;
-                    return /^https?:\/\/(www\.)?github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+(\/)?$/.test(url);
+                    // Only allow GitHub profile URLs (no repository path)
+                    return /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9-]+\/?$/.test(url);
                 },
-                message: 'Please provide a valid GitHub repository link'
+                message: 'Please provide a valid GitHub profile link'
             }
         },
         linkedin: {

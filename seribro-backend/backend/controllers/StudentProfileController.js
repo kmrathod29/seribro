@@ -241,9 +241,10 @@ exports.updatePortfolioLinks = async (req, res) => {
 
         // Validate URLs if provided
         const urlRegex = /^https?:\/\/.+/;
+        const githubProfileRegex = /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9-]+\/?$/;
 
-        if (github && !urlRegex.test(github)) {
-            return sendResponse(res, 400, false, 'Invalid GitHub URL format');
+        if (github && !githubProfileRegex.test(github)) {
+            return sendResponse(res, 400, false, 'Invalid GitHub profile URL. Please provide only the profile URL (e.g., https://github.com/username)');
         }
 
         if (linkedin && !urlRegex.test(linkedin)) {

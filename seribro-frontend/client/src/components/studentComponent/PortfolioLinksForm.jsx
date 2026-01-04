@@ -64,9 +64,10 @@ const PortfolioLinksForm = ({ initialData, onUpdate }) => {
     const validateURLs = () => {
         const newErrors = {};
         const urlRegex = /^https?:\/\/.+/;
+        const githubProfileRegex = /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9-]+\/?$/;
 
-        if (linksData.github && !urlRegex.test(linksData.github)) {
-            newErrors.github = 'Invalid URL format. Must start with http:// or https://';
+        if (linksData.github && !githubProfileRegex.test(linksData.github)) {
+            newErrors.github = 'Please enter a valid GitHub profile URL (not a repository link)';
         }
 
         if (linksData.linkedin && !urlRegex.test(linksData.linkedin)) {
@@ -202,7 +203,7 @@ const PortfolioLinksForm = ({ initialData, onUpdate }) => {
                         icon={Github}
                         label="GitHub Profile"
                         name="github"
-                        placeholder="https://github.com/username/"
+                        placeholder="https://github.com/username"
                         value={linksData.github}
                         error={errors.github}
                         hint="Link to your GitHub Profile"

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminAPI from '../../apis/adminApi';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, X, CheckCircle, AlertCircle, TrendingUp, Users, Building2, Clock, ChevronRight, DollarSign } from 'lucide-react';
+import { Bell, X, CheckCircle, AlertCircle, TrendingUp, Users, Building2, Clock, ChevronRight, IndianRupee } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import {
   fetchAdminNotifications,
@@ -13,9 +13,9 @@ export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [notifications, setNotifications] = useState([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [_notifications, setNotifications] = useState([]);
+  const [_notificationsLoading, setNotificationsLoading] = useState(false);
+  const [_showNotifications, _setShowNotifications] = useState(false);
   const navigate = useNavigate();
 
   // Hinglish: Dashboard data load karna
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleMarkAsRead = async (notificationId) => {
+  const _handleMarkAsRead = async (notificationId) => {
     try {
       await markNotificationAsRead(notificationId);
       // Hinglish: Notification ko list se remove karna
@@ -135,7 +135,7 @@ export default function AdminDashboard() {
   ];
 
   // Hinglish: Unread notifications count nikalna
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
 
   return (
     <AdminLayout>
@@ -148,93 +148,9 @@ export default function AdminDashboard() {
             </h1>
             <p className="text-gray-600">Here's what's happening on Seribro today</p>
           </div>
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-3 rounded-xl bg-white border-2 border-gray-200 hover:border-primary text-gray-600 hover:text-primary transition-all duration-300 shadow-md hover:shadow-lg"
-            >
-              <Bell size={24} />
-              {unreadCount > 0 && (
-                <span className="absolute -top-2 -right-2 inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-gradient-to-r from-primary to-primary-dark rounded-full shadow-lg animate-pulse">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Notifications Dropdown */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl z-50 border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b bg-gradient-to-r from-navy/5 to-primary/5 flex items-center justify-between">
-                  <h3 className="font-bold text-navy text-lg">Notifications</h3>
-                  <button
-                    onClick={() => setShowNotifications(false)}
-                    className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <div className="max-h-96 overflow-y-auto">
-                  {notificationsLoading ? (
-                    <div className="p-8 text-center">
-                      <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                  ) : notifications.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
-                      <Bell className="mx-auto mb-2 opacity-50" size={32} />
-                      <p>No notifications yet</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y">
-                      {notifications.slice(0, 10).map((notif) => (
-                        <div
-                          key={notif.id}
-                          className={`p-4 hover:bg-gray-900 cursor-pointer transition-all duration-200 border-l-4 ${
-                            !notif.isRead 
-                              ? 'border-l-primary bg-primary/5' 
-                              : 'border-l-transparent'
-                          }`}
-                          onClick={() => handleMarkAsRead(notif.id)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-grow">
-                              <p className="text-sm font-semibold text-navy">
-                                {notif.message}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-2">
-                                {new Date(notif.createdAt).toLocaleDateString()} at {new Date(notif.createdAt).toLocaleTimeString()}
-                              </p>
-                              <div className="flex gap-2 mt-3">
-                                <span className={`text-xs font-bold capitalize px-3 py-1 rounded-full ${
-                                  notif.type === 'student_submission' 
-                                    ? 'bg-blue-100 text-blue-700'
-                                    : 'bg-green-100 text-green-700'
-                                }`}>
-                                  {notif.type?.replace('_', ' ')}
-                                </span>
-                              </div>
-                            </div>
-                            {!notif.isRead && (
-                              <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0 mt-1 animate-pulse"></div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-4 border-t bg-gray-50">
-                  <button
-                    onClick={loadNotifications}
-                    className="w-full text-sm font-semibold text-primary hover:text-primary-dark py-2 transition-colors"
-                  >
-                    Refresh Notifications
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* TODO: Notification section disabled.
+              Reason: Duplicate with navbar notification bell. If page-level notifications are required in future, restore the block from VCS history and ensure only one visible bell remains.
+          */}
         </div>
 
         {/* Stats Grid */}
@@ -269,7 +185,7 @@ export default function AdminDashboard() {
             className="group bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-2xl p-8 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
           >
             <div className="flex items-center gap-4">
-              <DollarSign className="w-12 h-12 group-hover:rotate-12 transition-transform duration-300" />
+               <IndianRupee className="w-12 h-12 group-hover:rotate-12 transition-transform duration-300" />
               <div className="text-left">
                 <h3 className="font-bold text-xl mb-1">Payment Release Dashboard</h3>
                 <p className="text-emerald-100 text-sm">Manage pending payments and release funds</p>
@@ -323,7 +239,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-700">
                   {data?.recentPending?.length ? (
-                    data.recentPending.map((row, idx) => (
+                    data.recentPending.map((row) => (
                       <tr
                         key={`${row.type}-${row.id}`}
                         className="hover:bg-gray-900 transition-colors duration-200"

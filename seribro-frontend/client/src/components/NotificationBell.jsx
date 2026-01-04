@@ -130,13 +130,14 @@ const NotificationBell = () => {
       {/* Hinglish: Bell Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        // Use a brighter/yellow color so the bell is visible on dark navbar backgrounds
-        className="relative p-2 color-gray-700 hover:text-yellow-400 transition-colors"
+        // Default: muted gray for visibility on light backgrounds; on hover: brand amber highlight with subtle background
+        className="relative p-2 rounded-md text-gray-500 hover:text-amber-400 hover:bg-amber-400/10 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-300"
+        aria-label="Notifications"
         title="Notifications"
       >
         <Bell className="w-6 h-6" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full shadow-md">
             {unreadCount}
           </span>
         )}
