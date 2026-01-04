@@ -162,16 +162,16 @@ export default function AdminDashboard() {
                 key={idx}
                 className="group relative bg-gray-800/50 rounded-2xl p-6 border border-gray-700 hover:border-transparent overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1"
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgColor} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                <div className="relative">
+                <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgColor} opacity-0 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none`}></div>
+                <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg`}>
                       <Icon className="text-white" size={24} />
                     </div>
                     <TrendingUp className="text-yellow-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={20} />
                   </div>
-                  <p className="text-gray-400 text-sm font-medium mb-1">{stat.label}</p>
-                  <p className="text-3xl font-black text-white">{stat.value}</p>
+                  <p className="text-gray-400 text-sm font-medium mb-1 group-hover:text-white transition-colors duration-200">{stat.label}</p>
+                  <p className="text-3xl font-black text-white group-hover:text-amber-300 transition-colors duration-200">{stat.value}</p>
                 </div>
               </div>
             );
