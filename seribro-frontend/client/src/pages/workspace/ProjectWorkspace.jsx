@@ -287,9 +287,9 @@ const ProjectWorkspace = () => {
   }, []);
 
   // Append messages (alias)
-  const appendMessages = (incoming) => {
-    mergeMessages(incoming);
-  };
+  // const appendMessages = (incoming) => {
+  //   mergeMessages(incoming);
+  // };
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
