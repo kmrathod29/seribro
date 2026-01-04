@@ -71,6 +71,10 @@ html {
   background: linear-gradient(to bottom, #0052CC, #9c96e6);
 }
 
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 /* Gradient Animation */
 @keyframes gradient-animation {
   0% {
