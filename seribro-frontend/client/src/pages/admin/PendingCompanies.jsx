@@ -66,10 +66,10 @@ export default function PendingCompanies() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 pt-20">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-black text-navy mb-2">
+          <h1 className="text-4xl font-black text-amber-500 mb-2">
             Pending <span className="text-primary">Companies</span>
           </h1>
           <p className="text-gray-600">Review and approve company profile submissions</p>

@@ -121,3 +121,5 @@ Arman Mahetar and Krunal Rathod
 
 cd .\seribro-backend
 cd .\seribro-frontend\client
+
+py-[160px]

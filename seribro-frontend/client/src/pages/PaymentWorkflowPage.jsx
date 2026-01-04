@@ -142,7 +142,7 @@ const PaymentWorkflowPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-navy/90 to-navy/70">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-24">
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-3xl font-bold text-white mb-2">Payment Workflow</h1>

@@ -139,11 +139,11 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 pt-20">
         {/* Header Section */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-black text-navy mb-2">
+            <h1 className="text-4xl font-black text-amber-500 mb-2">
               Welcome Back, <span className="text-primary">Admin</span>
             </h1>
             <p className="text-gray-600">Here's what's happening on Seribro today</p>
