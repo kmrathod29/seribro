@@ -423,7 +423,6 @@ const ProjectWorkspace = () => {
           );
           return merged;
         });
-        alert('Message sent');
         
         // Mark as read with timeout protection
         try {
@@ -442,7 +441,7 @@ const ProjectWorkspace = () => {
         setMessages((prev) => prev.filter((m) => m._id !== tempId));
         optimisticAdded = false;
         const errorMsg = res.message || 'Failed to send message';
-        alert(errorMsg);
+        console.error('Send failed:', errorMsg);
         setError(errorMsg);
         return { success: false, message: errorMsg };
       }
@@ -458,7 +457,7 @@ const ProjectWorkspace = () => {
         ? 'Message send is taking too long. Please check your connection and try again.'
         : 'Failed to send message. Please try again.';
       
-      alert(errorMsg);
+      console.error(errorMsg);
       setError(errorMsg);
       return { success: false, message: err.message };
     } finally {

@@ -19,6 +19,7 @@ const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
   const [text, setText] = useState('');
   const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
+  const [localSending, setLocalSending] = useState(false);
   const fileRef = useRef(null);
   const textareaRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -80,6 +81,18 @@ const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
     }, 1000);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      // Send message on Enter (unless Shift is held)
+      e.preventDefault();
+      if (!text.trim() && files.length === 0) {
+        setError('Add a message or attachment');
+        return;
+      }
+      handleSend();
+    }
+  };
+
   const handleSend = async () => {
     // Clear typing timeout and emit typing_stop
     if (typingTimeoutRef.current) {
@@ -94,28 +107,36 @@ const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
       return;
     }
     setError('');
-    
+
+    // Prepare payload
+    const payload = { text: text.trim(), files };
+
+    // Optimistic UI: clear input and files immediately
+    setText('');
+    setFiles([]);
+    if (fileRef.current) fileRef.current.value = '';
+
+    setLocalSending(true);
     try {
-      const res = await onSend({ text: text.trim(), files });
-      // Expect caller to return { success: boolean, message?: string }
-      if (res?.success) {
-        setText('');
-        setFiles([]);
-        if (fileRef.current) fileRef.current.value = '';
-        return res;
-      } else {
+      const res = await onSend(payload);
+      if (!res?.success) {
+        // On failure, set inline error (no alert)
         setError(res?.message || 'Failed to send message');
         return res;
       }
+      // On success: do nothing (optimistic UI already updated)
+      return res;
     } catch (err) {
       console.error('Error sending message:', err);
       setError('Failed to send message. Please try again.');
       return { success: false, message: err.message };
+    } finally {
+      setLocalSending(false);
     }
   };
 
   const charColor = text.length >= 1900 ? 'text-red-400' : text.length >= 1800 ? 'text-orange-400' : 'text-gray-400';
-  const sendDisabled = disabled || (!text.trim() && files.length === 0);
+  const sendDisabled = disabled || localSending || (!text.trim() && files.length === 0);
 
   return (
     <div className="bg-slate-800/70 border border-white/10 rounded-xl p-4 space-y-3 shadow-lg">
@@ -123,10 +144,11 @@ const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
         ref={textareaRef}
         value={text}
         onChange={handleTextChange}
+        onKeyDown={handleKeyDown}
         placeholder="Type your message..."
         className="w-full bg-slate-900/70 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-amber-400 min-h-[60px] resize-none"
         maxLength={2000}
-        disabled={disabled}
+        disabled={disabled || localSending}
       />
       <div className="flex items-center justify-between text-xs">
         <span className={`${charColor}`}>{text.length}/2000 characters</span>
@@ -160,7 +182,7 @@ const MessageInput = ({ onSend, disabled, onTypingStart, onTypingStop }) => {
 
         <button onClick={handleSend} disabled={sendDisabled} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold disabled:opacity-60">
           <Send className="w-4 h-4" />
-          {disabled ? 'Sending...' : 'Send'}
+          {(localSending || disabled) ? 'Sending...' : 'Send'}
         </button>
       </div>
     </div>

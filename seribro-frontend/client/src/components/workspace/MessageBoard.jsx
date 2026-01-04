@@ -31,7 +31,6 @@ const MessageBoard = ({
       return result;
     } catch (error) {
       console.error('Error in handleSendWrapper:', error);
-      alert('Failed to send message. Please try again.');
       return { success: false, message: error.message };
     }
   };
