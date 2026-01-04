@@ -75,6 +75,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
 
+select {
+  color: #fff;
+}
+
+select option {
+  background: #0f182f; /* Dark navy background */
+  color: #fff;         /* White text */
+}
+
+select optgroup {
+  background: #0f182f;
+  color: #fff;
+}
+
+
 /* Gradient Animation */
 @keyframes gradient-animation {
   0% {
