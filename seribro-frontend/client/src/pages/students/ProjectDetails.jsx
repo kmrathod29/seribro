@@ -96,12 +96,14 @@ const ProjectDetails = () => {
             const response = await applyToProject(id, formData);
 
             if (response.success) {
-                // Reset form and show success
+                // Reset form and close form
                 setFormData({ coverLetter: '', proposedPrice: '', estimatedTime: '1 week' });
                 setShowApplicationForm(false);
-                
-                // Show success toast and redirect
-                alert('Application submitted successfully!');
+
+                // Update local project state so UI immediately reflects applied status
+                setProject((prev) => prev ? { ...prev, hasApplied: true, applicationStatus: response.data.application.status || 'pending' } : prev);
+
+                // Redirect to student's applications (no API call here, just navigation)
                 navigate('/student/my-applications');
             } else {
                 setFormError(response.message);
@@ -337,109 +339,111 @@ const ProjectDetails = () => {
                                                 <p className="text-sm text-gray-400">This project has been assigned to another student.</p>
                                             </div>
                                         </div>
-                                    ) : project.hasApplied ? (
-                                        <div className="flex items-center gap-3">
-                                            <CheckCircle className="w-6 h-6 text-green-400" />
-                                            <div>
-                                                <h3 className="font-semibold text-white">You've Applied</h3>
-                                                <p className="text-sm text-gray-400">Status: {project.applicationStatus}</p>
-                                            </div>
-                                        </div>
                                     ) : (
-                                        <>
-                                            {!showApplicationForm ? (
-                                                <button
-                                                    onClick={() => setShowApplicationForm(true)}
-                                                    className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-slate-900 font-bold transition-all duration-200 transform hover:scale-105"
-                                                >
-                                                    Apply Now
-                                                </button>
-                                            ) : (
-                                                <div className="space-y-4">
-                                                    <form onSubmit={handleApply} className="space-y-4">
-                                                        {/* Cover Letter */}
-                                                        <div>
-                                                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                                Cover Letter ({formData.coverLetter.length}/1000)
-                                                            </label>
-                                                            <textarea
-                                                                value={formData.coverLetter}
-                                                                onChange={(e) =>
-                                                                    setFormData({ ...formData, coverLetter: e.target.value.slice(0, 1000) })
-                                                                }
-                                                                placeholder="Tell the company why you're a good fit for this project..."
-                                                                className="w-full p-3 rounded-lg bg-slate-700/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 resize-none"
-                                                                rows="5"
-                                                                minLength="50"
-                                                            />
-                                                            <p className="text-xs text-gray-500 mt-1">Minimum 50 characters required</p>
-                                                        </div>
-
-                                                        {/* Proposed Price */}
-                                                        <div>
-                                                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                                Proposed Price (₹)
-                                                            </label>
-                                                            <input
-                                                                type="number"
-                                                                value={formData.proposedPrice}
-                                                                onChange={(e) =>
-                                                                    setFormData({ ...formData, proposedPrice: e.target.value })
-                                                                }
-                                                                placeholder="Enter your proposed price"
-                                                                className="w-full p-3 rounded-lg bg-slate-700/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50"
-                                                                min="0"
-                                                            />
-                                                        </div>
-
-                                                        {/* Estimated Time */}
-                                                        <div>
-                                                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                                Estimated Time to Complete
-                                                            </label>
-                                                            <select
-                                                                value={formData.estimatedTime}
-                                                                onChange={(e) =>
-                                                                    setFormData({ ...formData, estimatedTime: e.target.value })
-                                                                }
-                                                                className="w-full p-3 rounded-lg bg-slate-700/50 border border-white/10 text-white focus:outline-none focus:border-amber-500/50"
-                                                            >
-                                                                <option value="1 week">1 week</option>
-                                                                <option value="2 weeks">2 weeks</option>
-                                                                <option value="3-4 weeks">3-4 weeks</option>
-                                                                <option value="1-2 months">1-2 months</option>
-                                                                <option value="2-3 months">2-3 months</option>
-                                                            </select>
-                                                        </div>
-
-                                                        {/* Error */}
-                                                        {formError && (
-                                                            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
-                                                                {formError}
+                                        // Use the backend-provided `project.hasApplied` ONLY as the source of truth
+                                        (project.hasApplied) ? (
+                                            <button
+                                                onClick={() => navigate('/student/my-applications')}
+                                                className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-slate-900 font-bold transition-all duration-200 transform hover:scale-105"
+                                            >
+                                                View Your Application
+                                            </button>
+                                        ) : (
+                                            <>
+                                                {!showApplicationForm ? (
+                                                    <button
+                                                        onClick={() => setShowApplicationForm(true)}
+                                                        className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-slate-900 font-bold transition-all duration-200 transform hover:scale-105"
+                                                    >
+                                                        Apply Now
+                                                    </button>
+                                                ) : (
+                                                    <div className="space-y-4">
+                                                        <form onSubmit={handleApply} className="space-y-4">
+                                                            {/* Cover Letter */}
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                                    Cover Letter ({formData.coverLetter.length}/1000)
+                                                                </label>
+                                                                <textarea
+                                                                    value={formData.coverLetter}
+                                                                    onChange={(e) =>
+                                                                        setFormData({ ...formData, coverLetter: e.target.value.slice(0, 1000) })
+                                                                    }
+                                                                    placeholder="Tell the company why you're a good fit for this project..."
+                                                                    className="w-full p-3 rounded-lg bg-slate-700/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 resize-none"
+                                                                    rows="5"
+                                                                    minLength="50"
+                                                                />
+                                                                <p className="text-xs text-gray-500 mt-1">Minimum 50 characters required</p>
                                                             </div>
-                                                        )}
 
-                                                        {/* Buttons */}
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                type="submit"
-                                                                disabled={formLoading}
-                                                                className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 font-bold transition-all duration-200"
-                                                            >
-                                                                {formLoading ? 'Submitting...' : 'Submit Application'}
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setShowApplicationForm(false)}
-                                                                className="px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-medium transition-colors"
-                                                            >
-                                                                Cancel
-                                                            </button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            )}
-                                        </>
+                                                            {/* Proposed Price */}
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                                    Proposed Price (₹)
+                                                                </label>
+                                                                <input
+                                                                    type="number"
+                                                                    value={formData.proposedPrice}
+                                                                    onChange={(e) =>
+                                                                        setFormData({ ...formData, proposedPrice: e.target.value })
+                                                                    }
+                                                                    placeholder="Enter your proposed price"
+                                                                    className="w-full p-3 rounded-lg bg-slate-700/50 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50"
+                                                                    min="0"
+                                                                />
+                                                            </div>
+
+                                                            {/* Estimated Time */}
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                                                    Estimated Time to Complete
+                                                                </label>
+                                                                <select
+                                                                    value={formData.estimatedTime}
+                                                                    onChange={(e) =>
+                                                                        setFormData({ ...formData, estimatedTime: e.target.value })
+                                                                    }
+                                                                    className="w-full p-3 rounded-lg bg-slate-700/50 border border-white/10 text-white focus:outline-none focus:border-amber-500/50"
+                                                                >
+                                                                    <option value="1 week">1 week</option>
+                                                                    <option value="2 weeks">2 weeks</option>
+                                                                    <option value="3-4 weeks">3-4 weeks</option>
+                                                                    <option value="1-2 months">1-2 months</option>
+                                                                    <option value="2-3 months">2-3 months</option>
+                                                                </select>
+                                                            </div>
+
+                                                            {/* Error */}
+                                                            {formError && (
+                                                                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+                                                                    {formError}
+                                                                </div>
+                                                            )}
+
+                                                            {/* Buttons */}
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    type="submit"
+                                                                    disabled={formLoading}
+                                                                    className="flex-1 px-6 py-3 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 font-bold transition-all duration-200"
+                                                                >
+                                                                    {formLoading ? 'Submitting...' : 'Submit Application'}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setShowApplicationForm(false)}
+                                                                    className="px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-medium transition-colors"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )
                                     )}
                                 </div>
                             </div>

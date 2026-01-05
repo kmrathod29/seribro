@@ -198,12 +198,20 @@ exports.getProjectDetails = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Check if student has already applied
-        const hasApplied = await Application.findOne({
-            studentId: req.user.id,
-            projectId: id,
-            status: { $ne: 'withdrawn' },
-        });
+        // Fetch student profile first so we check applied state using the StudentProfile._id
+        const studentProfile = await StudentProfile.findOne({ user: req.user.id }).lean();
+
+        // Compute whether the current logged-in student has applied to this project
+        let hasApplied = false;
+        let applicationRecord = null;
+        if (studentProfile && studentProfile._id) {
+            applicationRecord = await Application.findOne({
+                studentId: studentProfile._id,
+                projectId: id,
+                status: { $ne: 'withdrawn' },
+            }).lean();
+            hasApplied = !!applicationRecord;
+        }
 
         // Project dhundo
         // Populate both company and companyId for backward compatibility
@@ -230,10 +238,7 @@ exports.getProjectDetails = async (req, res) => {
             }
         }
 
-        // Get student profile for skill comparison and identity
-        const studentProfile = await StudentProfile.findOne({ user: req.user.id }).lean();
-        
-        // Extract skills from nested structure (technical, soft, languages)
+        // Extract skills from the previously fetched `studentProfile` (if any)
         const studentSkills = studentProfile 
             ? [
                 ...(studentProfile.skills?.technical || []),
@@ -241,7 +246,7 @@ exports.getProjectDetails = async (req, res) => {
                 ...(studentProfile.skills?.languages || []),
               ].map((s) => s.toLowerCase())
             : [];
-        
+
         const projectSkills = project.requiredSkills.map((s) => s.toLowerCase());
         const matchPercentage = calculateSkillMatch(studentSkills, projectSkills);
 
@@ -285,8 +290,8 @@ exports.getProjectDetails = async (req, res) => {
                     } : null,
                     skillMatch: matchPercentage,
                     matchedSkills,
-                    hasApplied: !!hasApplied,
-                applicationStatus: hasApplied?.status || null,
+                    hasApplied: hasApplied,
+                    applicationStatus: applicationRecord?.status || null,
                 // Per-student assignment flags for frontend logic
                 isAssignedToYou,
                 isAssignedToOther,

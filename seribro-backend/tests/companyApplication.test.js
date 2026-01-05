@@ -7,6 +7,7 @@ const Project = require('../backend/models/Project');
 const Application = require('../backend/models/Application');
 const { approveStudentForProject, acceptApplication } = require('../backend/controllers/companyApplicationController');
 const { getProjectApplications, getAllCompanyApplications } = require('../backend/controllers/companyApplicationController');
+const { getProjectDetails } = require('../backend/controllers/studentProjectController');
 
 let replSet;
 
@@ -210,6 +211,43 @@ test('project/application listing filters reflect status changes after accept', 
   const statuses = resAll._body.data.applications.map(a => a.status);
   expect(statuses).toContain('accepted');
   expect(statuses).toContain('rejected');
+});
+
+// New test: getProjectDetails should return hasApplied when a student has applied
+test('getProjectDetails returns hasApplied true for student who applied', async () => {
+  const companyUser = await User.create({ email: 'comp5a@test.com', password: 'CompanyPass1!', role: 'company' });
+  const studentUser = await User.create({ email: 's9a@test.com', password: 'StudentPass1!', role: 'student' });
+
+  const companyProfile = await CompanyProfile.create({ user: companyUser._id, companyName: 'C5a' });
+  const studentModel = await (require('../backend/models/Student')).create({ user: studentUser._id, fullName: 'S9a', college: 'C1' });
+  const studentProfile = await StudentProfile.create({ student: studentModel._id, user: studentUser._id, basicInfo: { fullName: 'S9a' } });
+
+  const project = await Project.create({
+    company: companyUser._id,
+    companyId: companyProfile._id,
+    title: 'P5a',
+    description: 'desc',
+    category: 'Web Development',
+    requiredSkills: ['JS'],
+    budgetMin: 10,
+    budgetMax: 100,
+    projectDuration: '1 week',
+    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    createdBy: companyUser._id,
+  });
+
+  const application = await Application.create({ project: project._id, projectId: project._id, student: studentProfile._id, studentId: studentProfile._id, company: companyProfile._id, companyId: companyProfile._id, coverLetter: 'z'.repeat(60), proposedPrice: 50, estimatedTime: '1-2 months' });
+
+  const req = { params: { id: project._id.toString() }, user: { id: studentUser._id } };
+  const res = { status: function(code) { this._status = code; return this; }, json: function(obj) { this._body = obj; return this; } };
+
+  await getProjectDetails(req, res);
+
+  expect(res._body.success).toBe(true);
+  expect(res._body.data).toBeTruthy();
+  expect(res._body.data.project).toBeTruthy();
+  expect(res._body.data.project.hasApplied).toBe(true);
+  expect(res._body.data.project.applicationStatus).toBe('pending');
 });
 
 test('cannot accept non-pending/shortlisted application', async () => {
