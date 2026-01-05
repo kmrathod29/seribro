@@ -3,7 +3,7 @@
 
 const Application = require('../../models/Application');
 const Project = require('../../models/Project');
-const CompanyProfile = require('../../models/CompanyProfile');
+const CompanyProfile = require('../../models/companyProfile');
 
 /**
  * Hinglish: Simple HTML stripper - XSS protection ke liye
