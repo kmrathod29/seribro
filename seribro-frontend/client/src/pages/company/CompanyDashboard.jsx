@@ -293,10 +293,10 @@ const CompanyDashboard = () => {
                     {/* Phase 4.1: Post Project Button */}
                     <button
                         onClick={() => navigate('/company/post-project')}
-                        className="bg-gradient-to-br from-gold/20 to-gold/10 hover:from-gold/30 hover:to-gold/20 border border-gold/50 rounded-lg p-6 text-center transition-all duration-300 group"
+                        className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg p-6 text-center transition-all duration-300 group"
                     >
                         <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📝</div>
-                        <h4 className="text-gold font-semibold">Post Project</h4>
+                        <h4 className="text-white font-semibold">Post Project</h4>
                     </button>
                 </div>
             </main>
