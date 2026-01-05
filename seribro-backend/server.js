@@ -283,10 +283,28 @@ console.log('[Socket.io] Port:', SOCKET_PORT);
 // Initialize Socket.io with CORS configuration and optimized settings
 initializeSocketIO(httpServer, SOCKET_CORS_ORIGINS);
 
-httpServer.listen(SOCKET_PORT, () => {
-    console.log(`🚀 Server running on port ${SOCKET_PORT}`);
+// Render requires binding to 0.0.0.0
+const HOST = '0.0.0.0';
+
+httpServer.listen(SOCKET_PORT, HOST, () => {
+    console.log(`🚀 Server running on ${HOST}:${SOCKET_PORT}`);
     console.log(`📡 Socket.io ready for real-time connections`);
     console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌍 CORS Origins: ${SOCKET_CORS_ORIGINS.join(', ')}`);
     console.log(`✅ WebSocket transport: enabled`);
     console.log(`✅ Polling transport: enabled (fallback)`);
+});
+
+// Add error handling
+httpServer.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${SOCKET_PORT} is already in use`);
+        process.exit(1);
+    } else if (error.code === 'EACCES') {
+        console.error(`❌ Permission denied for port ${SOCKET_PORT}`);
+        process.exit(1);
+    } else {
+        console.error('❌ Server error:', error);
+        process.exit(1);
+    }
 });
