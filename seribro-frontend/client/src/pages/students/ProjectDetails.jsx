@@ -150,7 +150,7 @@ const ProjectDetails = () => {
 
                         {/* Project Content */}
                         {project && (
-                            <div className="space-y-6">
+                            <div className="space-y-6 mt-20">
                                 {/* Back Button */}
                                 <button
                                     onClick={() => navigate('/student/browse-projects')}
