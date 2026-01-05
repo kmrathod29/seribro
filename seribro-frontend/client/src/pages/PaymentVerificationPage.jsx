@@ -48,7 +48,7 @@ const PaymentVerificationPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-navy/90 to-navy/70">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-24">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">

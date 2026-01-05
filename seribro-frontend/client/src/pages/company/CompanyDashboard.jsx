@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Loader, CheckCircle, Clock, Edit2, TrendingUp, RefreshCw, DollarSign, ChevronRight } from 'lucide-react';
+import { AlertCircle, Loader, CheckCircle, Clock, Edit2, TrendingUp, RefreshCw, ChevronRight, IndianRupee } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { fetchCompanyDashboard, formatApiError, initializeCompanyProfile } from '../../apis/companyProfileApi';
@@ -113,7 +113,7 @@ const CompanyDashboard = () => {
         <div className="min-h-screen bg-gradient-to-br from-navy via-navy-light to-navy-dark">
             <Navbar />
 
-            <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20
+            <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24
             ">
                 {/* Header */}
                 <div className="mb-12 flex items-center justify-between">
@@ -177,7 +177,7 @@ const CompanyDashboard = () => {
                         className="group bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl p-8 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-left"
                     >
                         <div className="flex items-center gap-4">
-                            <DollarSign className="w-12 h-12 flex-shrink-0 group-hover:rotate-12 transition-transform duration-300" />
+                            <IndianRupee className="w-12 h-12 flex-shrink-0 group-hover:rotate-12 transition-transform duration-300" />
                             <div>
                                 <h3 className="font-bold text-xl mb-1">Verify Payment</h3>
                                 <p className="text-blue-100 text-sm">Verify Razorpay payments and release funds</p>
