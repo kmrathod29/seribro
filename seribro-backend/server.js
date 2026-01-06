@@ -19,24 +19,46 @@ connectDB();
 
 const app = express();
 
-// CORS Configuration
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  process.env.CLIENT_URL,
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-].filter(Boolean);
-
+// MAIN CORS - Razorpay included
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
-  },
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:5173',
+    'http://localhost:3000', 
+    'https://api.razorpay.com',
+    'https://checkout.razorpay.com'
+  ],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// RAZORPAY IMAGES CORS (Static files)
+app.use('/images', cors({
+  origin: ['https://api.razorpay.com', 'https://checkout.razorpay.com'],
+  methods: ['GET'],
+  maxAge: 86400
+}), express.static(path.join(__dirname, 'public')));
+
+app.use('/static', express.static(path.join(__dirname, 'static')));
+
+// GLOBAL HEADERS - dynamic origin for credentialed requests
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:5173',
+  'http://localhost:3000',
+  'https://api.razorpay.com',
+  'https://checkout.razorpay.com'
+];
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
 
 // Body Parser Middleware
 app.use(express.json());
