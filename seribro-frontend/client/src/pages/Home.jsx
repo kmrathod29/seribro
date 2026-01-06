@@ -16,8 +16,8 @@ const Home = () => {
   };
 
   // Alerts for wrong-role access (exact phrasing per spec)
-  const showStudentAccessDenied = () => alert("❌ Access Denied: You're a student account. Companies post projects.");
-  const showCompanyAccessDenied = () => alert("❌ Access Denied: You're a company account. Students find work.");
+  const showStudentAccessDenied = () => alert("❌ Access Denied: You're a student account.");
+  const showCompanyAccessDenied = () => alert("❌ Access Denied: You're a company account.");
 
   const handleStudentAction = () => {
     const tokenUser = getAuthFromLocalToken();
@@ -38,7 +38,7 @@ const Home = () => {
     if (!user) return openSignupModal('company');
     if (user.role === 'student') return showStudentAccessDenied();
 
-    navigate('/company/post-project');
+    navigate('/company/applications');
   };
 
   // Keep backward-compatible heroes mapped
@@ -48,7 +48,7 @@ const Home = () => {
   const scrollToFeatures = () => {
     const el = document.getElementById('features');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else navigate('/features');
+    else navigate('/about');
   };
 
   return (
