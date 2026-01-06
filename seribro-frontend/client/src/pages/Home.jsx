@@ -5,47 +5,50 @@ import Footer from '../components/Footer';
 
 import { useNavigate } from 'react-router-dom';
 import { getLoggedInUser, getAuthFromLocalToken } from '../utils/authUtils';
+// import SignupModal from '../components/Auth/SignupModal';
 
 const Home = () => {
   const navigate = useNavigate();
 
-  const handlePostProjectClick = () => {
+  const openSignupModal = (role = 'student') => {
+    // Redirect to the Signup page and preselect the role via query param
+    navigate(`/signup?role=${role}`);
+  };
+
+  // Alerts for wrong-role access (exact phrasing per spec)
+  const showStudentAccessDenied = () => alert("❌ Access Denied: You're a student account. Companies post projects.");
+  const showCompanyAccessDenied = () => alert("❌ Access Denied: You're a company account. Students find work.");
+
+  const handleStudentAction = () => {
     const tokenUser = getAuthFromLocalToken();
     const cookieUser = getLoggedInUser();
     const user = tokenUser || cookieUser;
 
-    if (!user) {
-      // No user -> go to login with preselected company role
-      navigate('/login?role=company');
-      return;
-    }
+    if (!user) return openSignupModal('student');
+    if (user.role === 'company') return showCompanyAccessDenied();
 
-    if (user?.role !== 'company') {
-      // Exact message required by spec
-      alert("Access Denied: You're a student account.");
-      return;
-    }
+    navigate('/student/browse-projects');
+  };
+
+  const handleCompanyAction = () => {
+    const tokenUser = getAuthFromLocalToken();
+    const cookieUser = getLoggedInUser();
+    const user = tokenUser || cookieUser;
+
+    if (!user) return openSignupModal('company');
+    if (user.role === 'student') return showStudentAccessDenied();
 
     navigate('/company/post-project');
   };
 
-  const handleFindWorkClick = () => {
-    const tokenUser = getAuthFromLocalToken();
-    const cookieUser = getLoggedInUser();
-    const user = tokenUser || cookieUser;
+  // Keep backward-compatible heroes mapped
+  const handlePostProjectClick = () => handleCompanyAction();
+  const handleFindWorkClick = () => handleStudentAction();
 
-    if (!user) {
-      // No user -> go to signup with preselected student role
-      navigate('/signup?role=student');
-      return;
-    }
-
-    if (user?.role !== 'student') {
-      alert("Access Denied: You're a company account.");
-      return;
-    }
-
-    navigate('/student/browse-projects');
+  const scrollToFeatures = () => {
+    const el = document.getElementById('features');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else navigate('/features');
   };
 
   return (
@@ -158,6 +161,15 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="col-span-1 md:col-span-3 text-center mt-2 mb-6">
+              <button
+                onClick={() => navigate('/about')}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 text-primary font-semibold hover:bg-white/20 transition min-h-[36px]"
+              >
+                Learn More
+                <ArrowRight size={16} />
+              </button>
+            </div>
             {[
               {
                 icon: Zap,
@@ -244,7 +256,12 @@ const Home = () => {
                   ))}
                 </div>
 
-                <button className="w-full bg-white text-primary py-3 rounded-xl font-bold text-base hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg flex items-center justify-center space-x-2 group/btn">
+                <button
+                  onClick={handleStudentAction}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleStudentAction(); }}
+                  aria-label="Start Earning - Students"
+                  className="w-full min-h-[44px] bg-white text-primary py-3 rounded-xl font-bold text-base hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg flex items-center justify-center space-x-2 group/btn"
+                >
                   <span>Start Earning</span>
                   <ArrowRight className="transform group-hover/btn:translate-x-1 transition-transform duration-300" size={18} />
                 </button>
@@ -280,7 +297,12 @@ const Home = () => {
                   ))}
                 </div>
 
-                <button className="w-full bg-white text-amber-700 py-3 rounded-xl font-bold text-base hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg flex items-center justify-center space-x-2 group/btn">
+                <button
+                  onClick={handleCompanyAction}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCompanyAction(); }}
+                  aria-label="Hire Talent - Companies"
+                  className="w-full min-h-[44px] bg-white text-amber-700 py-3 rounded-xl font-bold text-base hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg flex items-center justify-center space-x-2 group/btn"
+                >
                   <span>Hire Talent</span>
                   <ArrowRight className="transform group-hover/btn:translate-x-1 transition-transform duration-300" size={18} />
                 </button>
@@ -307,7 +329,12 @@ const Home = () => {
               Join <span className="font-bold text-primary">1,200+ students</span> and <span className="font-bold text-navy">350+ companies</span> already using Seribro
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button className="group relative px-8 py-3.5 rounded-xl font-semibold text-base overflow-hidden transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-primary/50">
+              <button
+                onClick={() => openSignupModal('student')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openSignupModal('student'); }}
+                aria-label="Sign Up Now"
+                className="group relative px-8 py-3.5 rounded-xl font-semibold text-base overflow-hidden transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-primary/50 min-h-[44px]"
+              >
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-navy"></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-navy to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <span className="relative z-10 flex items-center space-x-2 text-white">
@@ -315,7 +342,11 @@ const Home = () => {
                   <ArrowRight className="transform group-hover:translate-x-1 transition-transform duration-300" size={18} />
                 </span>
               </button>
-              <button className="px-8 py-3.5 rounded-xl font-semibold text-base border-2 border-gray-300 text-navy hover:border-primary hover:text-primary transition-all duration-300 transform hover:scale-105">
+              <button
+                onClick={scrollToFeatures}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') scrollToFeatures(); }}
+                className="px-8 py-3.5 rounded-xl font-semibold text-base border-2 border-gray-300 text-navy hover:border-primary hover:text-primary transition-all duration-300 transform hover:scale-105 min-h-[44px]"
+              >
                 Learn More
               </button>
             </div>
