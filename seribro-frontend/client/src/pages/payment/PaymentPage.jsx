@@ -251,12 +251,12 @@ const PaymentPage = () => {
 
       if (verifyRes.success) {
         setPaymentStatus('success');
-        alert('Payment successful! Redirecting...');
+        alert('Payment successful! View history →');
 
-        // Redirect to project page after 2 seconds, include state so workspace can react immediately
+        // Redirect company users to payments history after a short delay
         setTimeout(() => {
-          navigate(`/workspace/projects/${projectId}`, { replace: true, state: { paymentVerified: true } });
-        }, 2000);
+          navigate('/company/dashboard/payments', { replace: true });
+        }, 1500);
       } else {
         setPaymentStatus('verification_failed');
         setError(

@@ -275,13 +275,16 @@ exports.verifyPayment = async (req, res) => {
     try {
       const io = getIO();
       if (io && project) {
-        const roomId = `project_${project._id}`;
-        io.to(roomId).emit("payment:captured", {
+        const payload = {
           paymentId: payment._id,
           status: "captured",
           projectStatus: "live",
           projectId: project._id,
-        });
+        };
+        const roomId = `project_${project._id}`;
+        io.to(roomId).emit("payment:captured", payload);
+        // Also emit globally so dashboards (company/admin) can refresh in real-time
+        io.emit("payment:captured", payload);
       }
     } catch (e) {
       console.warn("Socket emit failed for payment captured:", e.message);
@@ -388,7 +391,7 @@ exports.getPendingReleases = async (req, res) => {
     }
 
     const query = {
-      status: "ready_for_release",
+      status: { $in: ["captured", "pending", "ready_for_release"] },
       ...dateFilter,
     };
 

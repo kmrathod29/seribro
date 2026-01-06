@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import paymentApi from '../../apis/paymentApi';
 import { Loader2 as Loader } from 'lucide-react';
+import { io } from 'socket.io-client';
+import { SOCKET_BASE_URL } from '../../apis/config';
 
 const CompanyPayments = () => {
   const [loading, setLoading] = useState(true);
@@ -8,8 +10,29 @@ const CompanyPayments = () => {
   const [summary, setSummary] = useState(null);
   const [payments, setPayments] = useState([]);
 
+  const socketRef = useRef(null);
+
   useEffect(() => {
     loadPayments();
+  }, []);
+
+  useEffect(() => {
+    socketRef.current = io(SOCKET_BASE_URL);
+    socketRef.current.on('connect', () => console.log('[Socket] connected', socketRef.current.id));
+    const handler = (data) => {
+      console.log('[Socket] payment captured', data);
+      loadPayments();
+    };
+    socketRef.current.on('payment:captured', handler);
+    socketRef.current.on('paymentcaptured', handler);
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off('payment:captured', handler);
+        socketRef.current.off('paymentcaptured', handler);
+        socketRef.current.disconnect();
+      }
+    };
   }, []);
 
   const loadPayments = async () => {
@@ -45,7 +68,7 @@ const CompanyPayments = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-white mb-4">Company Payments</h1>
+      <h1 className="text-2xl font-bold text-white mb-4">Payment History</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="p-4 bg-slate-800/50 rounded border border-slate-700">
@@ -70,20 +93,20 @@ const CompanyPayments = () => {
             <thead className="bg-slate-900/60 text-gray-400">
               <tr>
                 <th className="p-3">Project</th>
-                <th className="p-3">Student</th>
                 <th className="p-3">Amount</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Date</th>
+                <th className="p-3">Student</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700">
               {payments.map((p) => (
                 <tr key={p._id} className="hover:bg-slate-900/30">
                   <td className="p-3">{p.projectName}</td>
-                  <td className="p-3">{p.studentName}</td>
                   <td className="p-3">₹{(p.amount || 0).toLocaleString('en-IN')}</td>
                   <td className="p-3">{p.status}</td>
                   <td className="p-3">{new Date(p.createdAt).toLocaleString()}</td>
+                  <td className="p-3">{p.studentName}</td>
                 </tr>
               ))}
             </tbody>

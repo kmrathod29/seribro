@@ -104,5 +104,6 @@ export default {
   refundPayment, 
   getStudentEarnings,
   getPaymentDetails,
+  getCompanyPayments,
   bulkReleasePayments
 };

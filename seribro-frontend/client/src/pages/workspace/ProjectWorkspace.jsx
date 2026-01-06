@@ -168,6 +168,16 @@ const ProjectWorkspace = () => {
             };
             return { ...prev, project: updatedProject };
           });
+
+          // If current user is a company, redirect to payments history and show a quick toast
+          try {
+            if (workspace?.workspace?.role === 'company') {
+              alert('Payment successful! View history →');
+              navigate('/company/dashboard/payments', { replace: true });
+            }
+          } catch (navErr) {
+            console.warn('Redirect after payment capture failed:', navErr?.message || navErr);
+          }
         } catch (err) {
           console.warn('[Socket.io] Error handling payment:captured:', err.message);
         }
@@ -575,13 +585,20 @@ const ProjectWorkspace = () => {
           !project?.payment ? (
             <button onClick={() => navigate(`/payment/${project._id}`)} className="px-4 py-2 bg-amber-400 text-navy rounded-md font-semibold hover:bg-amber-500 transition-colors">💰 Pay Now</button>
           ) : (
-            // Payment exists: inform company of current state and hide pay action
-            <div className="px-4 py-2 rounded-md bg-white/5 border border-white/10 text-gray-300 text-sm">
-              {project?.paymentStatus === 'pending' && 'Payment initiated — awaiting confirmation'}
-              {project?.paymentStatus === 'captured' && 'Payment received — waiting for admin approval'}
-              {project?.paymentStatus === 'ready_for_release' && 'Waiting for admin release'}
-              {project?.paymentStatus === 'released' && 'Payment released'}
-            </div>
+            // Payment exists: show actions when captured, otherwise status message
+            project?.paymentStatus === 'captured' ? (
+              <div className="px-4 py-2 rounded-md bg-green-800/30 border border-green-600 text-white text-sm flex items-center gap-3">
+                <div>✅ Payment Completed!</div>
+                <button onClick={() => navigate('/company/dashboard/payments')} className="ml-auto px-3 py-1 bg-gold text-navy rounded-md font-semibold">View Payment History</button>
+                <button onClick={() => navigate('/company/dashboard')} className="ml-2 px-3 py-1 border border-white/10 text-gray-200 rounded-md">Back to Dashboard</button>
+              </div>
+            ) : (
+              <div className="px-4 py-2 rounded-md bg-white/5 border border-white/10 text-gray-300 text-sm">
+                {project?.paymentStatus === 'pending' && 'Payment initiated — awaiting confirmation'}
+                {project?.paymentStatus === 'ready_for_release' && 'Waiting for admin release'}
+                {project?.paymentStatus === 'released' && 'Payment released'}
+              </div>
+            )
           )
         )}
 

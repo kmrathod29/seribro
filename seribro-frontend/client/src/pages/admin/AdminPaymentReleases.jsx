@@ -1,7 +1,9 @@
 // src/pages/admin/AdminPaymentReleases.jsx
 // Admin Payment Releases - Full Implementation with Filters, Pagination, and Bulk Actions
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { io } from 'socket.io-client';
+import { SOCKET_BASE_URL } from '../../apis/config';
 import paymentApi from '../../apis/paymentApi';
 import { 
   Search, 
@@ -95,8 +97,29 @@ const AdminPaymentReleases = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
   }, [filters]);
 
+  const socketRef = useRef(null);
+
   useEffect(() => {
     loadPayments();
+  }, [loadPayments]);
+
+  useEffect(() => {
+    socketRef.current = io(SOCKET_BASE_URL);
+    const handler = (data) => {
+      console.log('[Admin Socket] payment:captured', data);
+      // refresh list when a new payment is captured
+      loadPayments();
+    };
+    socketRef.current.on('payment:captured', handler);
+    socketRef.current.on('paymentcaptured', handler);
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off('payment:captured', handler);
+        socketRef.current.off('paymentcaptured', handler);
+        socketRef.current.disconnect();
+      }
+    };
   }, [loadPayments]);
 
   /**
