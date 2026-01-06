@@ -8,7 +8,7 @@ const API = axios.create({
   // Use centralized API URL. Change backend target via env vars (VITE_* or REACT_APP_*).
   baseURL: `${API_URL}/auth`,
   withCredentials: true,
-  timeout: 30000,
+  timeout: 60000,
 });
 
 // Request interceptor to add JWT token
