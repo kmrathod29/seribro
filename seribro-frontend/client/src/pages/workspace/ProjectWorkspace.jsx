@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import { SOCKET_BASE_URL } from '../../apis/config';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import WorkspaceHeader from '../../components/workspace/WorkspaceHeader';
@@ -18,7 +19,7 @@ import {
 } from '../../apis/workspaceApi';
 import { Loader2 as Loader, AlertCircle } from 'lucide-react';
 
-const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:7000';
+const SOCKET_URL = SOCKET_BASE_URL;
 
 const ProjectWorkspace = () => {
   const { projectId } = useParams();

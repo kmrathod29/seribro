@@ -2,8 +2,9 @@
 // Admin Project Monitoring API calls - Phase 2.1
 
 import API from './api';
+import { API_URL } from './config';
 
-const API_BASE_URL = 'http://localhost:7000/api/admin/projects';
+const API_BASE_URL = `${API_URL}/admin/projects`;
 
 // ============================================
 // PROJECT STATS

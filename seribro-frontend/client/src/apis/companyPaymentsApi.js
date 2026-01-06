@@ -3,8 +3,10 @@
 
 import axios from 'axios';
 
+import { API_URL } from './config';
+
 const COMPANY_API = axios.create({
-    baseURL: 'http://localhost:7000/api/company',
+    baseURL: `${API_URL}/company`,
     withCredentials: true,
     timeout: 30000,
 });

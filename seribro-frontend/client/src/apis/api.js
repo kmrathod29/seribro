@@ -1,12 +1,12 @@
 // src/apis/api.js - Base API Configuration for Authentication
 
 import axios from 'axios';
+import { API_URL } from './config';
 
 // Base URL configuration
 const API = axios.create({
-  // NOTE: server default port is 5000 (see server.js). Use 5000 locally unless overridden by env.
-  // If your backend runs on a different port, update this value or set FRONTEND_API_URL in env.
-  baseURL: 'http://localhost:7000/api/auth',
+  // Use centralized API URL. Change backend target via env vars (VITE_* or REACT_APP_*).
+  baseURL: `${API_URL}/auth`,
   withCredentials: true,
   timeout: 30000,
 });

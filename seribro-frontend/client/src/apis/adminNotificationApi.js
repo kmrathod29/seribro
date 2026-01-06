@@ -3,10 +3,11 @@
 // Hinglish: Admin notification endpoints ke liye API calls
 
 import axios from 'axios';
+import { API_URL } from './config';
 
 // Hinglish: Base URL for admin endpoints
 const ADMIN_API = axios.create({
-  baseURL: 'http://localhost:7000/api/admin',
+  baseURL: `${API_URL}/admin`,
   withCredentials: true,
   timeout: 10000, // Reduced timeout from 30s to 10s for faster failure
 });

@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import paymentApi from '../../apis/paymentApi';
 import workspaceApi from '../../apis/workspaceApi';
+import { RAZORPAY_KEY_ID } from '../../apis/config';
 import PaymentSummary from '../../components/payment/PaymentSummary';
 import {
   AlertCircle,
@@ -140,7 +141,7 @@ const PaymentPage = () => {
       setOrderData(orderInfo);
 
       // Check if Razorpay key is in test mode
-      const keyToUse = orderInfo.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+      const keyToUse = orderInfo.keyId || RAZORPAY_KEY_ID || '';
       setRazorpayKey(keyToUse);
       setIsTestMode(keyToUse.startsWith('rzp_test'));
 
@@ -183,7 +184,7 @@ const PaymentPage = () => {
 
       // Razorpay options
       const options = {
-        key: razorpayKey || import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: razorpayKey || RAZORPAY_KEY_ID,
         amount: orderData.amount, // amount from server (in paise)
         currency: orderData.currency || 'INR',
         name: 'Seribro',

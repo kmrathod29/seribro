@@ -2,9 +2,10 @@
 // Student Earnings API Integration
 
 import axios from 'axios';
+import { API_URL } from './config';
 
 const STUDENT_API = axios.create({
-    baseURL: 'http://localhost:7000/api/student',
+    baseURL: `${API_URL}/student`,
     withCredentials: true,
     timeout: 30000,
 });

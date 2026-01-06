@@ -1,9 +1,11 @@
 // src/apis/adminApi.js
 // Hinglish: Admin endpoints ke liye axios instance
 import axios from 'axios';
+import { API_URL } from './config';
 
 const AdminAPI = axios.create({
-  baseURL: 'http://localhost:7000/api/admin', // NOTE: Keep in sync with backend port
+  // Centralized API URL (change via env vars only)
+  baseURL: `${API_URL}/admin`,
   withCredentials: true,
   timeout: 30000,
 });

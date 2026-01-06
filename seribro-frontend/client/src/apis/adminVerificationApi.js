@@ -1,8 +1,9 @@
 // src/apis/adminVerificationApi.js
 // Admin Verification Panel API endpoints - Phase 3
 import axios from 'axios';
+import { API_URL } from './config';
 
-const API_BASE_URL = 'http://localhost:7000/api/admin';
+const API_BASE_URL = `${API_URL}/admin`;
 
 // Create axios instance with credentials
 const api = axios.create({

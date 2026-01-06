@@ -1,5 +1,7 @@
 import axios from './api';
-const BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:7000') + '/api/ratings';
+import { API_URL } from './config';
+
+const BASE = `${API_URL}/ratings`;
 
 export const rateStudent = async (projectId, body) => {
   try {

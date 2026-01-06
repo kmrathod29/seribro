@@ -3,7 +3,9 @@
 
 import axiosInstance from './api';
 
-const API_BASE_URL = 'http://localhost:7000/api/company/projects';
+import { API_URL } from './config';
+
+const API_BASE_URL = `${API_URL}/company/projects`;
 
 // ============================================
 // PROJECT CREATION

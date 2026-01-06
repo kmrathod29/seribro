@@ -5,8 +5,10 @@
 import axios from 'axios';
 
 // Hinglish: Base URL for student endpoints
+import { API_URL } from './config';
+
 const STUDENT_API = axios.create({
-  baseURL: 'http://localhost:7000/api/student',
+  baseURL: `${API_URL}/student`,
   withCredentials: true,
   timeout: 30000,
 });

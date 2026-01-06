@@ -295,11 +295,14 @@ Add Socket.io integration for live payment updates:
 ```jsx
 import { useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { SOCKET_BASE_URL } from '../../apis/config';
 import StudentEarnings from '@/components/studentComponent/StudentEarnings';
 
 export default function RealtimeEarningsDashboard() {
   useEffect(() => {
-    const socket = io('http://localhost:7000', {
+    const socket = io(SOCKET_BASE_URL, {
+      transports: ['websocket'],
+      withCredentials: true,
       auth: {
         token: localStorage.getItem('token')
       }

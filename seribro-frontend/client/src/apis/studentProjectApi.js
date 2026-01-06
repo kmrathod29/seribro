@@ -4,8 +4,10 @@
 import axiosInstance from './api';
 
 // Base URL for student projects
-const BASE_URL = 'http://localhost:7000/api/student/projects';
-const APPLICATIONS_URL = 'http://localhost:7000/api/student/projects/applications';
+import { API_URL } from './config';
+
+const BASE_URL = `${API_URL}/student/projects`;
+const APPLICATIONS_URL = `${API_URL}/student/projects/applications`;
 
 /**
  * Hinglish: Error ko user-friendly format mein convert karo

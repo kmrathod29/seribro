@@ -2,8 +2,9 @@
 // Company Application Management API calls - Phase 4.3
 
 import axiosInstance from './api';
+import { API_URL } from './config';
 
-const API_BASE_URL = 'http://localhost:7000/api/company/applications';
+const API_BASE_URL = `${API_URL}/company/applications`;
 
 // ============================================
 // PROJECT APPLICATIONS
