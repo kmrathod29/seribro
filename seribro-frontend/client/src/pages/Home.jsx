@@ -22,7 +22,7 @@ const Home = () => {
 
     if (user?.role !== 'company') {
       // Exact message required by spec
-      alert("Access Denied: You're a student account. Companies post projects.");
+      alert("Access Denied: You're a student account.");
       return;
     }
 
@@ -41,7 +41,7 @@ const Home = () => {
     }
 
     if (user?.role !== 'student') {
-      alert("❌ Access Denied: You're a company account. Students find work.");
+      alert("Access Denied: You're a company account.");
       return;
     }
 
