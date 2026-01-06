@@ -3,7 +3,51 @@ import { Zap, Shield, CreditCard, Users, Briefcase, Check, ArrowRight, Star, Tre
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
+import { useNavigate } from 'react-router-dom';
+import { getLoggedInUser, getAuthFromLocalToken } from '../utils/authUtils';
+
 const Home = () => {
+  const navigate = useNavigate();
+
+  const handlePostProjectClick = () => {
+    const tokenUser = getAuthFromLocalToken();
+    const cookieUser = getLoggedInUser();
+    const user = tokenUser || cookieUser;
+
+    if (!user) {
+      // No user -> go to login with preselected company role
+      navigate('/login?role=company');
+      return;
+    }
+
+    if (user?.role !== 'company') {
+      // Exact message required by spec
+      alert("Access Denied: You're a student account. Companies post projects.");
+      return;
+    }
+
+    navigate('/company/post-project');
+  };
+
+  const handleFindWorkClick = () => {
+    const tokenUser = getAuthFromLocalToken();
+    const cookieUser = getLoggedInUser();
+    const user = tokenUser || cookieUser;
+
+    if (!user) {
+      // No user -> go to signup with preselected student role
+      navigate('/signup?role=student');
+      return;
+    }
+
+    if (user?.role !== 'student') {
+      alert("❌ Access Denied: You're a company account. Students find work.");
+      return;
+    }
+
+    navigate('/student/browse-projects');
+  };
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -42,14 +86,24 @@ const Home = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 animate-fade-in-up animation-delay-400">
-            <button className="group relative px-8 py-3.5 rounded-xl font-semibold text-base overflow-hidden transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-gold/50">
+            <button
+              onClick={handlePostProjectClick}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handlePostProjectClick(); }}
+              aria-label="Post a Project (Companies only)"
+              className="group relative px-8 py-3.5 rounded-xl font-semibold text-base overflow-hidden transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-gold/50"
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-100"></div>
               <span className="relative z-10 flex items-center space-x-2 text-navy">
                 <span>Post a Project</span>
                 <ArrowRight className="transform group-hover:translate-x-1 transition-transform duration-300" size={18} />
               </span>
             </button>
-            <button className="group px-8 py-3.5 rounded-xl font-semibold text-base border-2 border-white/30 text-white backdrop-blur-sm hover:bg-white/10 hover:border-gold transition-all duration-300 flex items-center space-x-2 transform hover:scale-105">
+            <button
+              onClick={handleFindWorkClick}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleFindWorkClick(); }}
+              aria-label="Find Work (Students only)"
+              className="group px-8 py-3.5 rounded-xl font-semibold text-base border-2 border-white/30 text-white backdrop-blur-sm hover:bg-white/10 hover:border-gold transition-all duration-300 flex items-center space-x-2 transform hover:scale-105"
+            >
               <Users size={18} />
               <span>Find Work</span>
             </button>

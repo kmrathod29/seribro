@@ -11,6 +11,18 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = window.location; // simple access (router location also available via useLocation if preferred)
+
+  // If a role is passed as query param (e.g. /login?role=company), preselect the userType
+  React.useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const role = params.get('role');
+      if (role === 'student' || role === 'company') setUserType(role);
+    } catch {
+      // ignore
+    }
+  }, [location.search]);
   const [formData, setFormData] = useState({
     email: '',
     password: '',

@@ -27,6 +27,17 @@ const Signup = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Preselect role if provided in query string (e.g. /signup?role=student)
+  React.useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const role = params.get('role');
+      if (role === 'student' || role === 'company') setUserType(role);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const [otpData, setOtpData] = useState({
     otp: '',
     showOtpField: false,

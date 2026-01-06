@@ -7,6 +7,7 @@ import GoogleSuccess from './pages/Auth/GoogleSuccess';
 import NotFound from './pages/NotFound/NotFound';
 import About from './pages/About';
 import Help from './pages/Help';
+import { Toaster } from 'react-hot-toast';
 
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -59,6 +60,7 @@ import { AdminRoute, StudentRoute, CompanyRoute, default as RoleRoute } from './
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
