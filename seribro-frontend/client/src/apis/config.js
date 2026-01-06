@@ -10,16 +10,44 @@
 // `SOCKET_BASE_URL` for socket connections.
 // To change the target backend, update your environment variables (VITE_* or REACT_APP_*), not the source code.
 
-const _rawApi = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || import.meta.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_API_URL;
-const API_BASE_URL = _rawApi ? _rawApi.replace(/\/$/, '') : 'http://localhost:7000';
-// API_URL is the base + /api (avoid double slashes)
-const API_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`;
+// src/config.js (ya jahan bhi hai)
 
-const SOCKET_BASE_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_BASE_URL || import.meta.env.REACT_APP_SOCKET_URL || import.meta.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_API_URL || 'http://localhost:7000';
+const _rawApi =
+  import.meta.env.REACT_APP_BACKEND_URL ||
+  import.meta.env.REACT_APP_API_URL ||
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL;
+
+const API_BASE_URL = _rawApi
+  ? _rawApi.replace(/\/$/, '')
+  : (import.meta.env.DEV ? 'http://localhost:7000' : 'https://seribro-backend.onrender.com');
+
+// API_URL is the base + /api (avoid double slashes)
+const API_URL = API_BASE_URL.endsWith('/api')
+  ? API_BASE_URL
+  : `${API_BASE_URL}/api`;
+
+const SOCKET_BASE_URL =
+  import.meta.env.REACT_APP_SOCKET_URL ||
+  import.meta.env.REACT_APP_BACKEND_URL ||
+  import.meta.env.REACT_APP_API_URL ||
+  import.meta.env.VITE_SOCKET_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? 'http://localhost:7000' : 'https://seribro-backend.onrender.com');
 
 // Public client-side keys
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.REACT_APP_GOOGLE_OAUTH_CLIENT_ID || import.meta.env.REACT_APP_GOOGLE_CLIENT_ID || '';
-const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || import.meta.env.REACT_APP_RAZORPAY_KEY_ID || '';
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ||
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  import.meta.env.REACT_APP_GOOGLE_OAUTH_CLIENT_ID ||
+  import.meta.env.REACT_APP_GOOGLE_CLIENT_ID ||
+  '';
+
+const RAZORPAY_KEY_ID =
+  import.meta.env.VITE_RAZORPAY_KEY_ID ||
+  import.meta.env.REACT_APP_RAZORPAY_KEY_ID ||
+  import.meta.env.RAZORPAY_KEY_ID ||
+  '';
 
 export { API_BASE_URL, API_URL, SOCKET_BASE_URL, GOOGLE_CLIENT_ID, RAZORPAY_KEY_ID };
-
