@@ -298,6 +298,15 @@ const CompanyDashboard = () => {
                         <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📝</div>
                         <h4 className="text-white font-semibold">Post Project</h4>
                     </button>
+
+                    <button
+                        onClick={() => navigate('/company/dashboard/payments')}
+                        className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg p-6 text-center transition-all duration-300 group"
+                    >
+                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">💰</div>
+                        <h4 className="text-white font-semibold">Payments</h4>
+                        <p className="text-gray-400 text-sm mt-2">View payment history and invoices</p>
+                    </button>
                 </div>
             </main>
 

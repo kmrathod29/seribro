@@ -2,7 +2,7 @@
 // Payment & Rating Routes Configuration
 
 import React from 'react';
-import StudentPaymentPage from '@/pages/StudentPaymentPage';
+import { Navigate } from 'react-router-dom';
 import AdminPaymentPage from '@/pages/AdminPaymentPage';
 import PaymentVerificationPage from '@/pages/PaymentVerificationPage';
 import RatingPage from '@/pages/RatingPage';
@@ -14,11 +14,11 @@ export const paymentRoutes = [
     path: '/student/payments',
     element: (
       <ProtectedRoute requiredRole="student">
-        <StudentPaymentPage />
+        <Navigate to="/student/earnings" replace />
       </ProtectedRoute>
     ),
     name: 'Student Payments',
-    description: 'View earnings and payment history',
+    description: 'Redirect to canonical earnings page',
     breadcrumb: 'Payments'
   },
   {

@@ -5,6 +5,7 @@ const CompanyProfile = require('../models/companyProfile');
 const StudentProfile = require('../models/StudentProfile');
 const User = require('../models/User');
 const { createRazorpayOrder, verifyPaymentSignature } = require('../utils/payment/razorpayHelper');
+const { getIO } = require('../utils/socket/socketManager');
 const sendResponse = require('../utils/students/sendResponse');
 const { sendNotification, sendAdminNotification } = require('../utils/notifications/sendNotification');
 const sendEmail = require('../utils/sendEmail');
@@ -47,6 +48,10 @@ exports.createOrder = async (req, res) => {
       order = await createRazorpayOrder(totalAmount, project._id, application.studentId || project.assignedStudent);
     } catch (err) {
       console.warn('Razorpay order creation failed:', err.message);
+      // Detect Razorpay-specific account/limit errors
+      const razorpayErrorDescription = err && err.error && (err.error.description || err.error.reason) ? (err.error.description || err.error.reason) : (err.message || 'Unknown Razorpay error');
+      const isRazorpayLimit = /limit|exceed|payout|daily|monthly|quota/i.test(String(razorpayErrorDescription));
+
       // Create payment record in DB (pending) so admin can inspect
       const payment = await Payment.create({
         razorpayOrderId: null,
@@ -59,8 +64,23 @@ exports.createOrder = async (req, res) => {
         status: 'pending',
       });
       await project.linkPayment(payment._id, baseAmount);
-      // NOTE: When Razorpay isn't configured, return amount in paise to keep client logic consistent (amount == paise)
-      return sendResponse(res, 200, true, 'Payment record created, but Razorpay is not configured. Complete configuration to generate an order.', { orderId: null, amount: Math.round(totalAmount * 100), totalAmount, baseAmount, platformFee, currency: 'INR', keyId: process.env.RAZORPAY_KEY_ID || null, payment });
+
+      // NOTE: When Razorpay isn't configured or there's an account limit, return amount in paise to keep client logic consistent (amount == paise)
+      const clientMessage = isRazorpayLimit ? 'Payment creation failed due to Razorpay account limits. Please contact support or use an alternate payment method.' : 'Payment record created, but Razorpay is not configured. Complete configuration to generate an order.';
+      return sendResponse(res, 200, true, clientMessage, {
+        orderId: null,
+        amount: Math.round(totalAmount * 100),
+        totalAmount,
+        baseAmount,
+        platformFee,
+        currency: 'INR',
+        keyId: process.env.RAZORPAY_KEY_ID || null,
+        payment,
+        razorpayError: {
+          type: isRazorpayLimit ? 'RAZORPAY_LIMIT' : 'RAZORPAY_ORDER_CREATION_FAILED',
+          message: razorpayErrorDescription
+        }
+      });
     }
 
     const paymentDoc = await Payment.create({
@@ -100,6 +120,12 @@ exports.verifyPayment = async (req, res) => {
       return sendResponse(res, 400, false, 'Invalid payment signature');
     }
 
+    // Idempotency: if already captured, return success with flags
+    if (payment.status === 'captured' || payment.status === 'released') {
+      const projectExisting = await Project.findById(payment.project);
+      return sendResponse(res, 200, true, 'Payment already captured', { payment, project: projectExisting, flags: { hidePayNow: true, projectStatus: projectExisting?.status || 'live' } });
+    }
+
     payment.razorpayPaymentId = razorpayPaymentId;
     payment.razorpaySignature = razorpaySignature;
     payment.status = 'captured';
@@ -109,7 +135,13 @@ exports.verifyPayment = async (req, res) => {
 
     // Link to project
     const project = await Project.findById(payment.project);
-    if (project) await project.markPaymentCaptured();
+    if (project) {
+      await project.markPaymentCaptured();
+      // Also set project status to live immediately as business rule
+      project.status = 'live';
+      project.liveAt = new Date();
+      await project.save();
+    }
 
     // Update student pending payments
     const studentProfile = await StudentProfile.findById(payment.student);
@@ -118,13 +150,40 @@ exports.verifyPayment = async (req, res) => {
       await sendNotification(studentProfile.user, 'student', `Payment received for project ${project ? project.title : ''}`, 'payment_received', 'project', project?._id);
     }
 
-    // Notify company
+    // Notify company via notification and email
+    try {
+      const companyProfile = await CompanyProfile.findById(payment.company);
+      if (companyProfile) {
+        await sendNotification(companyProfile.user, 'company', `Payment of ₹${payment.amount} received for project ${project ? project.title : ''}`, 'payment_received', 'project', project?._id);
+      }
+    } catch (e) {
+      console.warn('Company notification failed:', e.message);
+    }
+
     const companyUser = await User.findById(req.user._id);
     if (companyUser && companyUser.email && process.env.EMAIL_NOTIFY_ON_PAYMENT !== 'false') {
       try { await sendEmail({ email: companyUser.email, subject: 'Payment successful', message: `<p>Payment of ₹${payment.amount} received for project ${project ? project.title : ''}</p>` }); } catch (e) { console.warn('Email send failed for verifyPayment:', e.message); }
     }
 
-    return sendResponse(res, 200, true, 'Payment verified successfully', { payment, project });
+    // Emit socket event for real-time UI updates
+    try {
+      const io = getIO();
+      if (io && project) {
+        const roomId = `project_${project._id}`;
+        io.to(roomId).emit('payment:captured', { paymentId: payment._id, status: 'captured', projectStatus: 'live', projectId: project._id });
+      }
+    } catch (e) {
+      console.warn('Socket emit failed for payment captured:', e.message);
+    }
+
+    // Notify admins about the captured payment
+    try {
+      await sendAdminNotification(`Payment captured for project ${project ? project.title : ''}`, 'payment_captured', 'project', project?._id);
+    } catch (e) {
+      console.warn('Admin notification failed:', e.message);
+    }
+
+    return sendResponse(res, 200, true, 'Payment verified successfully', { payment, project, flags: { hidePayNow: true, projectStatus: 'live' } });
   } catch (error) {
     console.error('verifyPayment error:', error);
     return sendResponse(res, 500, false, 'Failed to verify payment');

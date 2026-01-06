@@ -151,6 +151,28 @@ const ProjectWorkspace = () => {
         }
       });
 
+      // Listen for payment capture events to update workspace UI in real-time
+      socketRef.current.on('payment:captured', (data) => {
+        try {
+          console.log('[Socket.io] Received payment:captured', data);
+          const { projectId: pid, paymentId, status, projectStatus } = data || {};
+          if (!pid || pid.toString() !== projectId) return;
+
+          // Update workspace state to reflect payment status change without full reload
+          setWorkspace((prev) => {
+            if (!prev) return prev;
+            const updatedProject = {
+              ...prev.project,
+              paymentStatus: status || prev.project.paymentStatus,
+              status: projectStatus || prev.project.status,
+            };
+            return { ...prev, project: updatedProject };
+          });
+        } catch (err) {
+          console.warn('[Socket.io] Error handling payment:captured:', err.message);
+        }
+      });
+
       socketRef.current.on('typing_start', (data) => {
         const { userId, senderName, senderRole } = data;
         setTypingUsers((prev) => new Map(prev).set(userId, { senderName, senderRole, timestamp: Date.now() }));
@@ -335,6 +357,15 @@ const ProjectWorkspace = () => {
     // Run once when projectId changes to avoid re-trigger loops
     loadWorkspace();
     loadMessages(1);
+
+    // If we navigated here after a successful payment, reload workspace to pick up the new state
+    if (location && location.state && location.state.paymentVerified) {
+      console.log('Detected paymentVerified state - reloading workspace to update payment status');
+      loadWorkspace();
+      // Clear the navigation state so this only happens once
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+
     // polling for new messages (30s fallback if Socket.io fails)
     pollingRef.current = setInterval(() => loadMessages(1), 30000);
     return () => {
@@ -568,7 +599,7 @@ const ProjectWorkspace = () => {
 
         {/* Payment & Earnings Navigation */}
         {workspace?.workspace?.role === 'student' && (
-          <button onClick={() => navigate(`/student/payments`)} className="px-4 py-2 bg-emerald-500 text-white rounded-md font-semibold hover:bg-emerald-600 transition-colors flex items-center gap-2">
+          <button onClick={() => navigate(`/student/earnings`)} className="px-4 py-2 bg-emerald-500 text-white rounded-md font-semibold hover:bg-emerald-600 transition-colors flex items-center gap-2">
             💰 My Earnings
           </button>
         )}

@@ -66,6 +66,15 @@ export const getStudentEarnings = async () => {
   }
 };
 
+export const getCompanyPayments = async () => {
+  try {
+    const res = await axios.get(`${BASE}/company/payments`);
+    return res.data;
+  } catch (err) {
+    return { success: false, message: err?.response?.data?.message || err.message };
+  }
+};
+
 export const getPaymentDetails = async (paymentId) => {
   try {
     const res = await axios.get(`${BASE}/${paymentId}`);

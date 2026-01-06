@@ -33,6 +33,7 @@ const PaymentPage = () => {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const [razorpayKey, setRazorpayKey] = useState(null);
   const [isTestMode, setIsTestMode] = useState(false);
+  const [razorpayBlocked, setRazorpayBlocked] = useState(false);
 
   // ===== PRICE DISPLAY (SOURCE OF TRUTH: server-provided order values) =====
   // Do NOT recalculate fees on the client. Use values returned from backend order API (baseAmount, platformFee, totalAmount).
@@ -140,6 +141,12 @@ const PaymentPage = () => {
       // { orderId, amount (paise), totalAmount (rupees), baseAmount (rupees), platformFee (rupees), currency, keyId }
       setOrderData(orderInfo);
 
+      // If backend reported a Razorpay account limit, surface a clear error and block checkout
+      if (orderInfo.razorpayError && orderInfo.razorpayError.type === 'RAZORPAY_LIMIT') {
+        setError(orderRes.message || orderInfo.razorpayError.message || 'Payment blocked by Razorpay account limits');
+        setRazorpayBlocked(true);
+      }
+
       // Check if Razorpay key is in test mode
       const keyToUse = orderInfo.keyId || RAZORPAY_KEY_ID || '';
       setRazorpayKey(keyToUse);
@@ -172,6 +179,13 @@ const PaymentPage = () => {
 
     try {
       setPaymentProcessing(true);
+
+      // Prevent checkout if Razorpay is blocked by account limits
+      if (razorpayBlocked) {
+        alert(error || 'Payment cannot be completed because your Razorpay account has limits. Contact support.');
+        setPaymentProcessing(false);
+        return;
+      }
 
       // Get the amount from orderData or calculate from project
       // NOTE: Do NOT use orderData.amount or project budget/payout fields here. The single source of truth for payment base is project.finalPrice.
@@ -239,9 +253,9 @@ const PaymentPage = () => {
         setPaymentStatus('success');
         alert('Payment successful! Redirecting...');
 
-        // Redirect to project page after 2 seconds
+        // Redirect to project page after 2 seconds, include state so workspace can react immediately
         setTimeout(() => {
-          navigate(`/workspace/projects/${projectId}`, { replace: true });
+          navigate(`/workspace/projects/${projectId}`, { replace: true, state: { paymentVerified: true } });
         }, 2000);
       } else {
         setPaymentStatus('verification_failed');
@@ -267,11 +281,18 @@ const PaymentPage = () => {
   // Handle payment failure
   const handlePaymentFailure = (error) => {
     setPaymentStatus('failed');
-    setError(
-      error?.description ||
-      'Payment failed. Please try again or use a different payment method.'
-    );
-    alert(String(error?.description || 'Payment failed'));
+    const desc = error?.description || error?.error?.description || error?.message || 'Payment failed. Please try again or use a different payment method.';
+
+    // Detect Razorpay limit errors and block future attempts
+    const isLimit = /limit|exceed|quota|payout|daily|monthly/i.test(String(desc));
+    if (isLimit) {
+      setError('Payment failed due to Razorpay account limits. Please contact support@seribro.com.');
+      setRazorpayBlocked(true);
+      alert('Payment cannot be processed: Razorpay account limits. Contact support.');
+    } else {
+      setError(desc);
+      alert(String(desc));
+    }
     setPaymentProcessing(false);
   };
 
@@ -345,6 +366,17 @@ const PaymentPage = () => {
             <div>
               <p className="text-blue-300 font-semibold">Payment info</p>
               <p className="text-blue-200 text-sm mt-1">{info}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Razorpay Account Limit Blocker */}
+        {razorpayBlocked && (
+          <div className="bg-red-600/10 border border-red-600/30 rounded-lg p-4 mb-6 flex gap-3">
+            <AlertCircle size={24} className="text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-red-300 font-semibold">Payment temporarily unavailable</p>
+              <p className="text-red-200 text-sm mt-1">{error || 'This payment cannot be processed because your Razorpay account has reached a limit. Please contact support@seribro.com for assistance or use an alternate payment method.'}</p>
             </div>
           </div>
         )}

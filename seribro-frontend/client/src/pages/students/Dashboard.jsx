@@ -293,7 +293,7 @@ const Dashboard = () => {
                             <h4 className="text-white font-semibold">Active Projects</h4>
                             <div className="text-3xl font-bold text-white mt-4">{dashboardData?.activeProjects || 0}</div>
                         </div>
-                        <div className="p-6 rounded-xl flex items-center justify-between cursor-pointer hover:bg-emerald-500/10 transition-all" style={{ background: '#334155' }} onClick={() => navigate('/student/payments')}>
+                        <div className="p-6 rounded-xl flex items-center justify-between cursor-pointer hover:bg-emerald-500/10 transition-all" style={{ background: '#334155' }} onClick={() => navigate('/student/earnings')}>
                             <div>
                                 <h4 className="text-white font-semibold">💰 Earnings</h4>
                                 <p className="text-emerald-400 mt-2 font-medium">View & Track</p>

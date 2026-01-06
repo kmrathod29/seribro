@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Auth/Login';
 import Signup from './pages/Auth/Signup';
@@ -17,6 +17,7 @@ import Dashboard from './pages/students/Dashboard';
 import StudentProfile from './pages/students/StudentProfile';
 import CompanyDashboard from './pages/company/CompanyDashboard';
 import CompanyProfile from './pages/company/CompanyProfile';
+import CompanyPayments from './pages/company/CompanyPayments';
 // Phase 4.1: Company Project Management
 import PostProject from './pages/company/PostProject';
 import MyProjects from './pages/company/MyProjects';
@@ -48,7 +49,7 @@ import SubmitWork from './pages/workspace/SubmitWork';
 import ReviewWork from './pages/workspace/ReviewWork';
 import PaymentPage from './pages/payment/PaymentPage';
 import RateProject from './pages/workspace/RateProject';
-import StudentPaymentPage from './pages/StudentPaymentPage';
+
 import AdminPaymentPage from './pages/AdminPaymentPage';
 import PaymentVerificationPage from './pages/PaymentVerificationPage';
 import RatingPage from './pages/RatingPage';
@@ -107,6 +108,7 @@ function App() {
 
   {/* Company Profile Management Routes */}
   <Route path="/company/dashboard" element={<CompanyRoute><CompanyDashboard /></CompanyRoute>} />
+  <Route path="/company/dashboard/payments" element={<CompanyRoute><CompanyPayments /></CompanyRoute>} />
   <Route path="/company/profile" element={<CompanyRoute><CompanyProfile /></CompanyRoute>} />
   <Route path="/company/about" element={<CompanyRoute><About /></CompanyRoute>} />
   <Route path="/company/help" element={<CompanyRoute><Help /></CompanyRoute>} />
@@ -141,7 +143,7 @@ function App() {
         <Route path="/workspace/projects/:projectId/rate" element={<RoleRoute allowedRoles={['student', 'company']}><RateProject /></RoleRoute>} />
 
         {/* Phase 5.4.8: New Payment & Rating Pages */}
-        <Route path="/student/payments" element={<StudentRoute><StudentPaymentPage /></StudentRoute>} />
+        <Route path="/student/payments" element={<Navigate to="/student/earnings" replace />} />
         <Route path="/admin/payments" element={<AdminRoute><AdminPaymentPage /></AdminRoute>} />
         <Route path="/payments/verify" element={<CompanyRoute><PaymentVerificationPage /></CompanyRoute>} />
         <Route path="/workspace/projects/:projectId/rating" element={<StudentRoute><RatingPage /></StudentRoute>} />
