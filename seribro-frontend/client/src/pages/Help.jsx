@@ -388,8 +388,8 @@ const Help = () => {
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Email Support</h3>
               <p className="text-slate-300 mb-4">Get help via email</p>
-              <a href="mailto:info.seribro@gmail.com" className="text-green-400 font-semibold hover:text-green-300 transition">
-                info.seribro@gmail.com
+              <a href="mailto:midnightsphere19@gmail.com" className="text-green-400 font-semibold hover:text-green-300 transition">
+                midnightsphere19@gmail.com
               </a>
             </div>
 

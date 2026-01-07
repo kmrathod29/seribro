@@ -4,6 +4,9 @@ import { ArrowRight, Mail, Phone, MapPin } from 'lucide-react';
 
 const Footer = () => {
   const footerLinks = {
+    // quickLinks: ['About Us', 'Browse Projects', 'Help Center', 'Contact'],
+    // forStudents: ['Find Work', 'My Dashboard', 'Payments'],
+    // forCompanies: ['Post a Project', 'Find Talent', 'Payment Terms'],
     quickLinks: ['About Us', 'Browse Projects', 'Help Center', 'Contact', 'Blog'],
     forStudents: ['Find Work', 'My Dashboard', 'Payments', 'Resources', 'Sign Up'],
     forCompanies: ['Post a Project', 'Find Talent', 'Payment Terms', 'Success Stories', 'Sign Up'],
@@ -51,7 +54,7 @@ const Footer = () => {
             <div className="space-y-2.5">
               <div className="flex items-center space-x-2.5 text-gray-300 hover:text-gold transition-colors duration-300 cursor-pointer">
                 <Mail size={16} className="text-primary" />
-                <span className="text-base">info.seribro@gmail.com</span>
+                <span className="text-base">midnightsphere19@gmail.com</span>
               </div>
               <div className="flex items-center space-x-2.5 text-gray-300 hover:text-gold transition-colors duration-300 cursor-pointer">
                 <Phone size={16} className="text-primary" />

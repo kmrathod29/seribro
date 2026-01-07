@@ -8,6 +8,9 @@
 // Use `API_BASE_URL` for the backend host (no trailing slash),
 // `API_URL` for the API root (including `/api`), and
 // `SOCKET_BASE_URL` for socket connections.
+// NOTE: The Google OAuth button constructs its URL using the auth axios instance
+// (API.defaults.baseURL). Ensure your production build sets VITE_API_URL / VITE_API_BASE_URL
+// or REACT_APP_API_URL / REACT_APP_BACKEND_URL correctly so OAuth points to your backend.
 // To change the target backend, update your environment variables (VITE_* or REACT_APP_*), not the source code.
 
 // src/config.js (ya jahan bhi hai)

@@ -641,7 +641,17 @@ const loginUser = asyncHandler(async (req, res) => {
 // Redirect user to Google's OAuth consent screen
 const googleAuthRedirect = asyncHandler(async (req, res) => {
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const redirectUri = `${process.env.BACKEND_URL || 'http://localhost:7000'}/auth/google/callback`;
+  const backendBase =
+    process.env.BACKEND_URL ||
+    process.env.VITE_BACKEND_URL ||
+    process.env.REACT_APP_BACKEND_URL ||
+    (process.env.NODE_ENV !== 'production' ? 'http://localhost:7000' : null);
+  if (!backendBase) {
+    console.error('Google OAuth: BACKEND_URL is not set (NODE_ENV=production). Aborting.');
+    return res.status(500).json({ message: 'Server misconfiguration: BACKEND_URL is required for OAuth in production' });
+  }
+  const redirectUri = `${backendBase.replace(/\/$/, '')}/auth/google/callback`;
+  console.log('Google OAuth redirectUri:', redirectUri);
   const scope = encodeURIComponent('openid email profile');
   // Allow frontend to pass a desired role via ?role=student|company (sent as state to Google and returned on callback)
   const role = req.query.role || req.query.state || '';
@@ -665,7 +675,17 @@ const googleAuthCallback = asyncHandler(async (req, res) => {
   const tokenEndpoint = 'https://oauth2.googleapis.com/token';
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-  const redirectUri = `${process.env.BACKEND_URL || 'http://localhost:7000'}/auth/google/callback`;
+  const backendBase =
+    process.env.BACKEND_URL ||
+    process.env.VITE_BACKEND_URL ||
+    process.env.REACT_APP_BACKEND_URL ||
+    (process.env.NODE_ENV !== 'production' ? 'http://localhost:7000' : null);
+  if (!backendBase) {
+    console.error('Google OAuth: BACKEND_URL is not set (NODE_ENV=production). Aborting.');
+    res.status(500);
+    throw new Error('Server misconfiguration: BACKEND_URL is required for OAuth in production');
+  }
+  const redirectUri = `${backendBase.replace(/\/$/, '')}/auth/google/callback`;
 
   // Exchange code for tokens
   const params = new URLSearchParams();
@@ -795,7 +815,16 @@ const googleAuthCallback = asyncHandler(async (req, res) => {
   const token = jwt.sign({ userId: user._id, role: user.role, ...extras }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_COOKIE_EXPIRE });
 
   // Redirect to dedicated frontend success page which will persist the token and then navigate
-  const frontendBase = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+  const frontendBase =
+    process.env.FRONTEND_URL ||
+    process.env.VITE_FRONTEND_URL ||
+    process.env.CLIENT_URL ||
+    (process.env.NODE_ENV !== 'production' ? 'http://localhost:5173' : null);
+  if (!frontendBase) {
+    console.error('Google OAuth: FRONTEND_URL is not set (NODE_ENV=production). Aborting.');
+    return res.status(500).json({ message: 'Server misconfiguration: FRONTEND_URL is required in production' });
+  }
+  console.log('Google OAuth final redirect to frontend:', `${frontendBase.replace(/\/$/, '')}/auth/google/success`);
   return res.redirect(`${frontendBase.replace(/\/$/, '')}/auth/google/success?token=${encodeURIComponent(token)}`);
 });
 

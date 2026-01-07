@@ -19,6 +19,13 @@ connectDB();
 
 const app = express();
 
+// Log critical runtime config to help troubleshooting OAuth/cors in production
+console.log('CONFIG: BACKEND_URL=', process.env.BACKEND_URL || 'not set');
+console.log('CONFIG: FRONTEND_URL=', process.env.FRONTEND_URL || 'not set');
+if (process.env.NODE_ENV === 'production' && (!process.env.BACKEND_URL || !process.env.FRONTEND_URL)) {
+  console.warn('⚠️ Production environment but BACKEND_URL or FRONTEND_URL is missing. Google OAuth and CORS may fail.');
+}
+
 // MAIN CORS - Razorpay included
 app.use(cors({
   origin: [
