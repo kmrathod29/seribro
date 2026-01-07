@@ -10,8 +10,8 @@
 const RENDER_BACKEND_URL = "https://seribro-backend.onrender.com/";
 
 // ping interval (12 minutes)
-// const PING_INTERVAL = 12 * 60 * 1000;
-const PING_INTERVAL = 5 * 1000;
+const PING_INTERVAL = 12 * 60 * 1000;
+// const PING_INTERVAL = 5 * 1000;
 
 export function startRenderKeepAlive() {
   // run immediately once
