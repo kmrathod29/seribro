@@ -7,7 +7,7 @@
  * - NOT for production use
  */
 
-const RENDER_BACKEND_URL = "https://YOUR_RENDER_BACKEND_URL.onrender.com/";
+const RENDER_BACKEND_URL = "https://seribro-backend.onrender.com/";
 
 // ping interval (12 minutes)
 // const PING_INTERVAL = 12 * 60 * 1000;
