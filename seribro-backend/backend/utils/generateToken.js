@@ -11,14 +11,19 @@ const generateToken = (res, userId, role, extras = {}) => {
     expiresIn: process.env.JWT_COOKIE_EXPIRE, // Hinglish: Token ki expiry
   });
 
-  // Cookie options (Hinglish: Cookie ki settings)
+  // Hinglish: Production environment check
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Cookie options (Hinglish: Cookie ki settings - production ke liye updated)
   const cookieOptions = {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRE.match(/(\d+)/)[0] * 24 * 60 * 60 * 1000 // Hinglish: Expiry ko milliseconds mein convert kiya
     ),
     httpOnly: true, // Hinglish: JavaScript se access nahi hoga, security ke liye
-    secure: process.env.NODE_ENV === 'production', // Hinglish: Production mein HTTPS par hi bhejna
-    sameSite: 'strict', // Hinglish: CSRF protection ke liye
+    secure: isProduction, // Hinglish: Production mein true (HTTPS required)
+    sameSite: isProduction ? 'none' : 'lax', // Hinglish: Production mein 'none' for cross-domain (Vercel + Render)
+    // Hinglish: domain setting production ke liye (optional, usually not needed)
+    // domain: isProduction ? undefined : undefined
   };
 
   // Cookie set karna (Hinglish: Cookie set kar rahe hain)
