@@ -1,6 +1,7 @@
 import React from 'react';
 import { Zap, Shield, CreditCard, Users, Briefcase, Check, ArrowRight, Star, TrendingUp, Award, Sparkles } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import toast from 'react-hot-toast';
 import Footer from '../components/Footer';
 
 import { useNavigate } from 'react-router-dom';
@@ -16,8 +17,10 @@ const Home = () => {
   };
 
   // Alerts for wrong-role access (exact phrasing per spec)
-  const showStudentAccessDenied = () => alert("❌ Access Denied: You're a student account.");
-  const showCompanyAccessDenied = () => alert("❌ Access Denied: You're a company account.");
+  // Use toast instead of native alert for consistent UI
+  // Note: react-hot-toast Toaster is already mounted in App
+  const showStudentAccessDenied = () => toast.error("❌ Access Denied: You're a student account.");
+  const showCompanyAccessDenied = () => toast.error("❌ Access Denied: You're a company account.");
 
   const handleStudentAction = () => {
     const tokenUser = getAuthFromLocalToken();
@@ -42,7 +45,16 @@ const Home = () => {
   };
 
   // Keep backward-compatible heroes mapped
-  const handlePostProjectClick = () => handleCompanyAction();
+  const handlePostProjectClick = () => {
+    const tokenUser = getAuthFromLocalToken();
+    const cookieUser = getLoggedInUser();
+    const user = tokenUser || cookieUser;
+
+    if (!user) return openSignupModal('company');
+    if (user.role === 'student') return showStudentAccessDenied();
+
+    navigate('/company/post-project');
+  };
   const handleFindWorkClick = () => handleStudentAction();
 
   const scrollToFeatures = () => {
@@ -161,7 +173,7 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="col-span-1 md:col-span-3 text-center mt-2 mb-6">
+            {/* <div className="col-span-1 md:col-span-3 text-center mt-2 mb-6">
               <button
                 onClick={() => navigate('/about')}
                 className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 text-primary font-semibold hover:bg-white/20 transition min-h-[36px]"
@@ -169,7 +181,7 @@ const Home = () => {
                 Learn More
                 <ArrowRight size={16} />
               </button>
-            </div>
+            </div> */}
             {[
               {
                 icon: Zap,

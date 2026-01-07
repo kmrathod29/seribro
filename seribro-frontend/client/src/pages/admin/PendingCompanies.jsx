@@ -15,7 +15,7 @@ export default function PendingCompanies() {
       const res = await AdminAPI.get('/companies/pending');
       setList(res.data.data || []);
     } catch (err) {
-      alert(String(err?.response?.data?.message || 'Pending companies load nahi huye'));
+      toast.error(String(err?.response?.data?.message || 'Pending companies load nahi huye'));
     } finally {
       setLoading(false);
     }
@@ -28,10 +28,10 @@ export default function PendingCompanies() {
     try {
       setActionId(id);
       await AdminAPI.post(`/company/${id}/approve`);
-      alert('Company approved ✔️');
+      toast.success('Company approved ✔️');
       await load();
     } catch (err) {
-      alert(err.response?.data?.message || 'Approve fail ho gaya');
+      toast.error(err.response?.data?.message || 'Approve fail ho gaya');
     } finally {
       setActionId('');
     }

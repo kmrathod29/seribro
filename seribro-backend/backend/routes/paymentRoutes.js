@@ -13,6 +13,7 @@ const {
   getPaymentDetails,
   getStudentEarnings,
   getCompanyPayments,
+  getAdminPayments,
 } = require('../controllers/paymentController');
 
 // Company routes
@@ -27,6 +28,8 @@ router.get('/company/payments', protect, roleMiddleware(['company']), getCompany
 
 // Admin routes
 router.get('/admin/pending-releases', protect, roleMiddleware(['admin']), getPendingReleases);
+// Admin: full payments list + stats
+router.get('/admin/payments', protect, roleMiddleware(['admin']), getAdminPayments);
 router.post('/admin/:paymentId/release', protect, roleMiddleware(['admin']), releasePayment);
 router.post('/admin/bulk-release', protect, roleMiddleware(['admin']), bulkReleasePayments);
 router.post('/admin/:paymentId/refund', protect, roleMiddleware(['admin']), refundPayment);

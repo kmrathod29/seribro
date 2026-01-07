@@ -39,6 +39,18 @@ export const getPendingReleases = async (params = {}) => {
   }
 };
 
+export const getAdminPayments = async (params = {}) => {
+  try {
+    const queryParams = new URLSearchParams();
+    queryParams.append('page', params.page || 1);
+    queryParams.append('limit', params.limit || 50);
+    const res = await axios.get(`${BASE}/admin/payments?${queryParams.toString()}`);
+    return res.data;
+  } catch (err) {
+    return { success: false, message: err?.response?.data?.message || err.message };
+  }
+};
+
 export const releasePayment = async (paymentId, data) => {
   try {
     const res = await axios.post(`${BASE}/admin/${paymentId}/release`, data);

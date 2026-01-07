@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Loader, DollarSign } from 'lucide-react';
 import { verifyPayment } from '@/apis/paymentApi';
 import Navbar from '@/components/Navbar';
+import toast from 'react-hot-toast';
 
 const PaymentVerificationPage = () => {
   const [verifying, setVerifying] = useState(false);
@@ -19,7 +20,7 @@ const PaymentVerificationPage = () => {
   // Simulate payment verification from Razorpay response
   const handleVerifyPayment = async () => {
     if (!formData.razorpayOrderId || !formData.razorpayPaymentId || !formData.razorpaySignature) {
-      alert('Please fill all payment details');
+      toast.error('Please fill all payment details');
       return;
     }
 
@@ -30,10 +31,10 @@ const PaymentVerificationPage = () => {
       if (res.success) {
         setVerified(true);
         setPaymentDetails(res.data);
-        alert('Payment verified successfully!');
+        toast.success('Payment verified successfully!');
       } else {
         setVerified(false);
-        alert(String(res?.message || 'Payment verification failed'));
+        toast.error(String(res?.message || 'Payment verification failed'));
       }
     } catch (error) {
       setVerified(false);

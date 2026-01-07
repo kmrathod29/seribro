@@ -59,11 +59,35 @@ exports.createOrder = async (req, res) => {
     }
 
     const proposedPrice = Number(application.proposedPrice || 0);
+    if (!proposedPrice || proposedPrice <= 0) {
+      return sendResponse(res, 400, false, 'Invalid final price for selected application');
+    }
     const platformPercent = Number(process.env.PLATFORM_FEE_PERCENTAGE || 5);
     const platformFee = Math.round((proposedPrice * platformPercent) / 100);
     const totalAmount = Number(proposedPrice) + platformFee;
     const baseAmount = proposedPrice;
     const netAmount = Math.max(0, baseAmount - platformFee);
+
+    // Prevent duplicate payments for same project
+    if (project.payment) {
+      const existingPayment = await Payment.findById(project.payment);
+      if (existingPayment && !['failed','refunded'].includes(existingPayment.status)) {
+        // Return existing payment info and prevent creating a new order
+        return sendResponse(res, 200, true, 'Existing payment found for project', {
+          payment: existingPayment,
+          hidePayNow: true,
+          baseAmount,
+          platformFee,
+          totalAmount,
+        });
+      }
+    }
+
+    // Persist price breakdown into project (single source of truth)
+    project.basePrice = baseAmount;
+    project.platformFee = platformFee;
+    project.finalPrice = totalAmount;
+    await project.save();
 
     // Attempt to create Razorpay order using the total amount
     let order;
@@ -87,10 +111,13 @@ exports.createOrder = async (req, res) => {
       // Create payment record in DB (pending) so admin can inspect
       const payment = await Payment.create({
         razorpayOrderId: null,
+        razorpay: { orderId: null },
         project: project._id,
         company: companyProfile._id,
         student: application.studentId || project.assignedStudent,
         amount: baseAmount,
+        baseAmount,
+        totalAmount,
         platformFee,
         netAmount,
         status: "pending",
@@ -121,10 +148,13 @@ exports.createOrder = async (req, res) => {
 
     const paymentDoc = await Payment.create({
       razorpayOrderId: order.id,
+      razorpay: { orderId: order.id },
       project: project._id,
       company: companyProfile._id,
       student: application.studentId || project.assignedStudent,
       amount: baseAmount,
+      baseAmount,
+      totalAmount,
       platformFee,
       netAmount,
       status: "pending",
@@ -200,6 +230,15 @@ exports.verifyPayment = async (req, res) => {
 
     payment.razorpayPaymentId = razorpayPaymentId;
     payment.razorpaySignature = razorpaySignature;
+    payment.razorpay = payment.razorpay || {};
+    payment.razorpay.paymentId = razorpayPaymentId;
+    payment.razorpay.signature = razorpaySignature;
+    payment.razorpay.orderId = payment.razorpay.orderId || razorpayOrderId;
+
+    // Ensure base/total fields exist on payment for frontend display
+    payment.baseAmount = payment.baseAmount || payment.amount;
+    payment.totalAmount = payment.totalAmount || (payment.amount + (payment.platformFee || 0));
+
     payment.status = "captured";
     payment.capturedAt = new Date();
     await payment.addTransactionHistory(
@@ -212,6 +251,12 @@ exports.verifyPayment = async (req, res) => {
     // Link to project
     const project = await Project.findById(payment.project);
     if (project) {
+      // Ensure project price fields are set (single source of truth)
+      project.basePrice = project.basePrice || payment.baseAmount || payment.amount;
+      project.platformFee = project.platformFee || payment.platformFee || 0;
+      project.finalPrice = project.finalPrice || payment.totalAmount || (payment.amount + (payment.platformFee || 0));
+      await project.save();
+
       await project.markPaymentCaptured();
       console.log(
         "✅ Payment captured. Project status unchanged:",
@@ -475,6 +520,38 @@ exports.getPendingReleases = async (req, res) => {
   } catch (error) {
     console.error("getPendingReleases error:", error);
     return sendResponse(res, 500, false, "Failed to fetch pending releases");
+  }
+};
+
+// GET /api/admin/payments - All payments + totals
+exports.getAdminPayments = async (req, res) => {
+  try {
+    const page = Number(req.query.page || 1);
+    const limit = Number(req.query.limit || 50);
+    const skip = (page - 1) * limit;
+
+    const query = {}; // admins can filter later
+
+    const total = await Payment.countDocuments(query);
+    const payments = await Payment.find(query)
+      .populate('project company student')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const platformRevenue = await Payment.getPlatformRevenue();
+    const released = await Payment.countDocuments({ status: 'released' });
+    const pending = await Payment.countDocuments({ status: { $in: ['captured','pending','ready_for_release'] } });
+
+    return sendResponse(res, 200, true, 'Admin payments fetched', {
+      payments,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) },
+      stats: { platformRevenue, released, pending },
+    });
+  } catch (error) {
+    console.error('getAdminPayments error:', error);
+    return sendResponse(res, 500, false, 'Failed to fetch admin payments');
   }
 };
 
@@ -757,6 +834,8 @@ exports.getStudentEarnings = async (req, res) => {
       recentPayments: recentPayments.map((p) => ({
         _id: p._id,
         amount: p.amount,
+        baseAmount: p.baseAmount || p.amount,
+        totalAmount: p.totalAmount || (p.amount + (p.platformFee || 0)),
         netAmount: p.netAmount || p.amount - (p.platformFee || 0),
         status: p.status,
         createdAt: p.createdAt,
@@ -766,7 +845,7 @@ exports.getStudentEarnings = async (req, res) => {
         projectId: p.project?._id,
         companyName: p.company?.companyName || "Unknown Company",
         companyId: p.company?._id,
-        transactionId: p.razorpayPaymentId || p.razorpayOrderId,
+        transactionId: p.razorpayPaymentId || p.razorpayOrderId || (p.razorpay && p.razorpay.paymentId),
         paymentMethod: p.paymentMethod || "Razorpay",
       })),
       monthlyEarnings: monthly.map((m) => ({
@@ -954,6 +1033,8 @@ exports.getCompanyPayments = async (req, res) => {
       recentPayments: recentPayments.map((p) => ({
         _id: p._id,
         amount: p.amount,
+        baseAmount: p.baseAmount || p.amount,
+        totalAmount: p.totalAmount || (p.amount + (p.platformFee || 0)),
         netAmount: p.netAmount || p.amount - (p.platformFee || 0),
         status: p.status,
         createdAt: p.createdAt,
@@ -963,7 +1044,7 @@ exports.getCompanyPayments = async (req, res) => {
         projectId: p.project?._id,
         studentName: p.student?.basicInfo?.fullName || "Unknown Student",
         studentId: p.student?._id,
-        transactionId: p.razorpayPaymentId || p.razorpayOrderId,
+        transactionId: p.razorpayPaymentId || p.razorpayOrderId || (p.razorpay && p.razorpay.paymentId),
         paymentMethod: p.paymentMethod || "Razorpay",
       })),
       monthlySpending: monthly.map((m) => ({

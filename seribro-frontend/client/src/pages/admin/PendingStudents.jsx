@@ -16,7 +16,7 @@ export default function PendingStudents() {
       const res = await AdminAPI.get('/students/pending');
       setList(res.data.data || []);
     } catch (err) {
-      alert(String(err?.response?.data?.message || 'Pending students load nahi huye'));
+      toast.error(String(err?.response?.data?.message || 'Pending students load nahi huye'));
     } finally {
       setLoading(false);
     }
@@ -29,10 +29,10 @@ export default function PendingStudents() {
     try {
       setActionId(id);
       await AdminAPI.post(`/student/${id}/approve`);
-      alert('Student approved ✔️');
+      toast.success('Student approved ✔️');
       await load();
     } catch (err) {
-      alert(err.response?.data?.message || 'Approve fail ho gaya');
+      toast.error(err.response?.data?.message || 'Approve fail ho gaya');
     } finally {
       setActionId('');
     }

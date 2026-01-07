@@ -2,7 +2,7 @@
 // Project card component - Phase 4.1
 
 import React from 'react';
-import { Calendar, DollarSign, Users, Briefcase, Trash2, Edit2, Eye } from 'lucide-react';
+import { Calendar, IndianRupee, Users, Briefcase, Trash2, Edit2, Eye } from 'lucide-react';
 
 const ProjectCard = ({ project, onView, onEdit, onDelete }) => {
     const formatDate = (date) => new Date(date).toLocaleDateString('en-IN');
@@ -35,7 +35,7 @@ const ProjectCard = ({ project, onView, onEdit, onDelete }) => {
             {/* Details Grid */}
             <div className="grid grid-cols-2 gap-3 mb-4 py-4 border-y border-gray-700">
                 <div className="flex items-center gap-2">
-                    <DollarSign size={16} className="text-gold" />
+                    <IndianRupee size={16} className="text-gold" />
                     <div className="text-sm">
                         <p className="text-gray-500 text-xs">Budget</p>
                         <p className="text-white font-semibold">{formatBudget(project.budgetMin)} - {formatBudget(project.budgetMax)}</p>

@@ -3,6 +3,7 @@
 // Test URL: http://localhost:5173/workspace/projects/[projectId]/payment
 
 import React, { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import paymentApi from '../../apis/paymentApi';
 import workspaceApi from '../../apis/workspaceApi';
@@ -42,74 +43,8 @@ const PaymentPage = () => {
   const totalAmount = orderData?.totalAmount ?? 0; // rupees
 
 
-  // Load project and order data
-  useEffect(() => {
-    loadProjectData();
-    loadRazorpayScript();
-  }, [projectId]);
-
-  // Load Razorpay script
-  const loadRazorpayScript = () => {
-    if (window.Razorpay) return;
-
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => {
-      console.log('Razorpay script loaded successfully');
-    };
-    script.onerror = () => {
-      console.error('Failed to load Razorpay script');
-      alert('Payment service unavailable');
-    };
-    document.head.appendChild(script);
-  };
-
-  // Load project and company data
-  const loadProjectData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Get project details
-      const projectRes = await workspaceApi.getWorkspaceOverview(projectId);
-      if (!projectRes.success) {
-        setError(projectRes.message || 'Failed to load project');
-        setLoading(false);
-        return;
-      }
-
-      if (!projectRes.data || !projectRes.data.project) {
-        setError('Invalid project data received');
-        setLoading(false);
-        return;
-      }
-
-      setProject(projectRes.data.project);
-      setCompanyProfile(projectRes.data.company);
-
-      // Determine if a student/application has been selected for payment
-      const hasSelectedApp = !!(projectRes.data.project && projectRes.data.project.selectedApplication && projectRes.data.project.selectedApplication.proposedPrice > 0);
-
-      if (!hasSelectedApp) {
-        // Don't create an order automatically; disable Pay and show instruction
-        setInfo('Student not selected yet');
-        setLoading(false);
-        return;
-      }
-
-      // Create order using server API
-      await createPaymentOrder(projectRes.data.project);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error loading project:', err);
-      setError(err.message || 'An error occurred while loading project details');
-      setLoading(false);
-    }
-  };
-
   // Create payment order
-  const createPaymentOrder = async (proj) => {
+  const createPaymentOrder = React.useCallback(async (proj) => {
     try {
       setOrderLoading(true);
 
@@ -163,17 +98,89 @@ const PaymentPage = () => {
       setError(err.message || 'Failed to create payment order');
       setOrderLoading(false);
     }
+  }, [projectId]);
+
+  // Load project and order data
+  const loadProjectData = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get project details
+      const projectRes = await workspaceApi.getWorkspaceOverview(projectId);
+      if (!projectRes.success) {
+        setError(projectRes.message || 'Failed to load project');
+        setLoading(false);
+        return;
+      }
+
+      if (!projectRes.data || !projectRes.data.project) {
+        setError('Invalid project data received');
+        setLoading(false);
+        return;
+      }
+
+      setProject(projectRes.data.project);
+      setCompanyProfile(projectRes.data.company);
+
+      // Determine if a student/application has been selected for payment
+      const hasSelectedApp = !!(projectRes.data.project && projectRes.data.project.selectedApplication && projectRes.data.project.selectedApplication.proposedPrice > 0);
+
+      if (!hasSelectedApp) {
+        // Don't create an order automatically; disable Pay and show instruction
+        setInfo('Student not selected yet');
+        setLoading(false);
+        return;
+      }
+
+      // Create order using server API
+      await createPaymentOrder(projectRes.data.project);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error loading project:', err);
+      setError(err.message || 'An error occurred while loading project details');
+      setLoading(false);
+    }
+  }, [projectId, createPaymentOrder]);
+
+  useEffect(() => {
+    loadProjectData();
+    loadRazorpayScript();
+  }, [projectId, loadProjectData]);
+
+  // Load Razorpay script
+  const loadRazorpayScript = () => {
+    if (window.Razorpay) return;
+
+    try {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = function() {
+        console.log('Razorpay script loaded successfully');
+      };
+      script.onerror = function() {
+        console.error('Failed to load Razorpay script');
+        toast.error('Payment service unavailable');
+      };
+      document.head.appendChild(script);
+    } catch (err) {
+      console.error('Error injecting Razorpay script', err);
+      toast.error('Payment service unavailable');
+    }
   };
+
+
 
   // Handle payment
   const handlePayment = async () => {
     if (!project || !orderData) {
-      alert('Missing payment details');
+      toast.error('Missing payment details');
       return;
     }
 
     if (!window.Razorpay) {
-      alert('Payment service not loaded. Please refresh and try again.');
+      toast.error('Payment service not loaded. Please refresh and try again.');
       return;
     }
 
@@ -182,7 +189,7 @@ const PaymentPage = () => {
 
       // Prevent checkout if Razorpay is blocked by account limits
       if (razorpayBlocked) {
-        alert(error || 'Payment cannot be completed because your Razorpay account has limits. Contact support.');
+        toast.error(error || 'Payment cannot be completed because your Razorpay account has limits. Contact support.');
         setPaymentProcessing(false);
         return;
       }
@@ -191,7 +198,7 @@ const PaymentPage = () => {
       // NOTE: Do NOT use orderData.amount or project budget/payout fields here. The single source of truth for payment base is project.finalPrice.
 
       if (!orderData || !orderData.amount) {
-        alert('Invalid payment details from server');
+        toast.error('Invalid payment details from server');
         setPaymentProcessing(false);
         return;
       }
@@ -214,7 +221,7 @@ const PaymentPage = () => {
         modal: {
           ondismiss: () => {
             setPaymentProcessing(false);
-            alert('Payment cancelled');
+            toast('Payment cancelled');
           },
         },
         handler: async (response) => {
@@ -230,7 +237,7 @@ const PaymentPage = () => {
       rzp.open();
     } catch (err) {
       console.error('Error initiating payment:', err);
-      alert('Failed to initiate payment');
+      toast.error('Failed to initiate payment');
       setPaymentProcessing(false);
     }
   };
@@ -251,28 +258,32 @@ const PaymentPage = () => {
 
       if (verifyRes.success) {
         setPaymentStatus('success');
-        alert('Payment successful! View history →');
+        toast.success('Payment verified successfully');
 
-        // Redirect company users to payments history after a short delay
-        setTimeout(() => {
-          navigate('/company/dashboard/payments', { replace: true });
-        }, 1500);
+        // If backend indicates hidePayNow, rely on it
+        if (verifyRes.data?.flags?.hidePayNow) {
+          // redirect to company payments
+          setTimeout(() => {
+            navigate('/company/dashboard/payments', { replace: true });
+          }, 1200);
+        } else {
+          setTimeout(() => {
+            navigate('/company/dashboard/payments', { replace: true });
+          }, 1200);
+        }
       } else {
         setPaymentStatus('verification_failed');
         setError(
           verifyRes.message ||
           'Payment verification failed. Payment may have been captured but not verified. Please contact support.'
         );
-        alert(
-          'Payment verification failed. Please contact support with your transaction ID: ' +
-          response.razorpay_payment_id
-        );
+        toast.error('Payment verification failed. Please contact support with your transaction ID: ' + response.razorpay_payment_id);
       }
     } catch (err) {
       console.error('Error verifying payment:', err);
       setPaymentStatus('verification_failed');
       setError('An error occurred during payment verification');
-      alert('Payment verification error');
+      toast.error('Payment verification error');
     } finally {
       setPaymentProcessing(false);
     }
@@ -288,10 +299,10 @@ const PaymentPage = () => {
     if (isLimit) {
       setError('Payment failed due to Razorpay account limits. Please contact support@seribro.com.');
       setRazorpayBlocked(true);
-      alert('Payment cannot be processed: Razorpay account limits. Contact support.');
+      toast.error('Payment cannot be processed: Razorpay account limits. Contact support.');
     } else {
       setError(desc);
-      alert(String(desc));
+      toast.error(String(desc));
     }
     setPaymentProcessing(false);
   };
@@ -455,7 +466,7 @@ const PaymentPage = () => {
 
                   <div className="bg-slate-900/50 p-4 rounded border border-slate-700">
                     <p className="text-gray-400 text-sm mb-1">Payment Status</p>
-                    <p className="text-amber-300 font-medium">Pending</p>
+                    <p className="text-amber-300 font-medium">{project?.paymentStatus || orderData?.status || 'pending'}</p>
                   </div>
                 </div>
               </div>
@@ -501,26 +512,36 @@ const PaymentPage = () => {
               Cancel
             </button>
 
-            <button
-              onClick={handlePayment}
-              disabled={paymentProcessing || !orderData || !!error}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${paymentProcessing || !orderData || error
-                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 hover:shadow-lg hover:shadow-amber-500/50 active:scale-95'
-                }`}
-            >
-              {paymentProcessing ? (
-                <>
-                  <Loader size={20} className="animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Zap size={20} />
-                  Pay ₹{totalAmount.toLocaleString('en-IN')}
-                </>
-              )}
-            </button>
+            {((project?.paymentStatus || '').toLowerCase() === 'released' || (project?.paymentStatus || '').toLowerCase() === 'captured' || orderData?.hidePayNow) ? (
+              <div className="flex-1">
+                <div className="py-3 px-4 rounded-lg font-medium bg-green-600/20 text-green-200 flex items-center justify-center gap-2">
+                  <CheckCircle2 size={18} className="text-green-300" />
+                  <span>Payment Completed ✓</span>
+                </div>
+                <button onClick={() => navigate('/company/dashboard/payments')} className="w-full mt-3 py-2 px-4 rounded-lg bg-white/5 text-white">View Payment History</button>
+              </div>
+            ) : (
+              <button
+                onClick={handlePayment}
+                disabled={paymentProcessing || !orderData || !!error}
+                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${paymentProcessing || !orderData || error
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 hover:shadow-lg hover:shadow-amber-500/50 active:scale-95'
+                  }`}
+              >
+                {paymentProcessing ? (
+                  <>
+                    <Loader size={20} className="animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Zap size={20} />
+                    Pay ₹{totalAmount.toLocaleString('en-IN')}
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
 

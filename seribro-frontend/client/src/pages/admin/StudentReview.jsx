@@ -17,7 +17,7 @@ export default function StudentReview() {
       const res = await AdminAPI.get(`/student/${id}`);
       setData(res.data.data);
     } catch (err) {
-      alert(String(err?.response?.data?.message || 'Details load nahi hue'));
+      toast.error(String(err?.response?.data?.message || 'Details load nahi hue'));
     } finally {
       setLoading(false);
     }
@@ -30,10 +30,10 @@ export default function StudentReview() {
     try {
       setActionLoading(true);
       await AdminAPI.post(`/student/${id}/approve`);
-      alert('Student approved ✔️');
+      toast.success('Student approved ✔️');
       navigate('/admin/students/pending');
     } catch (err) {
-      alert(err.response?.data?.message || 'Approve fail ho gaya');
+      toast.error(err.response?.data?.message || 'Approve fail ho gaya');
     } finally { setActionLoading(false); }
   };
 

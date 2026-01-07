@@ -1,11 +1,12 @@
 // src/pages/AdminPaymentPage.jsx
 // Admin Payment Management Dashboard
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { releasePayment, getAdminPayments } from '@/apis/paymentApi';
 import { Search, RefreshCw, DollarSign, Clock, AlertCircle } from 'lucide-react';
 import PaymentReleaseCard from '@/components/admin/PaymentReleaseCard';
-import { getPendingReleases, releasePayment } from '@/apis/paymentApi';
 import Navbar from '@/components/Navbar';
+import toast from 'react-hot-toast';
 
 const AdminPaymentPage = () => {
   const [payments, setPayments] = useState([]);
@@ -14,54 +15,65 @@ const AdminPaymentPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
 
-  useEffect(() => {
-    loadPayments();
-  }, [currentPage]);
+  const [summary, setSummary] = useState({});
 
-  const loadPayments = async () => {
+  const loadPayments = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await getPendingReleases(currentPage);
+      const res = await getAdminPayments({ page: currentPage, limit: 20 });
 
       if (res.success) {
         setPayments(res.data.payments || []);
+        const pag = res.data.pagination || {};
         setPagination({
-          total: res.data.total,
-          pages: res.data.pages,
-          current: currentPage
+          total: pag.total || 0,
+          pages: pag.pages || 1,
+          current: pag.page || currentPage,
         });
+        const stats = res.data.stats || {};
+        setSummary({ platformRevenue: stats.platformRevenue || 0, released: stats.released || 0, pending: stats.pending || 0 });
       } else {
-        alert(String(res?.message || 'Failed to load payments'));
+        toast.error(String(res?.message || 'Failed to load payments'));
       }
     } catch (error) {
-      alert('Error loading payments');
+      toast.error('Error loading payments');
       console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage]);
+
+  useEffect(() => {
+    loadPayments();
+  }, [loadPayments]);
+
+  const [confirmReleaseId, setConfirmReleaseId] = useState(null);
 
   const handleRelease = async (payment) => {
-    if (!confirm(`Release ₹${payment.amount?.toLocaleString('en-IN') || 0} to ${payment.studentName}?`)) {
-      return;
-    }
+    // show inline confirm row instead
+    setConfirmReleaseId(payment._id);
+  };
 
+  const confirmRelease = async (payment) => {
     try {
       const res = await releasePayment(payment._id, {
-        releaseNotes: `Released on ${new Date().toLocaleDateString('en-IN')} by admin`
+        notes: `Released on ${new Date().toLocaleDateString('en-IN')} by admin`,
       });
 
       if (res.success) {
-        alert('Payment released successfully');
-        setPayments(payments.filter(p => p._id !== payment._id));
+        toast.success('Payment released successfully');
+        setPayments(payments.filter((p) => p._id !== payment._id));
+        setConfirmReleaseId(null);
       } else {
-        alert(String(res?.message || 'Failed to release payment'));
+        toast.error(String(res?.message || 'Failed to release payment'));
       }
     } catch (error) {
-      alert('Error releasing payment');
+      toast.error('Error releasing payment');
       console.error(error);
     }
   };
+
+  const cancelReleaseConfirm = () => setConfirmReleaseId(null);
 
   const handleViewProject = ({ projectId }) => {
     window.open(`/admin/projects/${projectId}`, '_blank');
@@ -76,7 +88,7 @@ const AdminPaymentPage = () => {
     );
   });
 
-  const totalAmount = filteredPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
   const urgentCount = filteredPayments.filter(p => {
     const days = Math.floor((Date.now() - new Date(p.releaseReadySince)) / (24 * 60 * 60 * 1000));
     return days >= 3;
@@ -98,23 +110,17 @@ const AdminPaymentPage = () => {
           <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4">
             <p className="text-xs text-gray-400 mb-1">Ready for Release</p>
             <p className="text-2xl font-bold text-green-300">{filteredPayments.length}</p>
+            <p className="text-xs text-gray-400 mt-1">Released: {summary?.released ?? 0}</p>
           </div>
 
           <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
-            <p className="text-xs text-gray-400 mb-1">Total Amount</p>
-            <p className="text-2xl font-bold text-blue-300">
-              ₹{totalAmount.toLocaleString('en-IN')}
-            </p>
+            <p className="text-xs text-gray-400 mb-1">Platform Revenue</p>
+            <p className="text-2xl font-bold text-blue-300">₹{(summary?.platformRevenue || 0).toLocaleString('en-IN')}</p>
           </div>
 
           <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
-            <p className="text-xs text-gray-400 mb-1">Days Pending (1-3)</p>
-            <p className="text-2xl font-bold text-yellow-300">
-              {filteredPayments.filter(p => {
-                const days = Math.floor((Date.now() - new Date(p.releaseReadySince)) / (24 * 60 * 60 * 1000));
-                return days >= 1 && days <= 3;
-              }).length}
-            </p>
+            <p className="text-xs text-gray-400 mb-1">Pending Count</p>
+            <p className="text-2xl font-bold text-yellow-300">{summary?.pending ?? filteredPayments.length}</p>
           </div>
 
           <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
@@ -155,18 +161,26 @@ const AdminPaymentPage = () => {
         {!loading && filteredPayments.length > 0 ? (
           <div className="space-y-4 mb-8">
             {filteredPayments.map((payment) => (
-              <PaymentReleaseCard
-                key={payment._id}
-                payment={payment}
-                onRelease={handleRelease}
-                onViewProject={handleViewProject}
-              />
+              <div key={payment._id}>
+                <PaymentReleaseCard
+                  payment={payment}
+                  onRelease={() => handleRelease(payment)}
+                  onViewProject={handleViewProject}
+                />
+                {confirmReleaseId === payment._id && (
+                  <div className="flex justify-end gap-2 mt-2">
+                    <button onClick={() => cancelReleaseConfirm()} className="px-3 py-2 bg-gray-700 text-white rounded">Cancel</button>
+                    <button onClick={() => confirmRelease(payment)} className="px-3 py-2 bg-gold text-navy rounded">Confirm Release</button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         ) : !loading && (
           <div className="text-center py-12 bg-white/5 rounded-lg border border-white/10">
             <AlertCircle className="w-12 h-12 text-gray-500 mx-auto mb-4" />
             <p className="text-gray-400">No pending payments found</p>
+            <p className="text-sm text-gray-500 mt-2">Payments will appear here when they are ready for release.</p>
           </div>
         )}
 

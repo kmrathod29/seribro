@@ -17,10 +17,19 @@ const PaymentSchema = new Schema({
   company: { type: Schema.Types.ObjectId, ref: 'CompanyProfile', required: true },
   student: { type: Schema.Types.ObjectId, ref: 'StudentProfile', required: true },
 
-  amount: { type: Number, required: true, min: 0 }, // in rupees
+  amount: { type: Number, required: true, min: 0 }, // in rupees (base amount)
+  baseAmount: { type: Number }, // alias for base amount (for clarity)
   platformFee: { type: Number, default: 0 },
+  totalAmount: { type: Number }, // base + platform fee (in rupees)
   netAmount: { type: Number },
   currency: { type: String, default: 'INR' },
+
+  // Embedded razorpay object for easier access (kept for compatibility with existing top-level fields)
+  razorpay: {
+    orderId: String,
+    paymentId: String,
+    signature: String,
+  },
 
   status: { type: String, enum: ['pending', 'captured', 'ready_for_release', 'released', 'refunded', 'failed'], default: 'pending' },
 
@@ -53,8 +62,17 @@ PaymentSchema.methods.capturePayment = async function (captureMeta = {}) {
   if (this.status !== 'pending') throw new Error('Payment not in pending state');
   this.status = 'captured';
   this.capturedAt = new Date();
+  // Keep both top-level and nested razorpay info for backward compatibility
   this.razorpayPaymentId = this.razorpayPaymentId || captureMeta.razorpayPaymentId;
   this.razorpaySignature = this.razorpaySignature || captureMeta.razorpaySignature;
+  this.razorpay = this.razorpay || {};
+  if (captureMeta.razorpayPaymentId) this.razorpay.paymentId = captureMeta.razorpayPaymentId;
+  if (captureMeta.razorpaySignature) this.razorpay.signature = captureMeta.razorpaySignature;
+  if (captureMeta.razorpayOrderId) {
+    this.razorpay.orderId = captureMeta.razorpayOrderId;
+    this.razorpayOrderId = this.razorpayOrderId || captureMeta.razorpayOrderId;
+  }
+
   await this.addTransactionHistory('captured', captureMeta.performedBy || null, captureMeta.notes || 'Payment captured');
   return this.save();
 };

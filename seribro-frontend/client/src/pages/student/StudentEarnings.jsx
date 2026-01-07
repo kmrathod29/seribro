@@ -2,7 +2,7 @@
 // Student Earnings and Payment History Page
 
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, Loader, TrendingUp, DollarSign, CheckCircle, Clock } from 'lucide-react';
+import { AlertCircle, Loader, TrendingUp, IndianRupee, CheckCircle, Clock } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import RatingDisplay from '../../components/RatingDisplay';
@@ -140,7 +140,7 @@ const StudentEarnings = () => {
                     <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 hover:bg-white/15 transition-all duration-300">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-gray-400 font-semibold">Available Balance</h3>
-                            <DollarSign className="text-green-400" size={24} />
+                            <IndianRupee className="text-green-400" size={24} />
                         </div>
                         <p className="text-3xl font-bold text-white">₹{availableForWithdrawal.toLocaleString()}</p>
                         <p className="text-xs text-gray-400 mt-2">Ready to withdraw</p>
